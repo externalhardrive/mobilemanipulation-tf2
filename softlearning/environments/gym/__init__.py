@@ -10,6 +10,7 @@ import gym
 
 CUSTOM_GYM_ENVIRONMENTS_PATH = __package__
 MUJOCO_ENVIRONMENTS_PATH = f'{CUSTOM_GYM_ENVIRONMENTS_PATH}.mujoco'
+LOCOBOT_ENVIRONMENTS_PATH = f'{CUSTOM_GYM_ENVIRONMENTS_PATH}.locobot'
 
 MUJOCO_ENVIRONMENT_SPECS = (
     {
@@ -68,6 +69,36 @@ GENERAL_ENVIRONMENT_SPECS = (
         'id': 'MultiGoal-Default-v0',
         'entry_point': (f'{CUSTOM_GYM_ENVIRONMENTS_PATH}'
                         '.multi_goal:MultiGoalEnv')
+    },
+    {
+        'id': 'Locobot-Grasping-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.grasping_envs:LocobotGraspingEnv')
+    },
+    {
+        'id': 'Locobot-ImageGrasping-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.grasping_envs:ImageLocobotGraspingEnv')
+    },
+    {
+        'id': 'Locobot-ImageMultiGrasping-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.grasping_envs:ImageLocobotMultiGraspingEnv')
+    },
+    {
+        'id': 'Locobot-ImageSingleGrasping-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.grasping_envs:ImageLocobotSingleGraspingEnv')
+    },
+    {
+        'id': 'Locobot-ImageNavigationGrasping-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.nav_grasp_envs:ImageLocobotNavigationGraspingEnv')
+    },
+    {
+        'id': 'Locobot-ImageNavigation-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.nav_grasp_envs:ImageLocobotNavigationEnv')
     },
 )
 

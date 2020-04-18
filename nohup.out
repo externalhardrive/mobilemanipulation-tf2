@@ -1,0 +1,993 @@
+INFO:absl:MUJOCO_GL is not set, so an OpenGL backend will be chosen automatically.
+INFO:absl:Successfully imported OpenGL backend: glfw
+INFO:absl:MuJoCo library version is: 200
+2020-04-13 02:03:07,687	INFO resource_spec.py:212 -- Starting Ray with 4.2 GiB memory available for workers and up to 2.12 GiB for objects. You can adjust these settings with ray.init(memory=<bytes>, object_store_memory=<bytes>).
+2020-04-13 02:03:08,117	INFO web_server.py:239 -- Starting Tune Server...
+
+Aborted!
+== Status ==
+Memory usage on this node: 9.8/15.5 GiB
+Using FIFO scheduling algorithm.
+Resources requested: 12/12 CPUs, 0/0 GPUs, 0.0/4.2 GiB heap, 0.0/1.42 GiB objects
+Result logdir: /home/charles/ray_results/gym/HalfCheetah/v3/2020-04-13T02-03-07-my-sac-experiment-1
+Number of trials: 1 (1 RUNNING)
++--------------------+----------+-------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+
+| Trial name         | status   | loc   |   algorithm_params/config/num_warmup_samples | environment_params/evaluation   | exploration_policy_params/config/observation_keys   |   run_params/seed |
+|--------------------+----------+-------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------|
+| id=00000-seed=1202 | RUNNING  |       |                                        10000 |                                 |                                                     |              1202 |
++--------------------+----------+-------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+
+
+
+[2m[36m(pid=18957)[0m 2020-04-13 02:03:10.944860: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcuda.so.1
+[2m[36m(pid=18957)[0m 2020-04-13 02:03:10.946355: E tensorflow/stream_executor/cuda/cuda_driver.cc:313] failed call to cuInit: CUDA_ERROR_NO_DEVICE: no CUDA-capable device is detected
+[2m[36m(pid=18957)[0m 2020-04-13 02:03:10.946373: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (charles-AERO-15): /proc/driver/nvidia/version does not exist
+[2m[36m(pid=18957)[0m 2020-04-13 02:03:10,946	INFO trainable.py:217 -- Getting current IP.
+[2m[36m(pid=18957)[0m Using seed 1202
+[2m[36m(pid=18957)[0m 2020-04-13 02:03:10.972110: I tensorflow/core/platform/cpu_feature_guard.cc:143] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA
+[2m[36m(pid=18957)[0m 2020-04-13 02:03:10.977316: I tensorflow/core/platform/profile_utils/cpu_utils.cc:102] CPU Frequency: 2208000000 Hz
+[2m[36m(pid=18957)[0m 2020-04-13 02:03:10.977755: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x7fabe8000b20 initialized for platform Host (this does not guarantee that XLA will be used). Devices:
+[2m[36m(pid=18957)[0m 2020-04-13 02:03:10.977769: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): Host, Default Version
+INFO:absl:MUJOCO_GL is not set, so an OpenGL backend will be chosen automatically.
+INFO:absl:Successfully imported OpenGL backend: glfw
+INFO:absl:MuJoCo library version is: 200
+2020-04-13 02:03:19,557	INFO resource_spec.py:212 -- Starting Ray with 4.2 GiB memory available for workers and up to 2.11 GiB for objects. You can adjust these settings with ray.init(memory=<bytes>, object_store_memory=<bytes>).
+2020-04-13 02:03:19,967	INFO web_server.py:239 -- Starting Tune Server...
+== Status ==
+Memory usage on this node: 9.8/15.5 GiB
+Using FIFO scheduling algorithm.
+Resources requested: 12/12 CPUs, 0/0 GPUs, 0.0/4.2 GiB heap, 0.0/1.42 GiB objects
+Result logdir: /home/charles/ray_results/gym/HalfCheetah/v3/2020-04-13T02-03-19-my-sac-experiment-1
+Number of trials: 1 (1 RUNNING)
++--------------------+----------+-------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+
+| Trial name         | status   | loc   |   algorithm_params/config/num_warmup_samples | environment_params/evaluation   | exploration_policy_params/config/observation_keys   |   run_params/seed |
+|--------------------+----------+-------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------|
+| id=00000-seed=7307 | RUNNING  |       |                                        10000 |                                 |                                                     |              7307 |
++--------------------+----------+-------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+
+
+
+[2m[36m(pid=19188)[0m 2020-04-13 02:03:22.822742: I tensorflow/stream_executor/platform/default/dso_loader.cc:44] Successfully opened dynamic library libcuda.so.1
+[2m[36m(pid=19188)[0m 2020-04-13 02:03:22.824566: E tensorflow/stream_executor/cuda/cuda_driver.cc:313] failed call to cuInit: CUDA_ERROR_NO_DEVICE: no CUDA-capable device is detected
+[2m[36m(pid=19188)[0m 2020-04-13 02:03:22.824694: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (charles-AERO-15): /proc/driver/nvidia/version does not exist
+[2m[36m(pid=19188)[0m 2020-04-13 02:03:22,825	INFO trainable.py:217 -- Getting current IP.
+[2m[36m(pid=19188)[0m 2020-04-13 02:03:22.853204: I tensorflow/core/platform/cpu_feature_guard.cc:143] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA
+[2m[36m(pid=19188)[0m 2020-04-13 02:03:22.858338: I tensorflow/core/platform/profile_utils/cpu_utils.cc:102] CPU Frequency: 2208000000 Hz
+[2m[36m(pid=19188)[0m 2020-04-13 02:03:22.858860: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x7fe1e8000b20 initialized for platform Host (this does not guarantee that XLA will be used). Devices:
+[2m[36m(pid=19188)[0m 2020-04-13 02:03:22.858874: I tensorflow/compiler/xla/service/service.cc:176]   StreamExecutor device (0): Host, Default Version
+[2m[36m(pid=19188)[0m Using seed 7307
+[2m[36m(pid=19188)[0m WARNING:tensorflow:From /home/charles/anaconda3/envs/softlearning/lib/python3.7/site-packages/tensorflow_probability/python/bijectors/bijector.py:132: Tensor.experimental_ref (from tensorflow.python.framework.ops) is deprecated and will be removed in a future version.
+[2m[36m(pid=19188)[0m Instructions for updating:
+[2m[36m(pid=19188)[0m Use ref() instead.
+[2m[36m(pid=19188)[0m WARNING:tensorflow:From /home/charles/anaconda3/envs/softlearning/lib/python3.7/site-packages/tensorflow_probability/python/bijectors/bijector.py:132: Tensor.experimental_ref (from tensorflow.python.framework.ops) is deprecated and will be removed in a future version.
+[2m[36m(pid=19188)[0m Instructions for updating:
+[2m[36m(pid=19188)[0m Use ref() instead.
+Result for id=00000-seed=7307:
+  alpha: 0.6976596117019653
+  date: 2020-04-13_02-03-40
+  done: false
+  epoch: 0
+  evaluation:
+    environment_infos:
+      reward_ctrl-first-mean: -0.2102277994155884
+      reward_ctrl-last-mean: -0.3555599927902222
+      reward_ctrl-mean-mean: -0.22439805484861136
+      reward_ctrl-median-mean: -0.22255561351776124
+      reward_ctrl-range-mean: 0.4444459989666939
+      reward_run-first-mean: 0.4192055711557586
+      reward_run-last-mean: -0.23307447434153694
+      reward_run-mean-mean: 0.016827053858980826
+      reward_run-median-mean: 0.00962996318139231
+      reward_run-range-mean: 3.677752643397836
+      x_position-first-mean: -0.03178744567914975
+      x_position-last-mean: 0.7886049687121034
+      x_position-mean-mean: 1.0551700974186433
+      x_position-median-mean: 1.258104171991775
+      x_position-range-mean: 3.5369097169490136
+      x_velocity-first-mean: 0.4192055711557586
+      x_velocity-last-mean: -0.23307447434153694
+      x_velocity-mean-mean: 0.016827053858980826
+      x_velocity-median-mean: 0.00962996318139231
+      x_velocity-range-mean: 3.677752643397836
+    episode-length-max: 1000
+    episode-length-mean: 1000.0
+    episode-length-min: 1000
+    episode-length-std: 0.0
+    episode-reward-max: -207.57101440429688
+    episode-reward-mean: -207.57101440429688
+    episode-reward-min: -207.57101440429688
+    episode-reward-std: 0.0
+  experiment_id: b35de799ae2146538d00617b9e81cd9a
+  experiment_tag: '0_num_warmup_samples=10000,evaluation={''domain'': ''HalfCheetah'',
+    ''task'': ''v3'', ''universe'': ''gym'', ''kwargs'': {}},observation_keys=None,seed=7307'
+  hostname: charles-AERO-15
+  iterations_since_restore: 1
+  node_ip: 192.168.1.8
+  num_train_steps: 1000
+  pid: 19188
+  policy:
+    actions-max: 0.9959618449211121
+    actions-mean: 0.06795793771743774
+    actions-min: -0.9943092465400696
+    actions-std: 0.6074604392051697
+    entropy-mean: 3.8322079181671143
+    entropy-std: 0.7283667922019958
+    scales-mean: 0.9108669757843018
+    scales-std: 0.07865618169307709
+    shifts-mean: 0.07561720162630081
+    shifts-std: 0.1857004165649414
+  sampler:
+    episodes: 11
+    last-path-return: -265.4651938896292
+    max-path-return: -186.31377559192083
+    pool-size: 11000
+    total-samples: 11000
+  time_since_restore: 17.612499237060547
+  time_this_iter_s: 17.612499237060547
+  time_total_s: 17.612499237060547
+  times:
+    epoch_after_hook: 2.7230125851929188e-06
+    epoch_before_hook: 3.5129007301293314e-05
+    evaluation_metrics: 0.0008910290052881464
+    evaluation_paths: 0.6898072470066836
+    sample: 1.141537290866836
+    timestep_after_hook: 0.0021650198759743944
+    timestep_before_hook: 0.006942827822058462
+    train: 9.749265220831148
+    training_metrics: 0.0010081180080305785
+    training_paths: 0.004585496993968263
+  timestamp: 1586768620
+  timestep: 1000
+  timesteps_since_restore: 0
+  total_timestep: 1000
+  training:
+    environment_infos:
+      reward_ctrl-first-mean: -0.19265446662902833
+      reward_ctrl-last-mean: -0.2577242374420166
+      reward_ctrl-mean-mean: -0.21098741459026935
+      reward_ctrl-median-mean: -0.20746823549270632
+      reward_ctrl-range-mean: 0.4666158601641655
+      reward_run-first-mean: -0.45651418223604373
+      reward_run-last-mean: 0.9217291708338404
+      reward_run-mean-mean: -0.05447777929936011
+      reward_run-median-mean: -0.04407503342598096
+      reward_run-range-mean: 5.207989107172184
+      x_position-first-mean: 0.0018661254509613938
+      x_position-last-mean: -2.6991971304052416
+      x_position-mean-mean: -2.5475396810903903
+      x_position-median-mean: -2.7669901454564174
+      x_position-range-mean: 5.0531217296864686
+      x_velocity-first-mean: -0.45651418223604373
+      x_velocity-last-mean: 0.9217291708338404
+      x_velocity-mean-mean: -0.05447777929936011
+      x_velocity-median-mean: -0.04407503342598096
+      x_velocity-range-mean: 5.207989107172184
+    episode-length-max: 1000
+    episode-length-mean: 1000.0
+    episode-length-min: 1000
+    episode-length-std: 0.0
+    episode-reward-max: -265.46519388962946
+    episode-reward-mean: -265.46519388962946
+    episode-reward-min: -265.46519388962946
+    episode-reward-std: 0.0
+  training_iteration: 1
+  trial_id: '00000'
+  update:
+    Q_loss-mean: 0.8124411702156067
+    Q_value-mean: 8.452550888061523
+    alpha: 0.8481109142303467
+    alpha_loss-mean: 8.419584274291992
+    policy_loss-mean: -11.707802772521973
+  
+== Status ==
+Memory usage on this node: 10.5/15.5 GiB
+Using FIFO scheduling algorithm.
+Resources requested: 12/12 CPUs, 0/0 GPUs, 0.0/4.2 GiB heap, 0.0/1.42 GiB objects
+Result logdir: /home/charles/ray_results/gym/HalfCheetah/v3/2020-04-13T02-03-19-my-sac-experiment-1
+Number of trials: 1 (1 RUNNING)
++--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------+
+| Trial name         | status   | loc               |   algorithm_params/config/num_warmup_samples | environment_params/evaluation   | exploration_policy_params/config/observation_keys   |   run_params/seed |   iter |   total time (s) |
+|--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------|
+| id=00000-seed=7307 | RUNNING  | 192.168.1.8:19188 |                                        10000 |                                 |                                                     |              7307 |      1 |          17.6125 |
++--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------+
+
+
+Result for id=00000-seed=7307:
+  alpha: 0.3985654413700104
+  date: 2020-04-13_02-03-49
+  done: false
+  epoch: 1
+  evaluation:
+    environment_infos:
+      reward_ctrl-first-mean: -0.15783886909484865
+      reward_ctrl-last-mean: -0.41020917892456055
+      reward_ctrl-mean-mean: -0.23095289470851424
+      reward_ctrl-median-mean: -0.228379487991333
+      reward_ctrl-range-mean: 0.4261737614870072
+      reward_run-first-mean: -0.003600067581975286
+      reward_run-last-mean: 0.08531990861127436
+      reward_run-mean-mean: 0.0312623626700322
+      reward_run-median-mean: 0.07013922977264997
+      reward_run-range-mean: 4.164537662301
+      x_position-first-mean: 0.09791418258368084
+      x_position-last-mean: 1.6612123194643893
+      x_position-mean-mean: 1.3078043780447575
+      x_position-median-mean: 1.5503161589532577
+      x_position-range-mean: 3.358077226659555
+      x_velocity-first-mean: -0.003600067581975286
+      x_velocity-last-mean: 0.08531990861127436
+      x_velocity-mean-mean: 0.0312623626700322
+      x_velocity-median-mean: 0.07013922977264997
+      x_velocity-range-mean: 4.164537662301
+    episode-length-max: 1000
+    episode-length-mean: 1000.0
+    episode-length-min: 1000
+    episode-length-std: 0.0
+    episode-reward-max: -199.69053649902344
+    episode-reward-mean: -199.69053649902344
+    episode-reward-min: -199.69053649902344
+    episode-reward-std: 0.0
+  experiment_id: b35de799ae2146538d00617b9e81cd9a
+  experiment_tag: '0_num_warmup_samples=10000,evaluation={''domain'': ''HalfCheetah'',
+    ''task'': ''v3'', ''universe'': ''gym'', ''kwargs'': {}},observation_keys=None,seed=7307'
+  hostname: charles-AERO-15
+  iterations_since_restore: 2
+  node_ip: 192.168.1.8
+  num_train_steps: 2000
+  pid: 19188
+  policy:
+    actions-max: 0.9989960193634033
+    actions-mean: 0.04358687624335289
+    actions-min: -0.9954262971878052
+    actions-std: 0.6192450523376465
+    entropy-mean: 3.7607107162475586
+    entropy-std: 0.9153167009353638
+    scales-mean: 0.9249251484870911
+    scales-std: 0.05733369290828705
+    shifts-mean: 0.08249475806951523
+    shifts-std: 0.24527692794799805
+  sampler:
+    episodes: 12
+    last-path-return: -97.28306431061847
+    max-path-return: -97.28306431061847
+    pool-size: 12000
+    total-samples: 12000
+  time_since_restore: 26.938619136810303
+  time_this_iter_s: 9.326119899749756
+  time_total_s: 26.938619136810303
+  times:
+    epoch_after_hook: 2.1329906303435564e-06
+    epoch_before_hook: 6.925000343471766e-05
+    evaluation_metrics: 0.0008176059927791357
+    evaluation_paths: 0.7985347760113655
+    sample: 0.9378751006297534
+    timestep_after_hook: 0.002152575019863434
+    timestep_before_hook: 0.006756412869435735
+    train: 7.540076407763991
+    training_metrics: 0.0007676550012547523
+    training_paths: 0.007012877002125606
+  timestamp: 1586768629
+  timestep: 1000
+  timesteps_since_restore: 0
+  total_timestep: 2000
+  training:
+    environment_infos:
+      reward_ctrl-first-mean: -0.1947559118270874
+      reward_ctrl-last-mean: -0.20626683235168458
+      reward_ctrl-mean-mean: -0.22432392169833185
+      reward_ctrl-median-mean: -0.22635793685913086
+      reward_ctrl-range-mean: 0.4540259808301926
+      reward_run-first-mean: 0.6232242540156684
+      reward_run-last-mean: 0.9121925203615078
+      reward_run-mean-mean: 0.1270408573877134
+      reward_run-median-mean: 0.1723447955728577
+      reward_run-range-mean: 4.921078868775672
+      x_position-first-mean: -0.029810904511951595
+      x_position-last-mean: 6.291070752172935
+      x_position-mean-mean: 2.148781758943578
+      x_position-median-mean: 1.8791114394327821
+      x_position-range-mean: 7.008174815917212
+      x_velocity-first-mean: 0.6232242540156684
+      x_velocity-last-mean: 0.9121925203615078
+      x_velocity-mean-mean: 0.1270408573877134
+      x_velocity-median-mean: 0.1723447955728577
+      x_velocity-range-mean: 4.921078868775672
+    episode-length-max: 1000
+    episode-length-mean: 1000.0
+    episode-length-min: 1000
+    episode-length-std: 0.0
+    episode-reward-max: -97.28306431061841
+    episode-reward-mean: -97.28306431061841
+    episode-reward-min: -97.28306431061841
+    episode-reward-std: 0.0
+  training_iteration: 2
+  trial_id: '00000'
+  update:
+    Q_loss-mean: 0.4999854862689972
+    Q_value-mean: 17.446617126464844
+    alpha: 0.5478677749633789
+    alpha_loss-mean: 5.425638198852539
+    policy_loss-mean: -19.535888671875
+  
+== Status ==
+Memory usage on this node: 10.5/15.5 GiB
+Using FIFO scheduling algorithm.
+Resources requested: 12/12 CPUs, 0/0 GPUs, 0.0/4.2 GiB heap, 0.0/1.42 GiB objects
+Result logdir: /home/charles/ray_results/gym/HalfCheetah/v3/2020-04-13T02-03-19-my-sac-experiment-1
+Number of trials: 1 (1 RUNNING)
++--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------+
+| Trial name         | status   | loc               |   algorithm_params/config/num_warmup_samples | environment_params/evaluation   | exploration_policy_params/config/observation_keys   |   run_params/seed |   iter |   total time (s) |
+|--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------|
+| id=00000-seed=7307 | RUNNING  | 192.168.1.8:19188 |                                        10000 |                                 |                                                     |              7307 |      2 |          26.9386 |
++--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------+
+
+
+Result for id=00000-seed=7307:
+  alpha: 0.11146723479032516
+  date: 2020-04-13_02-03-58
+  done: false
+  epoch: 2
+  evaluation:
+    environment_infos:
+      reward_ctrl-first-mean: -0.29490387439727783
+      reward_ctrl-last-mean: -0.37798376083374025
+      reward_ctrl-mean-mean: -0.30198516489714383
+      reward_ctrl-median-mean: -0.29902082681655884
+      reward_ctrl-range-mean: 0.5391645982861519
+      reward_run-first-mean: 0.6535812675422353
+      reward_run-last-mean: -0.18096191898321679
+      reward_run-mean-mean: 0.00492319243651071
+      reward_run-median-mean: 0.07592087368279266
+      reward_run-range-mean: 5.356164528173438
+      x_position-first-mean: 0.1226365166101791
+      x_position-last-mean: 0.336117075058603
+      x_position-mean-mean: 0.5439950413375054
+      x_position-median-mean: 0.4978317889100201
+      x_position-range-mean: 2.2093333193224187
+      x_velocity-first-mean: 0.6535812675422353
+      x_velocity-last-mean: -0.18096191898321679
+      x_velocity-mean-mean: 0.00492319243651071
+      x_velocity-median-mean: 0.07592087368279266
+      x_velocity-range-mean: 5.356164528173438
+    episode-length-max: 1000
+    episode-length-mean: 1000.0
+    episode-length-min: 1000
+    episode-length-std: 0.0
+    episode-reward-max: -297.0619812011719
+    episode-reward-mean: -297.0619812011719
+    episode-reward-min: -297.0619812011719
+    episode-reward-std: 0.0
+  experiment_id: b35de799ae2146538d00617b9e81cd9a
+  experiment_tag: '0_num_warmup_samples=10000,evaluation={''domain'': ''HalfCheetah'',
+    ''task'': ''v3'', ''universe'': ''gym'', ''kwargs'': {}},observation_keys=None,seed=7307'
+  hostname: charles-AERO-15
+  iterations_since_restore: 3
+  node_ip: 192.168.1.8
+  num_train_steps: 3000
+  pid: 19188
+  policy:
+    actions-max: 0.9994469881057739
+    actions-mean: 0.18746130168437958
+    actions-min: -0.9991512298583984
+    actions-std: 0.6582866311073303
+    entropy-mean: 1.7929550409317017
+    entropy-std: 2.375944137573242
+    scales-mean: 0.8879297375679016
+    scales-std: 0.09822850674390793
+    shifts-mean: 0.32202601432800293
+    shifts-std: 0.708532452583313
+  sampler:
+    episodes: 13
+    last-path-return: -230.274948610602
+    max-path-return: -97.28306431061847
+    pool-size: 13000
+    total-samples: 13000
+  time_since_restore: 35.59942317008972
+  time_this_iter_s: 8.660804033279419
+  time_total_s: 35.59942317008972
+  times:
+    epoch_after_hook: 1.8020073184743524e-06
+    epoch_before_hook: 4.5205000787973404e-05
+    evaluation_metrics: 0.0008112789946608245
+    evaluation_paths: 0.6181796460004989
+    sample: 0.8740761530207237
+    timestep_after_hook: 0.002025432826485485
+    timestep_before_hook: 0.006599131083930843
+    train: 7.12506033264799
+    training_metrics: 0.000678220996633172
+    training_paths: 0.0039947540062712505
+  timestamp: 1586768638
+  timestep: 1000
+  timesteps_since_restore: 0
+  total_timestep: 3000
+  training:
+    environment_infos:
+      reward_ctrl-first-mean: -0.15047268867492677
+      reward_ctrl-last-mean: -0.2714885234832764
+      reward_ctrl-mean-mean: -0.25119117347896097
+      reward_ctrl-median-mean: -0.24754757881164552
+      reward_ctrl-range-mean: 0.5322727918624878
+      reward_run-first-mean: 0.06686295497647259
+      reward_run-last-mean: 1.0312460483803187
+      reward_run-mean-mean: 0.02091622486835851
+      reward_run-median-mean: 0.02871883919631113
+      reward_run-range-mean: 4.711716423502468
+      x_position-first-mean: -0.006385432395636426
+      x_position-last-mean: 1.0360826632734648
+      x_position-mean-mean: -0.6713508391788622
+      x_position-median-mean: -0.49468431940800883
+      x_position-range-mean: 3.812658140003924
+      x_velocity-first-mean: 0.06686295497647259
+      x_velocity-last-mean: 1.0312460483803187
+      x_velocity-mean-mean: 0.02091622486835851
+      x_velocity-median-mean: 0.02871883919631113
+      x_velocity-range-mean: 4.711716423502468
+    episode-length-max: 1000
+    episode-length-mean: 1000.0
+    episode-length-min: 1000
+    episode-length-std: 0.0
+    episode-reward-max: -230.2749486106025
+    episode-reward-mean: -230.2749486106025
+    episode-reward-min: -230.2749486106025
+    episode-reward-std: 0.0
+  training_iteration: 3
+  trial_id: '00000'
+  update:
+    Q_loss-mean: 0.5776010751724243
+    Q_value-mean: 21.347970962524414
+    alpha: 0.25160500407218933
+    alpha_loss-mean: 2.39604115486145
+    policy_loss-mean: -22.295387268066406
+  
+== Status ==
+Memory usage on this node: 10.5/15.5 GiB
+Using FIFO scheduling algorithm.
+Resources requested: 12/12 CPUs, 0/0 GPUs, 0.0/4.2 GiB heap, 0.0/1.42 GiB objects
+Result logdir: /home/charles/ray_results/gym/HalfCheetah/v3/2020-04-13T02-03-19-my-sac-experiment-1
+Number of trials: 1 (1 RUNNING)
++--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------+
+| Trial name         | status   | loc               |   algorithm_params/config/num_warmup_samples | environment_params/evaluation   | exploration_policy_params/config/observation_keys   |   run_params/seed |   iter |   total time (s) |
+|--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------|
+| id=00000-seed=7307 | RUNNING  | 192.168.1.8:19188 |                                        10000 |                                 |                                                     |              7307 |      3 |          35.5994 |
++--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------+
+
+
+Result for id=00000-seed=7307:
+  alpha: 0.0278061144053936
+  date: 2020-04-13_02-04-07
+  done: false
+  epoch: 3
+  evaluation:
+    environment_infos:
+      reward_ctrl-first-mean: -0.29395949840545654
+      reward_ctrl-last-mean: -0.23400473594665527
+      reward_ctrl-mean-mean: -0.4146376631379127
+      reward_ctrl-median-mean: -0.4129308223724365
+      reward_ctrl-range-mean: 0.5385368883609771
+      reward_run-first-mean: 0.5151882295267431
+      reward_run-last-mean: -0.403681913660936
+      reward_run-mean-mean: 0.07625120420253231
+      reward_run-median-mean: 0.09785936259978367
+      reward_run-range-mean: 5.325937204593163
+      x_position-first-mean: -0.07141580845353405
+      x_position-last-mean: 3.7153849901967435
+      x_position-mean-mean: 0.7462400321539756
+      x_position-median-mean: 1.4560968222767274
+      x_position-range-mean: 6.858271583563933
+      x_velocity-first-mean: 0.5151882295267431
+      x_velocity-last-mean: -0.403681913660936
+      x_velocity-mean-mean: 0.07625120420253231
+      x_velocity-median-mean: 0.09785936259978367
+      x_velocity-range-mean: 5.325937204593163
+    episode-length-max: 1000
+    episode-length-mean: 1000.0
+    episode-length-min: 1000
+    episode-length-std: 0.0
+    episode-reward-max: -338.386474609375
+    episode-reward-mean: -338.386474609375
+    episode-reward-min: -338.386474609375
+    episode-reward-std: 0.0
+  experiment_id: b35de799ae2146538d00617b9e81cd9a
+  experiment_tag: '0_num_warmup_samples=10000,evaluation={''domain'': ''HalfCheetah'',
+    ''task'': ''v3'', ''universe'': ''gym'', ''kwargs'': {}},observation_keys=None,seed=7307'
+  hostname: charles-AERO-15
+  iterations_since_restore: 4
+  node_ip: 192.168.1.8
+  num_train_steps: 4000
+  pid: 19188
+  policy:
+    actions-max: 0.9999690651893616
+    actions-mean: 0.12363878637552261
+    actions-min: -0.9999961853027344
+    actions-std: 0.80064457654953
+    entropy-mean: -6.433708190917969
+    entropy-std: 6.212658405303955
+    scales-mean: 0.7011709213256836
+    scales-std: 0.1306585818529129
+    shifts-mean: 0.23693327605724335
+    shifts-std: 1.8467206954956055
+  sampler:
+    episodes: 14
+    last-path-return: -281.73547724719117
+    max-path-return: -97.28306431061847
+    pool-size: 14000
+    total-samples: 14000
+  time_since_restore: 44.35731291770935
+  time_this_iter_s: 8.757889747619629
+  time_total_s: 44.35731291770935
+  times:
+    epoch_after_hook: 2.0469888113439083e-06
+    epoch_before_hook: 3.4559008781798184e-05
+    evaluation_metrics: 0.000824258997454308
+    evaluation_paths: 0.669314127007965
+    sample: 0.8896193670661887
+    timestep_after_hook: 0.002087642962578684
+    timestep_before_hook: 0.00667439000972081
+    train: 7.154109343318851
+    training_metrics: 0.0007891119894338772
+    training_paths: 0.004787024008692242
+  timestamp: 1586768647
+  timestep: 1000
+  timesteps_since_restore: 0
+  total_timestep: 4000
+  training:
+    environment_infos:
+      reward_ctrl-first-mean: -0.33172500133514404
+      reward_ctrl-last-mean: -0.4235250949859619
+      reward_ctrl-mean-mean: -0.3821329164624215
+      reward_ctrl-median-mean: -0.38185472488403327
+      reward_ctrl-range-mean: 0.49709693193435667
+      reward_run-first-mean: 0.8934098915087124
+      reward_run-last-mean: 0.21165109055088394
+      reward_run-mean-mean: 0.1003974392152303
+      reward_run-median-mean: 0.11161769303227986
+      reward_run-range-mean: 3.976090843725464
+      x_position-first-mean: 0.1343754340570995
+      x_position-last-mean: 5.109576900243178
+      x_position-mean-mean: 2.6916502619152065
+      x_position-median-mean: 2.4707590002847297
+      x_position-range-mean: 5.268519071746237
+      x_velocity-first-mean: 0.8934098915087124
+      x_velocity-last-mean: 0.21165109055088394
+      x_velocity-mean-mean: 0.1003974392152303
+      x_velocity-median-mean: 0.11161769303227986
+      x_velocity-range-mean: 3.976090843725464
+    episode-length-max: 1000
+    episode-length-mean: 1000.0
+    episode-length-min: 1000
+    episode-length-std: 0.0
+    episode-reward-max: -281.73547724719117
+    episode-reward-mean: -281.73547724719117
+    episode-reward-min: -281.73547724719117
+    episode-reward-std: 0.0
+  training_iteration: 4
+  trial_id: '00000'
+  update:
+    Q_loss-mean: 0.7581621408462524
+    Q_value-mean: 21.931032180786133
+    alpha: 0.04416169971227646
+    alpha_loss-mean: 0.17406795918941498
+    policy_loss-mean: -22.496692657470703
+  
+== Status ==
+Memory usage on this node: 10.6/15.5 GiB
+Using FIFO scheduling algorithm.
+Resources requested: 12/12 CPUs, 0/0 GPUs, 0.0/4.2 GiB heap, 0.0/1.42 GiB objects
+Result logdir: /home/charles/ray_results/gym/HalfCheetah/v3/2020-04-13T02-03-19-my-sac-experiment-1
+Number of trials: 1 (1 RUNNING)
++--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------+
+| Trial name         | status   | loc               |   algorithm_params/config/num_warmup_samples | environment_params/evaluation   | exploration_policy_params/config/observation_keys   |   run_params/seed |   iter |   total time (s) |
+|--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------|
+| id=00000-seed=7307 | RUNNING  | 192.168.1.8:19188 |                                        10000 |                                 |                                                     |              7307 |      4 |          44.3573 |
++--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------+
+
+
+Result for id=00000-seed=7307:
+  alpha: 0.025809427723288536
+  date: 2020-04-13_02-04-16
+  done: false
+  epoch: 4
+  evaluation:
+    environment_infos:
+      reward_ctrl-first-mean: -0.19887747764587405
+      reward_ctrl-last-mean: -0.3310316801071167
+      reward_ctrl-mean-mean: -0.4004671738743782
+      reward_ctrl-median-mean: -0.4045267820358277
+      reward_ctrl-range-mean: 0.4768948078155518
+      reward_run-first-mean: 0.5764412663672802
+      reward_run-last-mean: -0.19124527337957886
+      reward_run-mean-mean: 0.18647455547117484
+      reward_run-median-mean: 0.2176225513926644
+      reward_run-range-mean: 4.841893800698851
+      x_position-first-mean: 0.015230779839440906
+      x_position-last-mean: 9.310136490079818
+      x_position-mean-mean: 0.4472115268809398
+      x_position-median-mean: -0.4531170286244698
+      x_position-range-mean: 12.17654210823653
+      x_velocity-first-mean: 0.5764412663672802
+      x_velocity-last-mean: -0.19124527337957886
+      x_velocity-mean-mean: 0.18647455547117484
+      x_velocity-median-mean: 0.2176225513926644
+      x_velocity-range-mean: 4.841893800698851
+    episode-length-max: 1000
+    episode-length-mean: 1000.0
+    episode-length-min: 1000
+    episode-length-std: 0.0
+    episode-reward-max: -213.99261474609375
+    episode-reward-mean: -213.99261474609375
+    episode-reward-min: -213.99261474609375
+    episode-reward-std: 0.0
+  experiment_id: b35de799ae2146538d00617b9e81cd9a
+  experiment_tag: '0_num_warmup_samples=10000,evaluation={''domain'': ''HalfCheetah'',
+    ''task'': ''v3'', ''universe'': ''gym'', ''kwargs'': {}},observation_keys=None,seed=7307'
+  hostname: charles-AERO-15
+  iterations_since_restore: 5
+  node_ip: 192.168.1.8
+  num_train_steps: 5000
+  pid: 19188
+  policy:
+    actions-max: 0.999900221824646
+    actions-mean: -0.024415574967861176
+    actions-min: -0.9999833106994629
+    actions-std: 0.8055478930473328
+    entropy-mean: -6.116602897644043
+    entropy-std: 5.450867652893066
+    scales-mean: 0.6568167209625244
+    scales-std: 0.11052072048187256
+    shifts-mean: -0.050949156284332275
+    shifts-std: 1.7183895111083984
+  sampler:
+    episodes: 15
+    last-path-return: -397.8154890960871
+    max-path-return: -97.28306431061847
+    pool-size: 15000
+    total-samples: 15000
+  time_since_restore: 53.663846015930176
+  time_this_iter_s: 9.306533098220825
+  time_total_s: 53.663846015930176
+  times:
+    epoch_after_hook: 1.811000402085483e-06
+    epoch_before_hook: 3.597998875193298e-05
+    evaluation_metrics: 0.0009722730028443038
+    evaluation_paths: 0.7403838430036558
+    sample: 0.9383847209974192
+    timestep_after_hook: 0.002326273315702565
+    timestep_before_hook: 0.00713995480327867
+    train: 7.580487434373936
+    training_metrics: 0.000691332999849692
+    training_paths: 0.004494820997933857
+  timestamp: 1586768656
+  timestep: 1000
+  timesteps_since_restore: 0
+  total_timestep: 5000
+  training:
+    environment_infos:
+      reward_ctrl-first-mean: -0.22635807991027834
+      reward_ctrl-last-mean: -0.4451629161834717
+      reward_ctrl-mean-mean: -0.39526750101447106
+      reward_ctrl-median-mean: -0.4022234201431275
+      reward_ctrl-range-mean: 0.5152920782566071
+      reward_run-first-mean: 0.578327625605593
+      reward_run-last-mean: 0.8182635579335762
+      reward_run-mean-mean: -0.00254798808161582
+      reward_run-median-mean: 0.010464459865774482
+      reward_run-range-mean: 4.679723828648257
+      x_position-first-mean: 0.07599687642896838
+      x_position-last-mean: -0.08031890893210213
+      x_position-mean-mean: -1.2924025876179783
+      x_position-median-mean: -1.185936773374014
+      x_position-range-mean: 3.0666727052957907
+      x_velocity-first-mean: 0.578327625605593
+      x_velocity-last-mean: 0.8182635579335762
+      x_velocity-mean-mean: -0.00254798808161582
+      x_velocity-median-mean: 0.010464459865774482
+      x_velocity-range-mean: 4.679723828648257
+    episode-length-max: 1000
+    episode-length-mean: 1000.0
+    episode-length-min: 1000
+    episode-length-std: 0.0
+    episode-reward-max: -397.81548909608694
+    episode-reward-mean: -397.81548909608694
+    episode-reward-min: -397.81548909608694
+    episode-reward-std: 0.0
+  training_iteration: 5
+  trial_id: '00000'
+  update:
+    Q_loss-mean: 0.7617542743682861
+    Q_value-mean: 22.47783660888672
+    alpha: 0.025682594627141953
+    alpha_loss-mean: 0.0011172399390488863
+    policy_loss-mean: -23.062894821166992
+  
+== Status ==
+Memory usage on this node: 10.6/15.5 GiB
+Using FIFO scheduling algorithm.
+Resources requested: 12/12 CPUs, 0/0 GPUs, 0.0/4.2 GiB heap, 0.0/1.42 GiB objects
+Result logdir: /home/charles/ray_results/gym/HalfCheetah/v3/2020-04-13T02-03-19-my-sac-experiment-1
+Number of trials: 1 (1 RUNNING)
++--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------+
+| Trial name         | status   | loc               |   algorithm_params/config/num_warmup_samples | environment_params/evaluation   | exploration_policy_params/config/observation_keys   |   run_params/seed |   iter |   total time (s) |
+|--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------|
+| id=00000-seed=7307 | RUNNING  | 192.168.1.8:19188 |                                        10000 |                                 |                                                     |              7307 |      5 |          53.6638 |
++--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------+
+
+
+Result for id=00000-seed=7307:
+  alpha: 0.02248259261250496
+  date: 2020-04-13_02-04-25
+  done: false
+  epoch: 5
+  evaluation:
+    environment_infos:
+      reward_ctrl-first-mean: -0.2566850662231445
+      reward_ctrl-last-mean: -0.4223366737365723
+      reward_ctrl-mean-mean: -0.4000149796664715
+      reward_ctrl-median-mean: -0.406224536895752
+      reward_ctrl-range-mean: 0.5093518316745759
+      reward_run-first-mean: 0.08151080939798175
+      reward_run-last-mean: 0.32563680135329065
+      reward_run-mean-mean: 0.2852111985651852
+      reward_run-median-mean: 0.32286231670010324
+      reward_run-range-mean: 5.472203767468429
+      x_position-first-mean: -0.03691699185827326
+      x_position-last-mean: 14.219567395931083
+      x_position-mean-mean: 8.23330686106228
+      x_position-median-mean: 7.116012539891628
+      x_position-range-mean: 16.086407482858608
+      x_velocity-first-mean: 0.08151080939798175
+      x_velocity-last-mean: 0.32563680135329065
+      x_velocity-mean-mean: 0.2852111985651852
+      x_velocity-median-mean: 0.32286231670010324
+      x_velocity-range-mean: 5.472203767468429
+    episode-length-max: 1000
+    episode-length-mean: 1000.0
+    episode-length-min: 1000
+    episode-length-std: 0.0
+    episode-reward-max: -114.80378723144531
+    episode-reward-mean: -114.80378723144531
+    episode-reward-min: -114.80378723144531
+    episode-reward-std: 0.0
+  experiment_id: b35de799ae2146538d00617b9e81cd9a
+  experiment_tag: '0_num_warmup_samples=10000,evaluation={''domain'': ''HalfCheetah'',
+    ''task'': ''v3'', ''universe'': ''gym'', ''kwargs'': {}},observation_keys=None,seed=7307'
+  hostname: charles-AERO-15
+  iterations_since_restore: 6
+  node_ip: 192.168.1.8
+  num_train_steps: 6000
+  pid: 19188
+  policy:
+    actions-max: 0.9999300837516785
+    actions-mean: 0.005507790017873049
+    actions-min: -0.9999735355377197
+    actions-std: 0.7886909246444702
+    entropy-mean: -5.362391948699951
+    entropy-std: 5.323192119598389
+    scales-mean: 0.6177406311035156
+    scales-std: 0.11397860199213028
+    shifts-mean: -0.022568577900528908
+    shifts-std: 1.6710028648376465
+  sampler:
+    episodes: 16
+    last-path-return: -290.1994250325639
+    max-path-return: -97.28306431061847
+    pool-size: 16000
+    total-samples: 16000
+  time_since_restore: 62.58503174781799
+  time_this_iter_s: 8.921185731887817
+  time_total_s: 62.58503174781799
+  times:
+    epoch_after_hook: 1.9980070646852255e-06
+    epoch_before_hook: 9.766999573912472e-05
+    evaluation_metrics: 0.0008130409987643361
+    evaluation_paths: 0.5849977519974345
+    sample: 0.9050120870524552
+    timestep_after_hook: 0.0021717841154895723
+    timestep_before_hook: 0.006759804979083128
+    train: 7.385226280050119
+    training_metrics: 0.0007381969917332754
+    training_paths: 0.004202583993901499
+  timestamp: 1586768665
+  timestep: 1000
+  timesteps_since_restore: 0
+  total_timestep: 6000
+  training:
+    environment_infos:
+      reward_ctrl-first-mean: -0.27227153778076174
+      reward_ctrl-last-mean: -0.436449670791626
+      reward_ctrl-mean-mean: -0.3597191415250302
+      reward_ctrl-median-mean: -0.3649853110313416
+      reward_ctrl-range-mean: 0.5329028487205506
+      reward_run-first-mean: 0.7567747531844338
+      reward_run-last-mean: 0.6400966443254141
+      reward_run-mean-mean: 0.06951971649246605
+      reward_run-median-mean: 0.08248819955415931
+      reward_run-range-mean: 4.645157790022198
+      x_position-first-mean: -0.058526665910396056
+      x_position-last-mean: 3.379620421053685
+      x_position-mean-mean: 1.6186612707123704
+      x_position-median-mean: 1.3878595281991626
+      x_position-range-mean: 3.8035021364642527
+      x_velocity-first-mean: 0.7567747531844338
+      x_velocity-last-mean: 0.6400966443254141
+      x_velocity-mean-mean: 0.06951971649246605
+      x_velocity-median-mean: 0.08248819955415931
+      x_velocity-range-mean: 4.645157790022198
+    episode-length-max: 1000
+    episode-length-mean: 1000.0
+    episode-length-min: 1000
+    episode-length-std: 0.0
+    episode-reward-max: -290.1994250325641
+    episode-reward-mean: -290.1994250325641
+    episode-reward-min: -290.1994250325641
+    episode-reward-std: 0.0
+  training_iteration: 6
+  trial_id: '00000'
+  update:
+    Q_loss-mean: 0.7704559564590454
+    Q_value-mean: 22.912668228149414
+    alpha: 0.02407136932015419
+    alpha_loss-mean: 0.001104089547879994
+    policy_loss-mean: -23.5246524810791
+  
+== Status ==
+Memory usage on this node: 10.6/15.5 GiB
+Using FIFO scheduling algorithm.
+Resources requested: 12/12 CPUs, 0/0 GPUs, 0.0/4.2 GiB heap, 0.0/1.42 GiB objects
+Result logdir: /home/charles/ray_results/gym/HalfCheetah/v3/2020-04-13T02-03-19-my-sac-experiment-1
+Number of trials: 1 (1 RUNNING)
++--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------+
+| Trial name         | status   | loc               |   algorithm_params/config/num_warmup_samples | environment_params/evaluation   | exploration_policy_params/config/observation_keys   |   run_params/seed |   iter |   total time (s) |
+|--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------|
+| id=00000-seed=7307 | RUNNING  | 192.168.1.8:19188 |                                        10000 |                                 |                                                     |              7307 |      6 |           62.585 |
++--------------------+----------+-------------------+----------------------------------------------+---------------------------------+-----------------------------------------------------+-------------------+--------+------------------+
+
+
+Result for id=00000-seed=7307:
+  alpha: 0.021925657987594604
+  date: 2020-04-13_02-04-34
+  done: false
+  epoch: 6
+  evaluation:
+    environment_infos:
+      reward_ctrl-first-mean: -0.2962439298629761
+      reward_ctrl-last-mean: -0.4750785827636719
+      reward_ctrl-mean-mean: -0.3534111523807049
+      reward_ctrl-median-mean: -0.35776227712631226
+      reward_ctrl-range-mean: 0.5023606717586517
+      reward_run-first-mean: 0.49948896242939245
+      reward_run-last-mean: -1.3787568902149694
+      reward_run-mean-mean: 0.11145997945758439
+      reward_run-median-mean: 0.1256158058495993
+      reward_run-range-mean: 4.9103090447910525
+      x_position-first-mean: -0.07116550272181096
+      x_position-last-mean: 5.4768590220359386
+      x_position-mean-mean: 3.0938992182189784
+      x_position-median-mean: 2.7418286846096054
+      x_position-range-mean: 5.705381795565989
+      x_velocity-first-mean: 0.49948896242939245
+      x_velocity-last-mean: -1.3787568902149694
+      x_velocity-mean-mean: 0.11145997945758439
+      x_velocity-median-mean: 0.1256158058495993
+      x_velocity-range-mean: 4.9103090447910525
+    episode-length-max: 1000
+    episode-length-mean: 1000.0
+    episode-length-min: 1000
+    episode-length-std: 0.0
+    episode-reward-max: -241.951171875
+    episode-reward-mean: -241.951171875
+    episode-reward-min: -241.951171875
+    episode-reward-std: 0.0
+  experiment_id: b35de799ae2146538d00617b9e81cd9a
+  experiment_tag: '0_num_warmup_samples=10000,evaluation={''domain'': ''HalfCheetah'',
+    ''task'': ''v3'', ''universe'': ''gym'', ''kwargs'': {}},observation_keys=None,seed=7307'
+  hostname: charles-AERO-15
+  iterations_since_restore: 7
+  node_ip: 192.168.1.8
+  num_train_steps: 7000
+  pid: 19188
+  policy:
+    actions-max: 0.9999546408653259
+    actions-mean: 0.056707482784986496
+    actions-min: -0.9999825358390808
+    actions-std: 0.7781056761741638
+    entropy-mean: -5.077503204345703
+    entropy-std: 4.947033882141113
+    scales-mean: 0.5913991332054138
+    scales-std: 0.1082666665315628
+    shifts-mean: 0.11629601567983627
+    shifts-std: 1.5851554870605469
+  sampler:
+    episodes: 17
+    last-path-return: -251.2511446449017
+    max-path-return: -97.28306431061847
+    pool-size: 17000
+    total-samples: 17000
+  time_since_restore: 71.33447432518005
+  time_this_iter_s: 8.74944257736206
+  time_total_s: 71.33447432518005
+  times:
+    epoch_after_hook: 1.7669954104349017e-06
+    epoch_before_hook: 3.3559001167304814e-05
+    evaluation_metrics: 0.000810830999398604
+    evaluation_paths: 0.5985807910037693
+    sample: 0.9004518389992882
+    timestep_after_hook: 0.002154104149667546
+    timestep_before_hook: 0.006656946992734447
+    train: 7.205304858725867
+    training_metrics: 0.000766905999626033
+    training_paths: 0.004210958009934984
+  timestamp: 1586768674
+  timestep: 1000
+  timesteps_since_restore: 0
+  total_timestep: 7000
+  training:
+    environment_infos:
+      reward_ctrl-first-mean: -0.36192510128021244
+      reward_ctrl-last-mean: -0.37518618106842044
+      reward_ctrl-mean-mean: -0.36255141963362697
+      reward_ctrl-median-mean: -0.36427232027053835
+      reward_ctrl-range-mean: 0.5009660661220551
+      reward_run-first-mean: 0.37885661836676576
+      reward_run-last-mean: 0.016677303832075552
+      reward_run-mean-mean: 0.11130027498872551
+      reward_run-median-mean: 0.06027566649675631
+      reward_run-range-mean: 5.215583621947109
+      x_position-first-mean: -0.06624095411735302
+      x_position-last-mean: 5.479829964400585
+      x_position-mean-mean: 2.3072324717874197
+      x_position-median-mean: 1.9100951142452822
+      x_position-range-mean: 6.212584267228216
+      x_velocity-first-mean: 0.37885661836676576
+      x_velocity-last-mean: 0.016677303832075552
+      x_velocity-mean-mean: 0.11130027498872551
+      x_velocity-median-mean: 0.06027566649675631
+      x_velocity-range-mean: 5.215583621947109
+    episode-length-max: 1000
+    episode-length-mean: 1000.0
+    episode-length-min: 1000
+    episode-length-std: 0.0
+    episode-reward-max: -251.25114464490144
+    episode-reward-mean: -251.25114464490144
+    episode-reward-min: -251.25114464490144
+    episode-reward-std: 0.0
+  training_iteration: 7
+  trial_id: '00000'
+  update:
+    Q_loss-mean: 0.729104220867157
+    Q_value-mean: 23.143585205078125
+    alpha: 0.02149541862308979
+    alpha_loss-mean: 0.00011704568896675482
+    policy_loss-mean: -23.72140121459961
+  *** Aborted at 1586768676 (unix time) try "date -d @1586768676" if you are using GNU date ***
+PC: @                0x0 (unknown)
+*** SIGTERM (@0x3e800004bc5) received by PID 19132 (TID 0x7f9c3a3ca740) from PID 19397; stack trace: ***
+    @     0x7f9c39fba890 (unknown)
+    @     0x7f9c39fb5f85 __pthread_cond_timedwait
+    @     0x7f9c3764ada1 ray::GetRequest::Wait()
+    @     0x7f9c3764b81f ray::CoreWorkerMemoryStore::GetImpl()
+    @     0x7f9c3764cacb ray::CoreWorkerMemoryStore::Wait()
+    @     0x7f9c3760513e ray::CoreWorker::Wait()
+    @     0x7f9c375a42f2 __pyx_pw_3ray_7_raylet_10CoreWorker_27wait()
+    @     0x5604a8d33ab4 _PyMethodDef_RawFastCallKeywords
+    @     0x5604a8d47dbf _PyMethodDescr_FastCallKeywords
+    @     0x5604a8d9a34d _PyEval_EvalFrameDefault
+    @     0x5604a8cdf389 _PyEval_EvalCodeWithName
+    @     0x5604a8d33255 _PyFunction_FastCallKeywords
+    @     0x5604a8d9a1e9 _PyEval_EvalFrameDefault
+    @     0x5604a8d3302b _PyFunction_FastCallKeywords
+    @     0x5604a8d95d40 _PyEval_EvalFrameDefault
+    @     0x5604a8d3302b _PyFunction_FastCallKeywords
+    @     0x5604a8d95d40 _PyEval_EvalFrameDefault
+    @     0x5604a8d3302b _PyFunction_FastCallKeywords
+    @     0x5604a8d95d40 _PyEval_EvalFrameDefault
+    @     0x5604a8cdf389 _PyEval_EvalCodeWithName
+    @     0x5604a8ce06ef _PyFunction_FastCallDict
+    @     0x5604a8d9754d _PyEval_EvalFrameDefault
+    @     0x5604a8cdf389 _PyEval_EvalCodeWithName
+    @     0x5604a8d33255 _PyFunction_FastCallKeywords
+    @     0x5604a8d95ac6 _PyEval_EvalFrameDefault
+    @     0x5604a8cdf389 _PyEval_EvalCodeWithName
+    @     0x5604a8ce06ef _PyFunction_FastCallDict
+    @     0x5604a8d9754d _PyEval_EvalFrameDefault
+    @     0x5604a8cdf389 _PyEval_EvalCodeWithName
+    @     0x5604a8ce06ef _PyFunction_FastCallDict
+    @     0x5604a8cffa73 _PyObject_Call_Prepend
+    @     0x5604a8cf1fde PyObject_Call

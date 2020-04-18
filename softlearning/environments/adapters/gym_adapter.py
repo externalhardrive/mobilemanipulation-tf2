@@ -5,6 +5,7 @@ import copy
 
 import gym
 from gym import spaces, wrappers
+from gym.wrappers.pixel_observation import PixelObservationWrapper
 from gym.envs.mujoco.mujoco_env import MujocoEnv
 
 from .softlearning_env import SoftlearningEnv
@@ -97,7 +98,7 @@ class GymAdapter(SoftlearningEnv):
         env = wrappers.ClipAction(env)
 
         if pixel_wrapper_kwargs is not None:
-            env = wrappers.PixelObservationWrapper(env, **pixel_wrapper_kwargs)
+            env = PixelObservationWrapper(env, **pixel_wrapper_kwargs)
 
         self._env = env
 

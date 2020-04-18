@@ -115,3 +115,7 @@ vendor/*
 
 .mujoco/
 .vscode/
+
+*.npy
+dataset/data/
+dataset/models/

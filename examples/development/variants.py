@@ -120,7 +120,11 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
         },
         'Point2DEnv': {
             DEFAULT_KEY: int(5e4),
-        }
+        },
+        'Locobot': {
+            DEFAULT_KEY: int(2e5),
+            'ImageNavigation-v0': int(1e6),
+        },
     },
     'dm_control': {
         # BENCHMARKING
@@ -227,6 +231,12 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
         'Pendulum': {
             DEFAULT_KEY: 200,
         },
+        'Locobot': {
+            DEFAULT_KEY: 200,
+            'ImageMultiGrasping-v0': 1,
+            'ImageSingleGrasping-v0': 1,
+            'ImageNavigation-v0': 200,
+        },
     },
 }
 
@@ -314,6 +324,54 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                     'PickPlaceSingle',
                     'Stack',
             )
+        },
+        'Locobot': {
+            'ImageGrasping-v0': {
+                'pixel_wrapper_kwargs': {
+                    'observation_key': 'pixels',
+                    'pixels_only': True,
+                    'render_kwargs': {
+                    },
+                },
+            },
+            'ImageMultiGrasping-v0': {
+                'pixel_wrapper_kwargs': {
+                    'observation_key': 'pixels',
+                    'pixels_only': True,
+                    'render_kwargs': {
+                    },
+                },
+            },
+            'ImageSingleGrasping-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': True,
+                    'render_kwargs': {},
+                },
+
+                'random_orientation': False,
+                'action_dim': 2,
+                'min_blocks': 1,
+                'max_blocks': 6,
+                'crop_output': True,
+                'min_other_blocks': 0,
+                'max_other_blocks': 6
+
+            },
+            'ImageNavigation-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': True,
+                    'render_kwargs': {},
+                },
+                'num_objects': 100, 
+                'object_name': "greensquareball", 
+                'wall_size': 5.0, 
+                'max_ep_len': 200,
+                'image_size': 100,
+                'use_dist_reward': False,
+                'grasp_reward': 1,
+                'stack_frames': 1,
+                'grayscale': False
+            },
         },
     },
     'dm_control': {
@@ -491,7 +549,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         'replay_pool_params': {
             'class_name': 'SimpleReplayPool',
             'config': {
-                'max_size': int(1e6),
+                'max_size': int(1e3),
             },
         },
         'sampler_params': {
@@ -529,13 +587,24 @@ def get_variant_spec_image(universe,
         universe, domain, task, policy, algorithm, *args, **kwargs)
 
     if is_image_env(universe, domain, task, variant_spec):
+        # preprocessor_params = {
+        #     'class_name': 'convnet_preprocessor',
+        #     'config': {
+        #         'conv_filters': (64, ) * 3,
+        #         'conv_kernel_sizes': (3, ) * 3,
+        #         'conv_strides': (2, ) * 3,
+        #         'normalization_type': 'layer',
+        #         'downsampling_type': 'conv',
+        #     },
+        # }
+
         preprocessor_params = {
             'class_name': 'convnet_preprocessor',
             'config': {
-                'conv_filters': (64, ) * 3,
-                'conv_kernel_sizes': (3, ) * 3,
-                'conv_strides': (2, ) * 3,
-                'normalization_type': 'layer',
+                'conv_filters': (8, 16, 32),
+                'conv_kernel_sizes': (3, 3, 3),
+                'conv_strides': (2, 2, 1),
+                'normalization_type': None,
                 'downsampling_type': 'conv',
             },
         }
