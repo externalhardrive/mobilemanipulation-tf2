@@ -5,6 +5,7 @@ from pathlib import Path
 import pickle
 
 import pandas as pd
+import numpy as np
 
 from softlearning.environments.utils import get_environment_from_params
 from softlearning import policies
@@ -33,6 +34,7 @@ def parse_args():
     parser.add_argument('--video-save-path',
                         type=Path,
                         default=None)
+    parser.add_argument('--env-kwargs', type=json.loads, default='{}')
 
     args = parser.parse_args()
 
@@ -60,11 +62,14 @@ def load_variant_progress_metadata(checkpoint_path):
     return variant, progress, metadata
 
 
-def load_environment(variant):
+def load_environment(variant, env_kwargs):
     environment_params = (
         variant['environment_params']['training']
         if 'evaluation' in variant['environment_params']
         else variant['environment_params']['training'])
+    environment_params["kwargs"]["renders"] = True
+    environment_params["kwargs"]["step_duration"] = 1/60
+    environment_params["kwargs"].update(env_kwargs)
 
     environment = get_environment_from_params(environment_params)
     return environment
@@ -94,11 +99,12 @@ def simulate_policy(checkpoint_path,
                     max_path_length,
                     render_kwargs,
                     video_save_path=None,
-                    evaluation_environment_params=None):
+                    evaluation_environment_params=None,
+                    env_kwargs={}):
     checkpoint_path = os.path.abspath(checkpoint_path.rstrip('/'))
     variant, progress, metadata = load_variant_progress_metadata(
         checkpoint_path)
-    environment = load_environment(variant)
+    environment = load_environment(variant, env_kwargs)
     policy = load_policy(checkpoint_path, variant, environment)
     render_kwargs = {**DEFAULT_RENDER_KWARGS, **render_kwargs}
 
@@ -107,6 +113,10 @@ def simulate_policy(checkpoint_path,
                      policy,
                      path_length=max_path_length,
                      render_kwargs=render_kwargs)
+    
+    ep_returns = np.array([np.sum(p['rewards']) for p in paths])
+    print("returns:", ep_returns)
+    print("avg rewards:", np.mean(ep_returns))
 
     if video_save_path and render_kwargs.get('mode') == 'rgb_array':
         fps = 1 // getattr(environment, 'dt', 1/30)
