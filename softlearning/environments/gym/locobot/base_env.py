@@ -45,6 +45,9 @@ class LocobotBaseEnv(gym.Env):
         else:
             self.action_space = params["action_space"]
 
+        self.max_ep_len = self.params["max_ep_len"]
+        self.num_steps = 0
+
     def reset_stacked_obs(self):
         self.stacked_obs_initalized = False
 

@@ -91,14 +91,14 @@ GENERAL_ENVIRONMENT_SPECS = (
                         '.grasping_envs:ImageLocobotSingleGraspingEnv')
     },
     {
-        'id': 'Locobot-ImageNavigationGrasping-v0',
-        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.nav_grasp_envs:ImageLocobotNavigationGraspingEnv')
-    },
-    {
         'id': 'Locobot-ImageNavigation-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
                         '.nav_grasp_envs:ImageLocobotNavigationEnv')
+    },
+    {
+        'id': 'Locobot-MixedNavigation-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.nav_grasp_envs:MixedLocobotNavigationEnv')
     },
 )
 

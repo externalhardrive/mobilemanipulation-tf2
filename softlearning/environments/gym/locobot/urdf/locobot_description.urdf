@@ -29,7 +29,7 @@
         <collision name="base">
             <geometry>
                 <!-- <cylinder length="0.10938" radius="0.178"/> -->
-                <cylinder length="0.125" radius="0.178"/>
+                <cylinder length="0.120" radius="0.178"/>
             </geometry>
             <origin rpy="0 0 0" xyz="0.0 0 0.05949"/>
         </collision>

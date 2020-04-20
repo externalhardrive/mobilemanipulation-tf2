@@ -108,15 +108,28 @@ def simulate_policy(checkpoint_path,
     policy = load_policy(checkpoint_path, variant, environment)
     render_kwargs = {**DEFAULT_RENDER_KWARGS, **render_kwargs}
 
-    paths = rollouts(num_rollouts,
-                     environment,
-                     policy,
-                     path_length=max_path_length,
-                     render_kwargs=render_kwargs)
+    # paths = rollouts(num_rollouts,
+    #                  environment,
+    #                  policy,
+    #                  path_length=max_path_length,
+    #                  render_kwargs=render_kwargs)
     
-    ep_returns = np.array([np.sum(p['rewards']) for p in paths])
-    print("returns:", ep_returns)
-    print("avg rewards:", np.mean(ep_returns))
+    # ep_returns = np.array([np.sum(p['rewards']) for p in paths])
+    # print("returns:", ep_returns)
+    # print("avg rewards:", np.mean(ep_returns))
+
+    ep_returns = []
+    for n in range(num_rollouts):
+        ep_returns = 0
+        obs = environment.reset()
+        for i in range(max_path_length):
+            action = policy.action(obs).numpy()
+            obs, reward, done, info = environment.step(action)
+            ep_returns += reward 
+            if done:
+                break
+        print(f"ep {n}: {ep_returns}")
+    print(f"avg over {num_rollouts} eps: {np.mean(np.array(ep_returns))}")
 
     if video_save_path and render_kwargs.get('mode') == 'rgb_array':
         fps = 1 // getattr(environment, 'dt', 1/30)

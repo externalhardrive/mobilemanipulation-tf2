@@ -51,13 +51,6 @@ class ExperimentRunner(tune.Trainable):
             if 'evaluation' in environment_params
             else training_environment)
 
-        variant['Q_params']['config'].update({
-            'input_shapes': (
-                training_environment.observation_shape,
-                training_environment.action_shape),
-        })
-        Qs = self.Qs = value_functions.get(variant['Q_params'])
-
         variant['policy_params']['config'].update({
             'action_range': (training_environment.action_space.low,
                              training_environment.action_space.high),
@@ -65,6 +58,14 @@ class ExperimentRunner(tune.Trainable):
             'output_shape': training_environment.action_shape,
         })
         policy = self.policy = policies.get(variant['policy_params'])
+        
+        variant['Q_params']['config'].update({
+            'input_shapes': (
+                training_environment.observation_shape,
+                training_environment.action_shape),
+        })
+        Qs = self.Qs = value_functions.get(variant['Q_params'])
+
 
         variant['replay_pool_params']['config'].update({
             'environment': training_environment,

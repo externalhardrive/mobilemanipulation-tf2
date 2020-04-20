@@ -31,8 +31,24 @@ def feedforward_Q_function(input_shapes,
                            **kwargs):
     inputs = create_inputs(input_shapes)
 
-    if preprocessors is None:
-        preprocessors = tree.map_structure(lambda _: None, inputs)
+    # TODO(externalhardrive): Need to find a better way of handling unspecified preprocessors
+    empty_preprocessors = tree.map_structure(lambda x: None, inputs)
+    if preprocessors is not None:
+        if isinstance(preprocessors, (tuple, list)) and len(preprocessors) == 2:
+            observation_preprocessor = empty_preprocessors[0]
+            if preprocessors[0] is not None:
+                if isinstance(preprocessors[0], dict):
+                    observation_preprocessor.update(preprocessors[0])
+                else:
+                    raise NotImplementedError("observation preprocessors can only be of type dict")
+            action_preprocessors = empty_preprocessors[1]
+            if preprocessors[1] is not None:
+                action_preprocessors = preprocessors[1]
+            preprocessors = (observation_preprocessor, action_preprocessors)
+        else:
+            raise NotImplementedError("preprocessors can only be of shape (observation preprocessors, action preprocessors)")
+    else:
+        preprocessors = empty_preprocessors
 
     preprocessors = tree.map_structure_up_to(
         inputs, preprocessors_lib.deserialize, preprocessors)

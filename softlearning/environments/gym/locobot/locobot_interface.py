@@ -143,14 +143,14 @@ class PybulletInterface:
     def spawn_walls(self, size=1.0):
         self.walls_id = self.p.loadURDF(URDF["walls"], globalScaling=size)
 
-    def spawn_object(self, urdf, pos=None, ori=None):
+    def spawn_object(self, urdf, pos=[0,0,0], ori=None, scale=1.0):
         assert self.num_objects <= self.max_objects, "Maximum Number of Objects reached"
         if ori == None:
             ori = self.default_ori
         elif type(ori) == float or type(ori) == int:
             ori = self.p.getQuaternionFromEuler([0,0,ori])
         self.num_objects += 1
-        self.object_dict[self.num_objects] = self.p.loadURDF(urdf, pos, ori)
+        self.object_dict[self.num_objects] = self.p.loadURDF(urdf, basePosition=pos, baseOrientation=ori, globalScaling=scale)
         return self.num_objects
 
     def get_object(self, object_id, relative=False):
@@ -217,6 +217,15 @@ class PybulletInterface:
 
         new_pos[2] = 0.3
         self.move_ee(new_pos, wrist_rotate, steps=60, velocity_constrained=1.0)
+
+    def set_wheels_velocity(self, left, right):
+        self.p.setJointMotorControl2(self.robot, 1, self.p.VELOCITY_CONTROL, targetVelocity=left)
+        self.p.setJointMotorControl2(self.robot, 2, self.p.VELOCITY_CONTROL, targetVelocity=right)
+
+    def get_wheels_velocity(self):
+        _, left, _, _ = self.p.getJointState(self.robot, 1)
+        _, right, _, _ = self.p.getJointState(self.robot, 2)
+        return np.array([left, right])
 
     def move_base(self, left, right):
         self.p.setJointMotorControl2(self.robot, 1, self.p.VELOCITY_CONTROL, targetVelocity=left, force=1e8)

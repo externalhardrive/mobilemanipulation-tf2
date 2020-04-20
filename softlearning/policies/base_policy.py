@@ -31,8 +31,14 @@ class BasePolicy:
         self._observation_keys = observation_keys
         self._inputs = create_inputs(input_shapes)
 
-        if preprocessors is None:
-            preprocessors = tree.map_structure(lambda x: None, input_shapes)
+        # TODO(externalhardrive): Need to find a better way of handling unspecified preprocessors
+        empty_preprocessors = tree.map_structure(lambda x: None, input_shapes)
+        if preprocessors is not None:
+            if isinstance(preprocessors, dict):
+                empty_preprocessors.update(preprocessors)
+            else:
+                raise NotImplementedError("preprocessors can only be of type dict")
+        preprocessors = empty_preprocessors
 
         preprocessors = tree.map_structure_up_to(
             input_shapes, preprocessors_lib.deserialize, preprocessors)

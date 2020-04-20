@@ -124,6 +124,7 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
         'Locobot': {
             DEFAULT_KEY: int(2e5),
             'ImageNavigation-v0': int(1e6),
+            'MixedNavigation-v0': int(1e6),
         },
     },
     'dm_control': {
@@ -236,6 +237,7 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageMultiGrasping-v0': 1,
             'ImageSingleGrasping-v0': 1,
             'ImageNavigation-v0': 200,
+            'MixedNavigation-v0': 200,
         },
     },
 }
@@ -362,15 +364,30 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                     'pixels_only': True,
                     'render_kwargs': {},
                 },
-                'num_objects': 100, 
-                'object_name': "greensquareball", 
-                'wall_size': 5.0, 
+                'room_name': 'simple',
+                'room_params': {
+                    'num_objects': 100, 
+                    'object_name': "greensquareball", 
+                    'wall_size': 5.0, 
+                },
                 'max_ep_len': 200,
                 'image_size': 100,
                 'use_dist_reward': False,
                 'grasp_reward': 1,
-                'stack_frames': 1,
-                'grayscale': False
+            },
+            'MixedNavigation-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
+                },
+                'observation_keys': ('velocity', 'pixels'),
+                'room_name': 'simple',
+                'room_params': {
+                    'num_objects': 100, 
+                    'object_name': "greensquareball", 
+                    'wall_size': 5.0, 
+                },
+                'max_ep_len': 200,
+                'image_size': 100,
             },
         },
     },
@@ -597,6 +614,8 @@ def get_variant_spec_image(universe,
         #         'downsampling_type': 'conv',
         #     },
         # }
+        
+        print("------------- preprocessor ---------------")
 
         preprocessor_params = {
             'class_name': 'convnet_preprocessor',
@@ -604,7 +623,7 @@ def get_variant_spec_image(universe,
                 'conv_filters': (8, 16, 32),
                 'conv_kernel_sizes': (3, 3, 3),
                 'conv_strides': (2, 2, 1),
-                'normalization_type': None,
+                'normalization_type': 'layer',
                 'downsampling_type': 'conv',
             },
         }
@@ -613,7 +632,7 @@ def get_variant_spec_image(universe,
         variant_spec['policy_params']['config']['preprocessors'] = {
             'pixels': deepcopy(preprocessor_params)
         }
-
+    
         variant_spec['Q_params']['config']['hidden_layer_sizes'] = (
             tune.sample_from(lambda spec: (deepcopy(
                 spec.get('config', spec)
