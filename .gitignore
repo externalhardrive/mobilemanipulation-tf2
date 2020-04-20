@@ -119,3 +119,4 @@ vendor/*
 *.npy
 dataset/data/
 dataset/models/
+nohup_output/

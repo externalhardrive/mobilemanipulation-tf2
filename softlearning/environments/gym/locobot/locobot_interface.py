@@ -87,11 +87,11 @@ class PybulletInterface:
         self.p.setAdditionalSearchPath(pybullet_data.getDataPath())
         self.p.setGravity(0, 0, -9.8)
 
-        # self.plane_id = self.p.loadURDF("plane.urdf")
+        self.plane_id = self.p.loadURDF("plane.urdf")
         # self.plane_visual_id = self.p.createVisualShape(self.p.GEOM_PLANE, rgbaColor=[0.9, 0.9, 0.9, 1], visualFramePosition=[0, 0, 0])
         # self.plane_collision_id = self.p.createCollisionShape(self.p.GEOM_BOX, halfExtents=[100, 100, 10], collisionFramePosition=[0, 0, -10])
         # self.plane_id = self.p.loadURDF("plane100.urdf", useMaximalCoordinates=True)
-        self.plane_id = self.p.loadURDF(URDF["plane"], useMaximalCoordinates=True)
+        # self.plane_id = self.p.loadURDF(URDF["plane"], useMaximalCoordinates=True)
 
         # self.under_plane_id = self.p.loadURDF("plane.urdf")
         # self.p.resetBasePositionAndOrientation(self.under_plane_id, [0, 0, -10], self.default_ori)

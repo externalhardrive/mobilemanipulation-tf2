@@ -198,7 +198,8 @@ class BasePolicy:
             'output_shape': self._output_shape,
             'observation_keys': self._observation_keys,
             # 'preprocessors': preprocessors.serialize(self._preprocessors),
-            'preprocessors': self._preprocessors,
+            # 'preprocessors': self._preprocessors,
+            'preprocessors': tree.map(preprocessors_lib.serialize, self._preprocessors),
             'name': self._name,
         }
         return config

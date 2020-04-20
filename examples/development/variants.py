@@ -19,9 +19,9 @@ ALGORITHM_PARAMS_BASE = {
         'train_every_n_steps': 1,
         'n_train_repeat': 1,
         'eval_render_kwargs': {},
-        'eval_n_episodes': 1,
+        'eval_n_episodes': 0,
         'num_warmup_samples': tune.sample_from(lambda spec: (
-            10 * (spec.get('config', spec)
+            5 * (spec.get('config', spec)
                   ['sampler_params']
                   ['config']
                   ['max_path_length'])
