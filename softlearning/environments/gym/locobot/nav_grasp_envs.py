@@ -165,7 +165,7 @@ class MixedLocobotNavigationEnv(RoomEnv):
             object_pos, _ = self.interface.get_object(self.room.objects_id[i], relative=True)
             if is_in_rect(object_pos[0], object_pos[1], 0.42 - 0.04, -0.12, 0.42 + 0.04, 0.12):
                 reward += 1.0
-                info["succss"] = 1.0
+                info["success"] = 1.0
                 self.interface.move_object(self.room.objects_id[i], [self.room.extent * 3.0, 0, 1])
                 break
         

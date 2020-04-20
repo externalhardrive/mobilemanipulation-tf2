@@ -19,7 +19,7 @@ ALGORITHM_PARAMS_BASE = {
         'train_every_n_steps': 1,
         'n_train_repeat': 1,
         'eval_render_kwargs': {},
-        'eval_n_episodes': 0,
+        'eval_n_episodes': 1,
         'num_warmup_samples': tune.sample_from(lambda spec: (
             5 * (spec.get('config', spec)
                   ['sampler_params']
@@ -566,7 +566,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         'replay_pool_params': {
             'class_name': 'SimpleReplayPool',
             'config': {
-                'max_size': int(1e3),
+                'max_size': int(5e4),
             },
         },
         'sampler_params': {
@@ -615,8 +615,6 @@ def get_variant_spec_image(universe,
         #     },
         # }
         
-        print("------------- preprocessor ---------------")
-
         preprocessor_params = {
             'class_name': 'convnet_preprocessor',
             'config': {
