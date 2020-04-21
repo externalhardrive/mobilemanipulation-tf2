@@ -6,9 +6,9 @@ softlearning run_example_local examples.development \
     --task MixedNavigation-v0 \
     --exp-name locobot-mixed-navigation-test \
     --checkpoint-frequency 20 \
-    --cpus 1 \
-    --gpus 0 \
-    --trial-cpus 1 \
-    --trial-gpus 0 \
-    --server-port 11111 \
+    --cpus 4 \
+    --gpus 1 \
+    --trial-cpus 4 \
+    --trial-gpus 1 \
+    --server-port 11112 \
     --run-eagerly False
