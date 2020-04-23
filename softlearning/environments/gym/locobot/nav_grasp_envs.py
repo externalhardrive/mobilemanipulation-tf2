@@ -116,7 +116,7 @@ class MixedLocobotNavigationEnv(RoomEnv):
     def __init__(self, **params):
         defaults = dict()
 
-        defaults["max_ep_len"] = 200
+        defaults["max_ep_len"] = 1000
         defaults["observation_space"] = spaces.Dict({
             "velocity": spaces.Box(low=-1.0, high=1.0, shape=(2,))
             # "pixels": added by PixelObservationWrapper
@@ -144,7 +144,7 @@ class MixedLocobotNavigationEnv(RoomEnv):
         # velociy control
         max_velocity = 20.0
         acceleration = 2.0
-        num_sim_steps = 50
+        num_sim_steps = 10
         
         d_left, d_right = action
         left, right = self.interface.get_wheels_velocity()

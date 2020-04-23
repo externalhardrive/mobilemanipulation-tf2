@@ -16,8 +16,8 @@ NUM_COUPLING_LAYERS = 2
 
 ALGORITHM_PARAMS_BASE = {
     'config': {
-        'train_every_n_steps': 1,
-        'n_train_repeat': 1,
+        'train_every_n_steps': 5,   # 1
+        'n_train_repeat': 5,        # 1
         'eval_render_kwargs': {},
         'eval_n_episodes': 1,
         'num_warmup_samples': tune.sample_from(lambda spec: (
@@ -237,13 +237,20 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageMultiGrasping-v0': 1,
             'ImageSingleGrasping-v0': 1,
             'ImageNavigation-v0': 200,
-            'MixedNavigation-v0': 200,
+            'MixedNavigation-v0': 1000,
         },
     },
 }
 
 EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
     DEFAULT_KEY: 1000,
+    'gym': {
+        DEFAULT_KEY: 1000,
+        'Locobot': {
+            DEFAULT_KEY: 1000,
+            'MixedNavigation-v0': 5000,
+        },
+    },
 }
 
 
@@ -386,7 +393,7 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                     'object_name': "greensquareball", 
                     'wall_size': 5.0, 
                 },
-                'max_ep_len': 200,
+                'max_ep_len': 1000,
                 'image_size': 100,
             },
         },
