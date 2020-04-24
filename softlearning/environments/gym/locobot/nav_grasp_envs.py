@@ -114,7 +114,7 @@ class ImageLocobotNavigationEnv(RoomEnv):
 class MixedLocobotNavigationEnv(RoomEnv):
     """ A room with the robot moves around using velocity control and auto picks up. """
     def __init__(self, **params):
-        defaults = dict()
+        defaults = dict(steps_per_second=2)
 
         defaults["max_ep_len"] = 500
         defaults["observation_space"] = spaces.Dict({
@@ -128,6 +128,8 @@ class MixedLocobotNavigationEnv(RoomEnv):
 
         super().__init__(**defaults)
         print("MixedLocobotNavigationEnv params:", self.params)
+
+        self.num_sim_steps_per_env_step = int(60 / self.params["steps_per_second"])
 
     def get_observation(self):
         obs = OrderedDict()
@@ -144,7 +146,6 @@ class MixedLocobotNavigationEnv(RoomEnv):
         # velociy control
         max_velocity = 20.0
         acceleration = 2.0
-        num_sim_steps = 12
         
         d_left, d_right = action
         left, right = self.interface.get_wheels_velocity()
@@ -153,7 +154,7 @@ class MixedLocobotNavigationEnv(RoomEnv):
         new_right = np.clip(right + d_right * acceleration, -max_velocity, max_velocity)
 
         self.interface.set_wheels_velocity(new_left, new_right)
-        for _ in range(num_sim_steps):
+        for _ in range(self.num_sim_steps_per_env_step):
             self.interface.step()
 
         # init return values

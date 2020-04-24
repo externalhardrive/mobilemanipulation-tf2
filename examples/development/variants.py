@@ -237,7 +237,7 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageMultiGrasping-v0': 1,
             'ImageSingleGrasping-v0': 1,
             'ImageNavigation-v0': 200,
-            'MixedNavigation-v0': 500,
+            'MixedNavigation-v0': 250,
         },
     },
 }
@@ -248,7 +248,7 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
         DEFAULT_KEY: 1000,
         'Locobot': {
             DEFAULT_KEY: 1000,
-            'MixedNavigation-v0': 2500,
+            'MixedNavigation-v0': 1000,
         },
     },
 }
@@ -364,12 +364,10 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'crop_output': True,
                 'min_other_blocks': 0,
                 'max_other_blocks': 6
-
             },
             'ImageNavigation-v0': {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': True,
-                    'render_kwargs': {},
                 },
                 'room_name': 'simple',
                 'room_params': {
@@ -393,8 +391,9 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                     'object_name': "greensquareball", 
                     'wall_size': 5.0, 
                 },
-                'max_ep_len': 500,
+                'max_ep_len': 250,
                 'image_size': 100,
+                'steps_per_second': 2
             },
         },
     },
@@ -573,7 +572,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         'replay_pool_params': {
             'class_name': 'SimpleReplayPool',
             'config': {
-                'max_size': int(1e5),
+                'max_size': int(5e4),
             },
         },
         'sampler_params': {
