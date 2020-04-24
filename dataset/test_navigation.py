@@ -20,27 +20,29 @@ def save_obs(obs, path):
     mpimg.imsave(path, obs)
 
 def main(args):
-    # inner_env = ImageLocobotNavigationEnv(
+    room_name = "simple_obstacles"
+    room_params = dict(
+        num_objects=100, object_name="greensquareball", wall_size=5.0
+    )
+    inner_env = ImageLocobotNavigationEnv(
+            renders=True, grayscale=False, step_duration=1/60,
+            room_name=room_name,
+            room_params=room_params,
+            image_size=100,
+            use_dist_reward=False, grasp_reward=1
+        )
+    # inner_env = MixedLocobotNavigationEnv(
     #         renders=True, grayscale=False, step_duration=1/60,
-    #         room_name="simple",
+    #         room_name="simple_obstacles",
     #         room_params=dict(
     #             num_objects=100, object_name="greensquareball", wall_size=5.0
     #         ),
     #         image_size=100,
-    #         use_dist_reward=False, grasp_reward=1,
     #     )
-    inner_env = MixedLocobotNavigationEnv(
-            renders=True, grayscale=False, step_duration=1/60,
-            room_name="simple",
-            room_params=dict(
-                num_objects=100, object_name="greensquareball", wall_size=5.0
-            ),
-            image_size=100,
-        )
     env = GymAdapter(None, None,
         env=inner_env,
         pixel_wrapper_kwargs={
-            'pixels_only': False,
+            'pixels_only': True,
         },
     )
     
@@ -62,7 +64,7 @@ def main(args):
         
     while True:
         # save_obs(obs["pixels"], f"../images/obs{i}.png")
-        print("velocity:", obs["velocity"])
+        # print("velocity:", obs["velocity"])
         cmd = input().strip()
         try:
             if cmd == "exit":

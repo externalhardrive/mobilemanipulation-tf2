@@ -37,7 +37,8 @@ class BasePolicy:
             if isinstance(preprocessors, dict):
                 empty_preprocessors.update(preprocessors)
             else:
-                raise NotImplementedError("preprocessors can only be of type dict")
+                # don't really know how to handle non dict cases
+                empty_preprocessors = preprocessors
         preprocessors = empty_preprocessors
 
         preprocessors = tree.map_structure_up_to(

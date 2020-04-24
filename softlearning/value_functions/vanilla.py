@@ -40,7 +40,8 @@ def feedforward_Q_function(input_shapes,
                 if isinstance(preprocessors[0], dict):
                     observation_preprocessor.update(preprocessors[0])
                 else:
-                    raise NotImplementedError("observation preprocessors can only be of type dict")
+                    observation_preprocessor = preprocessors[0]
+                    # raise NotImplementedError("observation preprocessors can only be of type dict")
             action_preprocessors = empty_preprocessors[1]
             if preprocessors[1] is not None:
                 action_preprocessors = preprocessors[1]
