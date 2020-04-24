@@ -47,11 +47,14 @@ class SimpleRoom(Room):
         for i in range(self._num_objects):
             self.objects_id.append(self.interface.spawn_object(URDF[self.params["object_name"]], np.array([0.0, 0.0, 10 + i])))
 
+    def is_valid_spawn_loc(self, x, y):
+        return not is_in_circle(x, y, 0, 0, 1.0)
+
     def reset(self):
         for i in range(self._num_objects):
             while True:
                 x, y = np.random.uniform(-self._wall_size * 0.5, self._wall_size * 0.5, size=(2,))
-                if not is_in_circle(x, y, 0, 0, 1.0):
+                if self.is_valid_spawn_loc(x, y):
                     break
             self.interface.move_object(self.objects_id[i], [x, y, 0.015])
     
@@ -71,28 +74,23 @@ class SimpleRoomWithObstacles(SimpleRoom):
 
         # add 4 rectangular pillars to the 4 corners
         c = self._wall_size / 5
-        self.obstacles_id.append(self.interface.spawn_object(URDF["rectangular_pillar"], pos=[c, c, 0], scale=1.0))
-        self.obstacles_id.append(self.interface.spawn_object(URDF["rectangular_pillar"], pos=[-c, c, 0], scale=1.0))
-        self.obstacles_id.append(self.interface.spawn_object(URDF["rectangular_pillar"], pos=[c, -c, 0], scale=1.0))
-        self.obstacles_id.append(self.interface.spawn_object(URDF["rectangular_pillar"], pos=[-c, -c, 0], scale=1.0))
+        pillar_size = 0.75
+
+        self.obstacles_id.append(self.interface.spawn_object(URDF["rectangular_pillar"], pos=[c, c, 0], scale=pillar_size))
+        self.obstacles_id.append(self.interface.spawn_object(URDF["rectangular_pillar"], pos=[-c, c, 0], scale=pillar_size))
+        self.obstacles_id.append(self.interface.spawn_object(URDF["rectangular_pillar"], pos=[c, -c, 0], scale=pillar_size))
+        self.obstacles_id.append(self.interface.spawn_object(URDF["rectangular_pillar"], pos=[-c, -c, 0], scale=pillar_size))
 
         self.no_spawn_zones = []
+        psh = pillar_size * 0.5
         self.no_spawn_zones.append(lambda x, y: is_in_circle(x, y, 0, 0, 1.0))
-        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y, c - 0.5, c - 0.5, c + 0.5, c + 0.5))
-        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y, -c - 0.5, c - 0.5, -c + 0.5, c + 0.5))
-        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y, c - 0.5, -c - 0.5, c + 0.5, -c + 0.5))
-        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y, -c - 0.5, -c - 0.5, -c + 0.5, -c + 0.5))
+        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y, c - psh, c - psh, c + psh, c + psh))
+        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y, -c - psh, c - psh, -c + psh, c + psh))
+        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y, c - psh, -c - psh, c + psh, -c + psh))
+        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y, -c - psh, -c - psh, -c + psh, -c + psh))
 
     def is_valid_spawn_loc(self, x, y):
         for no_spawn in self.no_spawn_zones:
             if no_spawn(x, y):
                 return False
         return True
-
-    def reset(self):
-        for i in range(self._num_objects):
-            while True:
-                x, y = np.random.uniform(-self._wall_size * 0.5, self._wall_size * 0.5, size=(2,))
-                if self.is_valid_spawn_loc(x, y):
-                    break
-            self.interface.move_object(self.objects_id[i], [x, y, 0.015])
