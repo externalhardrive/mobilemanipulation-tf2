@@ -16,8 +16,8 @@ NUM_COUPLING_LAYERS = 2
 
 ALGORITHM_PARAMS_BASE = {
     'config': {
-        'train_every_n_steps': 5,   # 1
-        'n_train_repeat': 5,        # 1
+        'train_every_n_steps': 1,
+        'n_train_repeat': 1,
         'eval_render_kwargs': {},
         'eval_n_episodes': 1,
         'num_warmup_samples': tune.sample_from(lambda spec: (
@@ -237,7 +237,7 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageMultiGrasping-v0': 1,
             'ImageSingleGrasping-v0': 1,
             'ImageNavigation-v0': 200,
-            'MixedNavigation-v0': 1000,
+            'MixedNavigation-v0': 500,
         },
     },
 }
@@ -248,7 +248,7 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
         DEFAULT_KEY: 1000,
         'Locobot': {
             DEFAULT_KEY: 1000,
-            'MixedNavigation-v0': 5000,
+            'MixedNavigation-v0': 2500,
         },
     },
 }
@@ -389,11 +389,11 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'observation_keys': ('velocity', 'pixels'),
                 'room_name': 'simple',
                 'room_params': {
-                    'num_objects': 100, 
+                    'num_objects': 80, 
                     'object_name': "greensquareball", 
                     'wall_size': 5.0, 
                 },
-                'max_ep_len': 1000,
+                'max_ep_len': 500,
                 'image_size': 100,
             },
         },
@@ -573,7 +573,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         'replay_pool_params': {
             'class_name': 'SimpleReplayPool',
             'config': {
-                'max_size': int(5e4),
+                'max_size': int(1e5),
             },
         },
         'sampler_params': {

@@ -174,7 +174,7 @@ class RLAlgorithm(Checkpointable):
                 self._timestep = samples_now - start_samples
 
                 if (samples_now >= start_samples + self._epoch_length
-                    and self.ready_to_train):
+                    and self.ready_to_train and len(update_diagnostics) > 0):
                     break
 
                 self._timestep_before_hook()
@@ -184,8 +184,9 @@ class RLAlgorithm(Checkpointable):
                 gt.stamp('sample')
 
                 if self.ready_to_train:
-                    update_diagnostics.append(self._do_training_repeats(
-                        timestep=self._total_timestep))
+                    diagnostic = self._do_training_repeats(timestep=self._total_timestep)
+                    if diagnostic is not None:
+                        update_diagnostics.append(diagnostic)
 
                 gt.stamp('train')
 
