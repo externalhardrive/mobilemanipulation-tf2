@@ -130,7 +130,7 @@ class MixedLocobotNavigationEnv(RoomEnv):
 
         self.num_sim_steps_per_env_step = int(60 / self.params["steps_per_second"])
         self.max_velocity = self.params["max_velocity"]
-        self.velocity_change_scale = self.params["max_acceleration"] * (self.params["steps_per_second"] / 60.0)
+        self.velocity_change_scale = self.params["max_acceleration"] / self.params["steps_per_second"]
 
     def get_observation(self):
         obs = OrderedDict()
