@@ -24,25 +24,24 @@ def main(args):
     room_params = dict(
         num_objects=100, object_name="greensquareball", wall_size=5.0
     )
-    inner_env = ImageLocobotNavigationEnv(
+    # inner_env = ImageLocobotNavigationEnv(
+    #         renders=True, grayscale=False, step_duration=1/60,
+    #         room_name=room_name,
+    #         room_params=room_params,
+    #         image_size=100,
+    #         use_dist_reward=False, grasp_reward=1
+    #     )
+    inner_env = MixedLocobotNavigationEnv(
             renders=True, grayscale=False, step_duration=1/60,
-            room_name=room_name,
+            room_name="simple",
             room_params=room_params,
             image_size=100,
-            use_dist_reward=False, grasp_reward=1
+            steps_per_second=2
         )
-    # inner_env = MixedLocobotNavigationEnv(
-    #         renders=True, grayscale=False, step_duration=1/60,
-    #         room_name="simple_obstacles",
-    #         room_params=dict(
-    #             num_objects=100, object_name="greensquareball", wall_size=5.0
-    #         ),
-    #         image_size=100,
-    #     )
     env = GymAdapter(None, None,
         env=inner_env,
         pixel_wrapper_kwargs={
-            'pixels_only': True,
+            'pixels_only': False,
         },
     )
     

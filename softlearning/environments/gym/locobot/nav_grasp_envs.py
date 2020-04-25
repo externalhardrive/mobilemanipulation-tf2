@@ -33,14 +33,11 @@ class RoomEnv(LocobotBaseEnv):
 
     def reset(self):
         self.robot_yaw = np.random.uniform(0, np.pi * 2)
-
-        self.interface.set_base_pos_and_yaw(self.robot_pos, self.robot_yaw)
+        self.interface.reset_robot(self.robot_pos, self.robot_yaw, 0, 0)
+        
         self.room.reset()
-        self.interface.move_joints_to_start()
 
         self.num_steps = 0
-
-        self.reset_stacked_obs()
 
         return self.get_observation()
 

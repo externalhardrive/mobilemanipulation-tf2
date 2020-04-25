@@ -188,6 +188,13 @@ class PybulletInterface:
     #     output = GRASP_CLASSIFIER.predict(image)
     #     return output.item()
 
+    def reset_robot(self, pos=[0, 0], yaw=0, left=0, right=0):
+        self.set_base_pos_and_yaw(pos=pos, yaw=yaw)
+        self.set_wheels_velocity(left, right)
+        self.p.resetJointState(self.robot, 1, targetValue=0, targetVelocity=left)
+        self.p.resetJointState(self.robot, 2, targetValue=0, targetVelocity=right)
+        self.move_joints_to_start()
+
     def get_grasp_pos(self):
         base_pos, base_ori = self.p.getBasePositionAndOrientation(self.robot)
         grasp_pos, grasp_ori = self.p.multiplyTransforms(base_pos, base_ori, self.params["gripper_ref_pos"], self.default_ori)
