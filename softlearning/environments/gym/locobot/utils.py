@@ -19,7 +19,8 @@ URDF = {
     "greensquareball": os.path.join(CURR_PATH, 'urdf/greensquareball_v2.urdf'),
     "walls": os.path.join(CURR_PATH, 'urdf/walls.urdf'),
     "plane": os.path.join(CURR_PATH, 'urdf/plane.urdf'),
-    "rectangular_pillar": os.path.join(CURR_PATH, 'urdf/rectangular_pillar.urdf')
+    "rectangular_pillar": os.path.join(CURR_PATH, 'urdf/rectangular_pillar.urdf'),
+    "solid_box": os.path.join(CURR_PATH, 'urdf/solid_box.urdf')
 }
 
 def load_convnet(path, image_size, **params):

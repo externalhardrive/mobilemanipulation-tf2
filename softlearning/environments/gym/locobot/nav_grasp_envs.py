@@ -32,6 +32,8 @@ class RoomEnv(LocobotBaseEnv):
         raise NotImplementedError
 
     def reset(self):
+        self.robot_yaw = np.random.uniform(0, np.pi * 2)
+
         self.interface.set_base_pos_and_yaw(self.robot_pos, self.robot_yaw)
         self.room.reset()
         self.interface.move_joints_to_start()

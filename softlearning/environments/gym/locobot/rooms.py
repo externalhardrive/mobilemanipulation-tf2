@@ -72,22 +72,39 @@ class SimpleRoomWithObstacles(SimpleRoom):
         defaults = dict()
         super().__init__(interface, defaults)
 
+        # don't spawn in 1m radius around the robot
+        self.no_spawn_zones = []
+        self.no_spawn_zones.append(lambda x, y: is_in_circle(x, y, 0, 0, 1.0))
+
+
         # add 4 rectangular pillars to the 4 corners
-        c = self._wall_size / 5
-        pillar_size = 0.75
+        c = self._wall_size / 4
+        pillar_size = 0.5
 
         self.obstacles_id.append(self.interface.spawn_object(URDF["rectangular_pillar"], pos=[c, c, 0], scale=pillar_size))
         self.obstacles_id.append(self.interface.spawn_object(URDF["rectangular_pillar"], pos=[-c, c, 0], scale=pillar_size))
         self.obstacles_id.append(self.interface.spawn_object(URDF["rectangular_pillar"], pos=[c, -c, 0], scale=pillar_size))
         self.obstacles_id.append(self.interface.spawn_object(URDF["rectangular_pillar"], pos=[-c, -c, 0], scale=pillar_size))
 
-        self.no_spawn_zones = []
         psh = pillar_size * 0.5
-        self.no_spawn_zones.append(lambda x, y: is_in_circle(x, y, 0, 0, 1.0))
-        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y, c - psh, c - psh, c + psh, c + psh))
-        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y, -c - psh, c - psh, -c + psh, c + psh))
-        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y, c - psh, -c - psh, c + psh, -c + psh))
+        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y,  c - psh,  c - psh,  c + psh,  c + psh))
+        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y, -c - psh,  c - psh, -c + psh,  c + psh))
+        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y,  c - psh, -c - psh,  c + psh, -c + psh))
         self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y, -c - psh, -c - psh, -c + psh, -c + psh))
+
+        # add 4 short boxes
+        box_size = 0.25
+        box_height = 0.2
+        bsh = box_size * 0.5
+        self.obstacles_id.append(self.interface.spawn_object(URDF["solid_box"], pos=[ c,  0, box_height - box_size], scale=box_size))
+        self.obstacles_id.append(self.interface.spawn_object(URDF["solid_box"], pos=[-c,  0, box_height - box_size], scale=box_size))
+        self.obstacles_id.append(self.interface.spawn_object(URDF["solid_box"], pos=[ 0,  c, box_height - box_size], scale=box_size))
+        self.obstacles_id.append(self.interface.spawn_object(URDF["solid_box"], pos=[ 0, -c, box_height - box_size], scale=box_size))
+
+        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y,  c - bsh,     -bsh,  c + bsh,      bsh))
+        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y, -c - bsh,     -bsh, -c + bsh,      bsh))
+        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y,     -bsh,  c - bsh,      bsh,  c + bsh))
+        self.no_spawn_zones.append(lambda x, y: is_in_rect(x, y,     -bsh, -c - bsh,      bsh, -c + bsh))
 
     def is_valid_spawn_loc(self, x, y):
         for no_spawn in self.no_spawn_zones:
