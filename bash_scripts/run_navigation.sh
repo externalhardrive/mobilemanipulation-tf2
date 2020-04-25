@@ -5,10 +5,11 @@ softlearning run_example_local examples.development \
     --domain Locobot \
     --task ImageNavigation-v0 \
     --exp-name locobot-image-navigation-test \
-    --checkpoint-frequency 20 \
-    --cpus 6 \
-    --gpus 1 \
+    --checkpoint-frequency 10 \
     --trial-cpus 6 \
     --trial-gpus 1 \
     --server-port 11111 \
     --run-eagerly False
+
+    # --cpus 6 \
+    # --gpus 1 \

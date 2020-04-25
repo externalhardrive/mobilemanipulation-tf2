@@ -369,7 +369,7 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': True,
                 },
-                'room_name': 'simple',
+                'room_name': 'simple_obstacles',
                 'room_params': {
                     'num_objects': 100, 
                     'object_name': "greensquareball", 
@@ -624,7 +624,7 @@ def get_variant_spec_image(universe,
         preprocessor_params = {
             'class_name': 'convnet_preprocessor',
             'config': {
-                'conv_filters': (8, 16, 32),
+                'conv_filters': (16, 16, 32),
                 'conv_kernel_sizes': (3, 3, 3),
                 'conv_strides': (2, 2, 1),
                 'normalization_type': 'layer',
