@@ -34,7 +34,7 @@ ALGORITHM_PARAMS_ADDITIONAL = {
     'SAC': {
         'class_name': 'SAC',
         'config': {
-            'policy_lr': 3e-4,
+            'policy_lr': 3e-4, # 3e-4
             'Q_lr': 3e-4,
             'alpha_lr': 3e-4,
             'target_update_interval': 1,
@@ -393,7 +393,9 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 },
                 'max_ep_len': 250,
                 'image_size': 100,
-                'steps_per_second': 2
+                'steps_per_second': 2,
+                'max_velocity': 20.0,
+                'max_acceleration': 4.0
             },
         },
     },

@@ -5,6 +5,8 @@ import tree
 
 from .base_sampler import BaseSampler
 
+import sys, os
+import time
 
 class SimpleSampler(BaseSampler):
     def __init__(self, **kwargs):
@@ -53,6 +55,18 @@ class SimpleSampler(BaseSampler):
             self.reset()
 
         action = self.policy.action(self._policy_input).numpy()
+
+        if np.any(np.isnan(action)):
+            print("WARNING:")
+            print("observation:", self._policy_input)
+            print("action:", action)
+            os.makedirs(f"/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/error_policy_{self._total_samples}"", exist_ok=True)
+            self.policy.save(f"/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/error_policy_{self._total_samples}/")
+            np.save(f"/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/error_policy_{self._total_samples}/observation", self._policy_input)
+            sys.stdout.flush()
+            time.sleep(10)
+            # temporary
+            action = np.zeros(action.shape)
 
         next_observation, reward, terminal, info = self.environment.step(
             action)
