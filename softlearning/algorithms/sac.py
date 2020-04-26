@@ -131,7 +131,8 @@ class SAC(RLAlgorithm):
             learning_rate=self._policy_lr,
             name="policy_optimizer")
 
-        self._alpha = tf.Variable(tf.exp(0.0), name='alpha')
+        # self._alpha = tf.Variable(tf.exp(0.0), name='alpha')
+        self._log_alpha = tf.Variable(0.0, name='log_alpha')
 
         self._alpha_optimizer = tf.optimizers.Adam(
             self._alpha_lr, name='alpha_optimizer')
@@ -142,7 +143,8 @@ class SAC(RLAlgorithm):
         rewards = batch['rewards']
         terminals = batch['terminals']
 
-        entropy_scale = self._alpha
+        # entropy_scale = self._alpha
+        entropy_scale = tf.exp(self._log_alpha)
         reward_scale = self._reward_scale
         discount = self._discount
 
@@ -218,7 +220,8 @@ class SAC(RLAlgorithm):
                 Q.values(observations, actions) for Q in self._Qs)
             Q_log_targets = tf.reduce_min(Qs_log_targets, axis=0)
 
-            policy_losses = self._alpha * log_pis - Q_log_targets
+            # policy_losses = self._alpha * log_pis - Q_log_targets
+            policy_losses = tf.exp(self._log_alpha) * log_pis - Q_log_targets
 
         tf.debugging.assert_shapes((
             (actions, ('B', 'nA')),
@@ -244,16 +247,19 @@ class SAC(RLAlgorithm):
         actions, log_pis = self._policy.actions_and_log_probs(observations)
 
         with tf.GradientTape() as tape:
-            alpha_losses = -1.0 * (
-                self._alpha * tf.stop_gradient(log_pis + self._target_entropy))
+            # alpha_losses = -1.0 * (
+            #    self._alpha * tf.stop_gradient(log_pis + self._target_entropy))
+            alpha_losses = -1.0 * (tf.exp(self._log_alpha) * tf.stop_gradient(log_pis + self._target_entropy))
             # NOTE(hartikainen): It's important that we take the average here,
             # otherwise we end up effectively having `batch_size` times too
             # large learning rate.
             alpha_loss = tf.nn.compute_average_loss(alpha_losses)
 
-        alpha_gradients = tape.gradient(alpha_loss, [self._alpha])
-        self._alpha_optimizer.apply_gradients(zip(
-            alpha_gradients, [self._alpha]))
+        # alpha_gradients = tape.gradient(alpha_loss, [self._alpha])
+        # self._alpha_optimizer.apply_gradients(zip(
+        #     alpha_gradients, [self._alpha]))
+        alpha_gradients = tape.gradient(alpha_loss, [self._log_alpha])
+        self._alpha_optimizer.apply_gradients(zip(alpha_gradients, [self._log_alpha]))
 
         return alpha_losses
 
@@ -276,9 +282,11 @@ class SAC(RLAlgorithm):
             ('Q_value-mean', tf.reduce_mean(Qs_values)),
             ('Q_loss-mean', tf.reduce_mean(Qs_losses)),
             ('policy_loss-mean', tf.reduce_mean(policy_losses)),
-            ('alpha', self._alpha),
+            # ('alpha', self._alpha),
+            ('alpha', tf.exp(self._log_alpha)),
             ('alpha_loss-mean', tf.reduce_mean(alpha_losses)),
         ))
+
         return diagnostics
 
     def _do_training(self, iteration, batch):
@@ -300,7 +308,8 @@ class SAC(RLAlgorithm):
         Also calls the `draw` method of the plotter, if plotter defined.
         """
         diagnostics = OrderedDict((
-            ('alpha', self._alpha.numpy()),
+            # ('alpha', self._alpha.numpy()),
+            ('alpha', tf.exp(self._log_alpha).numpy()),
             ('policy', self._policy.get_diagnostics_np(batch['observations'])),
         ))
 
@@ -317,7 +326,8 @@ class SAC(RLAlgorithm):
                 f'Q_optimizer_{i}': optimizer
                 for i, optimizer in enumerate(self._Q_optimizers)
             },
-            '_alpha': self._alpha,
+            # '_alpha': self._alpha,
+            '_log_alpha': self._log_alpha,
         }
 
         if hasattr(self, '_alpha_optimizer'):

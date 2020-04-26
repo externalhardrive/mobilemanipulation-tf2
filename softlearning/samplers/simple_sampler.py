@@ -55,17 +55,26 @@ class SimpleSampler(BaseSampler):
             self.reset()
 
         action = self.policy.action(self._policy_input).numpy()
+        
+        if np.any(np.abs(action) >= 1.0):
+            print("WARNING:")
+            print("ACTION:", action)
+            sys.stdout.flush()
 
         if np.any(np.isnan(action)):
             print("WARNING:")
             print("observation:", self._policy_input)
             print("action:", action)
-            os.makedirs(f"/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/error_policy_{self._total_samples}"", exist_ok=True)
-            self.policy.save(f"/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/error_policy_{self._total_samples}/")
-            np.save(f"/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/error_policy_{self._total_samples}/observation", self._policy_input)
+            save_path = f"/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/error_2/error_policy_{self._total_samples}/"
+            os.makedirs(save_path, exist_ok=True)
+            self.policy.save(save_path + "policy")
+            np.save(save_path + "observation", self._policy_input)
+            np.save(save_path + "curr_path", np.array(self._current_path))
+            
             sys.stdout.flush()
             time.sleep(10)
             # temporary
+            raise RuntimeError("NAN IN OUTPUT")
             action = np.zeros(action.shape)
 
         next_observation, reward, terminal, info = self.environment.step(

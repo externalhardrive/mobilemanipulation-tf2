@@ -10,6 +10,7 @@ import tree
 from softlearning.models.utils import create_inputs
 from softlearning.utils.tensorflow import cast_and_concat, apply_preprocessors
 from softlearning import preprocessors as preprocessors_lib
+from softlearning.distributions.bijectors import ClippedTanh
 
 # pylint: disable=g-import-not-at-top
 try:
@@ -250,7 +251,8 @@ class ContinuousPolicy(BasePolicy):
         self._action_range = action_range
         self._squash = squash
         self._action_post_processor = {
-            True: tfp.bijectors.Tanh(),
+            # True: tfp.bijectors.Tanh(),
+            True: tfp.bijectors.ClippedTanh(),
             False: tfp.bijectors.Identity(),
         }[squash]
 

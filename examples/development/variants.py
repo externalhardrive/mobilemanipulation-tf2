@@ -574,7 +574,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         'replay_pool_params': {
             'class_name': 'SimpleReplayPool',
             'config': {
-                'max_size': int(5e4),
+                'max_size': int(1e4),
             },
         },
         'sampler_params': {
@@ -585,11 +585,10 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         },
         'run_params': {
             'host_name': get_host_name(),
-            'seed': tune.sample_from(
-                lambda spec: np.random.randint(0, 10000)),
+            'seed': 9994, #tune.sample_from(lambda spec: np.random.randint(0, 10000)),
             'checkpoint_at_end': True,
             'checkpoint_frequency': tune.sample_from(get_checkpoint_frequency),
-            'checkpoint_replay_pool': False,
+            'checkpoint_replay_pool': True,
         },
     }
 
