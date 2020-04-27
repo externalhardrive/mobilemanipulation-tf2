@@ -46,13 +46,15 @@ def load_policy(checkpoint_dir, variant, environment):
 
     return policy
 
-variant_path = 'nohup_output/error_policy/params.pkl'
+root_path = "/home/externalhardrive/ray_results/gym/Locobot/MixedNavigation-v0/2020-04-25T20-21-03-locobot-mixed-navigation-test/id=00000-seed=9994_0_hidden_layer_sizes=(256, 256),preprocessors=({'pixels': {'class_name': 'convnet_preprocessor', 'config': {'co_2020-04-25_20-21-040wu9t7n2/"
+
+variant_path = root_path + "params.pkl"
 with open(variant_path, 'rb') as f:
     variant = pickle.load(f)
 
 env = load_environment(variant, {})
-policy = load_policy('nohup_output/error_policy/error_policy/', variant, env)
+policy = load_policy(root_path + "checkpoint_54/policy", variant, env)
 
 print(variant)
 
-observation = np.load('nohup_output/error_policy/error_policy/observation.npy', allow_pickle=True)[()]
+# observation = np.load('nohup_output/error_policy/error_policy/observation.npy', allow_pickle=True)[()]

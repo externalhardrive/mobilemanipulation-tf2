@@ -251,8 +251,8 @@ class ContinuousPolicy(BasePolicy):
         self._action_range = action_range
         self._squash = squash
         self._action_post_processor = {
-            # True: tfp.bijectors.Tanh(),
-            True: ClippedTanh(),
+            True: tfp.bijectors.Tanh(),
+            # True: ClippedTanh(),
             False: tfp.bijectors.Identity(),
         }[squash]
 
