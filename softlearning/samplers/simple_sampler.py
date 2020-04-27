@@ -71,6 +71,27 @@ class SimpleSampler(BaseSampler):
             np.save(save_path + "observation", self._policy_input)
             np.save(save_path + "curr_path", np.array(self._current_path))
             
+            from pprint import pprint
+            all_observations = self.pool.last_n_batch(self.pool.size)['observations']
+            print("min:")
+            pprint(tree.map_structure(lambda x: np.min(x, axis=0), all_observations))
+            print()
+
+            print("max:")
+            pprint(tree.map_structure(lambda x: np.max(x, axis=0), all_observations))
+            print()
+
+            print("mean:")
+            pprint(tree.map_structure(lambda x: np.mean(x, axis=0), all_observations))
+            print()
+
+            print("std:")
+            pprint(tree.map_structure(lambda x: np.std(x, axis=0), all_observations))
+            print()
+
+            breakpoint()
+            pass
+
             sys.stdout.flush()
             time.sleep(10)
             # temporary

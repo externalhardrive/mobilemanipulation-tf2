@@ -261,6 +261,19 @@ class SAC(RLAlgorithm):
         alpha_gradients = tape.gradient(alpha_loss, [self._log_alpha])
         self._alpha_optimizer.apply_gradients(zip(alpha_gradients, [self._log_alpha]))
 
+        # if not all(tree.flatten(tree.map_structure(
+        #         lambda x: tf.reduce_all(tf.math.is_finite(x)),
+        #         (alpha_loss, alpha_gradients),
+        # ))):
+        #     alpha_loss_nan_index = tf.where(~tf.math.is_finite(alpha_loss))
+        #     nan_causing_observation = tree.map_structure(
+        #         lambda x: x[alpha_loss_nan_index], observations)
+        #     pprint(nan_causing_observation)
+        #     save_path = f"/home/externalhardrive/mobilemanipulation-tf2/nohup_output/error_3/"
+        #     os.makedirs(save_path, exist_ok=True)
+        #     np.save(save_path + "nan_observations", nan_causing_observation)
+        #     sys.stdout.flush()
+
         return alpha_losses
 
     @tf.function(experimental_relax_shapes=True)
