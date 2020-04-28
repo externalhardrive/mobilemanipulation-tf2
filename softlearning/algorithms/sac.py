@@ -229,11 +229,9 @@ class SAC(RLAlgorithm):
             (policy_losses, ('B', 1)),
         ))
 
-        policy_gradients = tape.gradient(
-            policy_losses, self._policy.trainable_variables)
+        policy_gradients = tape.gradient(policy_losses, self._policy.trainable_variables)
 
-        self._policy_optimizer.apply_gradients(zip(
-            policy_gradients, self._policy.trainable_variables))
+        self._policy_optimizer.apply_gradients(zip(policy_gradients, self._policy.trainable_variables))
 
         return policy_losses
 

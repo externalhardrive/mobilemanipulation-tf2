@@ -65,7 +65,7 @@ class SimpleSampler(BaseSampler):
             print("WARNING:")
             print("observation:", self._policy_input)
             print("action:", action)
-            save_path = f"/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/error_2/error_policy_{self._total_samples}/"
+            save_path = f"/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/error/error_policy_{self._total_samples}/"
             os.makedirs(save_path, exist_ok=True)
             self.policy.save(save_path + "policy")
             np.save(save_path + "observation", self._policy_input)
@@ -93,7 +93,7 @@ class SimpleSampler(BaseSampler):
             pass
 
             sys.stdout.flush()
-            time.sleep(10)
+            time.sleep(600)
             # temporary
             raise RuntimeError("NAN IN OUTPUT")
             action = np.zeros(action.shape)
