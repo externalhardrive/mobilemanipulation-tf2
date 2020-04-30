@@ -44,7 +44,7 @@ class SimpleRoom(Room):
         self._wall_size = self.params["wall_size"]
         self.obstacles_id.append(self.interface.spawn_object(URDF["walls"], scale=self._wall_size))
 
-        self.no_spawn_radius = no_spawn_radius
+        self.no_spawn_radius = self.params["no_spawn_radius"]
         
         self._num_objects = self.params["num_objects"]
         for i in range(self._num_objects):
