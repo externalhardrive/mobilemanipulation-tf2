@@ -5,8 +5,8 @@ softlearning run_example_local examples.development \
     --domain Locobot \
     --task MixedNavigation-v0 \
     --exp-name locobot-mixed-navigation-test \
-    --checkpoint-frequency 5 \
+    --checkpoint-frequency 10 \
     --trial-cpus 6 \
     --trial-gpus 1 \
-    --server-port 11112 \
-    --run-eagerly False
+    --run-eagerly False \
+    # --server-port 11112 \

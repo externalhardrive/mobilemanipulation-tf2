@@ -35,20 +35,23 @@ class SimpleRoom(Room):
         defaults = dict(
             num_objects=100, 
             object_name="greensquareball", 
-            wall_size=5.0
+            wall_size=5.0,
+            no_spawn_radius=1.0,
         )
         defaults.update(params)
         super().__init__(interface, defaults)
 
         self._wall_size = self.params["wall_size"]
         self.obstacles_id.append(self.interface.spawn_object(URDF["walls"], scale=self._wall_size))
+
+        self.no_spawn_radius = no_spawn_radius
         
         self._num_objects = self.params["num_objects"]
         for i in range(self._num_objects):
             self.objects_id.append(self.interface.spawn_object(URDF[self.params["object_name"]], np.array([0.0, 0.0, 10 + i])))
 
     def is_valid_spawn_loc(self, x, y):
-        return not is_in_circle(x, y, 0, 0, 1.0)
+        return not is_in_circle(x, y, 0, 0, self.no_spawn_radius)
 
     def reset(self):
         for i in range(self._num_objects):

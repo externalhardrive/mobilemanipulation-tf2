@@ -131,8 +131,8 @@ class SAC(RLAlgorithm):
             learning_rate=self._policy_lr,
             name="policy_optimizer")
 
-        # self._alpha = tf.Variable(tf.exp(0.0), name='alpha')
         self._log_alpha = tf.Variable(0.0, name='log_alpha')
+        self._alpha = tfp.util.DeferredTensor(self._log_alpha, tf.exp)
 
         self._alpha_optimizer = tf.optimizers.Adam(
             self._alpha_lr, name='alpha_optimizer')
@@ -143,8 +143,7 @@ class SAC(RLAlgorithm):
         rewards = batch['rewards']
         terminals = batch['terminals']
 
-        # entropy_scale = self._alpha
-        entropy_scale = tf.exp(self._log_alpha)
+        entropy_scale = self._alpha
         reward_scale = self._reward_scale
         discount = self._discount
 
@@ -182,18 +181,17 @@ class SAC(RLAlgorithm):
         actions = batch['actions']
         rewards = batch['rewards']
 
-        tf.debugging.assert_shapes((
-            (Q_targets, ('B', 1)), (rewards, ('B', 1))))
+        tf.debugging.assert_shapes(((Q_targets, ('B', 1)), (rewards, ('B', 1))))
 
         Qs_values = []
         Qs_losses = []
         for Q, optimizer in zip(self._Qs, self._Q_optimizers):
             with tf.GradientTape() as tape:
                 Q_values = Q.values(observations, actions)
-                Q_losses = (
-                    0.5 * tf.losses.MSE(y_true=Q_targets, y_pred=Q_values))
+                Q_losses = 0.5 * tf.losses.MSE(y_true=Q_targets, y_pred=Q_values)
+                Q_loss = tf.nn.compute_average_loss(Q_losses)
 
-            gradients = tape.gradient(Q_losses, Q.trainable_variables)
+            gradients = tape.gradient(Q_loss, Q.trainable_variables)
             optimizer.apply_gradients(zip(gradients, Q.trainable_variables))
             Qs_losses.append(Q_losses)
             Qs_values.append(Q_values)
@@ -220,8 +218,8 @@ class SAC(RLAlgorithm):
                 Q.values(observations, actions) for Q in self._Qs)
             Q_log_targets = tf.reduce_min(Qs_log_targets, axis=0)
 
-            # policy_losses = self._alpha * log_pis - Q_log_targets
-            policy_losses = tf.exp(self._log_alpha) * log_pis - Q_log_targets
+            policy_losses = self._alpha * log_pis - Q_log_targets
+            policy_loss = tf.nn.compute_average_loss(policy_losses)
 
         tf.debugging.assert_shapes((
             (actions, ('B', 'nA')),
@@ -229,11 +227,9 @@ class SAC(RLAlgorithm):
             (policy_losses, ('B', 1)),
         ))
 
-        policy_gradients = tape.gradient(
-            policy_losses, self._policy.trainable_variables)
+        policy_gradients = tape.gradient(policy_loss, self._policy.trainable_variables)
 
-        self._policy_optimizer.apply_gradients(zip(
-            policy_gradients, self._policy.trainable_variables))
+        self._policy_optimizer.apply_gradients(zip(policy_gradients, self._policy.trainable_variables))
 
         return policy_losses
 
@@ -247,32 +243,15 @@ class SAC(RLAlgorithm):
         actions, log_pis = self._policy.actions_and_log_probs(observations)
 
         with tf.GradientTape() as tape:
-            # alpha_losses = -1.0 * (
-            #    self._alpha * tf.stop_gradient(log_pis + self._target_entropy))
-            alpha_losses = -1.0 * (tf.exp(self._log_alpha) * tf.stop_gradient(log_pis + self._target_entropy))
+            alpha_losses = -1.0 * (self._alpha * tf.stop_gradient(log_pis + self._target_entropy))
+            # alpha_losses = -1.0 * tf.exp(self._log_alpha) * tf.stop_gradient(log_pis + self._target_entropy)
             # NOTE(hartikainen): It's important that we take the average here,
             # otherwise we end up effectively having `batch_size` times too
             # large learning rate.
             alpha_loss = tf.nn.compute_average_loss(alpha_losses)
 
-        # alpha_gradients = tape.gradient(alpha_loss, [self._alpha])
-        # self._alpha_optimizer.apply_gradients(zip(
-        #     alpha_gradients, [self._alpha]))
         alpha_gradients = tape.gradient(alpha_loss, [self._log_alpha])
         self._alpha_optimizer.apply_gradients(zip(alpha_gradients, [self._log_alpha]))
-
-        # if not all(tree.flatten(tree.map_structure(
-        #         lambda x: tf.reduce_all(tf.math.is_finite(x)),
-        #         (alpha_loss, alpha_gradients),
-        # ))):
-        #     alpha_loss_nan_index = tf.where(~tf.math.is_finite(alpha_loss))
-        #     nan_causing_observation = tree.map_structure(
-        #         lambda x: x[alpha_loss_nan_index], observations)
-        #     pprint(nan_causing_observation)
-        #     save_path = f"/home/externalhardrive/mobilemanipulation-tf2/nohup_output/error_3/"
-        #     os.makedirs(save_path, exist_ok=True)
-        #     np.save(save_path + "nan_observations", nan_causing_observation)
-        #     sys.stdout.flush()
 
         return alpha_losses
 
@@ -295,8 +274,7 @@ class SAC(RLAlgorithm):
             ('Q_value-mean', tf.reduce_mean(Qs_values)),
             ('Q_loss-mean', tf.reduce_mean(Qs_losses)),
             ('policy_loss-mean', tf.reduce_mean(policy_losses)),
-            # ('alpha', self._alpha),
-            ('alpha', tf.exp(self._log_alpha)),
+            ('alpha', tf.convert_to_tensor(self._alpha)),
             ('alpha_loss-mean', tf.reduce_mean(alpha_losses)),
         ))
 
@@ -321,8 +299,8 @@ class SAC(RLAlgorithm):
         Also calls the `draw` method of the plotter, if plotter defined.
         """
         diagnostics = OrderedDict((
-            # ('alpha', self._alpha.numpy()),
-            ('alpha', tf.exp(self._log_alpha).numpy()),
+            ('alpha', self._alpha.numpy()),
+            # ('alpha', tf.convert_to_tensor(self._alpha).numpy()),
             ('policy', self._policy.get_diagnostics_np(batch['observations'])),
         ))
 

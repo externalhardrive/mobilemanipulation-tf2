@@ -237,7 +237,7 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageMultiGrasping-v0': 1,
             'ImageSingleGrasping-v0': 1,
             'ImageNavigation-v0': 200,
-            'MixedNavigation-v0': 250,
+            'MixedNavigation-v0': 200,
         },
     },
 }
@@ -369,7 +369,13 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': True,
                 },
-                'room_name': 'simple_obstacles',
+                # 'room_name': 'simple_obstacles',
+                # 'room_params': {
+                #     'num_objects': 100, 
+                #     'object_name': "greensquareball", 
+                #     'wall_size': 5.0, 
+                # },
+                'room_name': 'simple',
                 'room_params': {
                     'num_objects': 100, 
                     'object_name': "greensquareball", 
@@ -390,8 +396,9 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                     'num_objects': 80, 
                     'object_name': "greensquareball", 
                     'wall_size': 5.0, 
+                    'no_spawn_radius': 0.8,
                 },
-                'max_ep_len': 250,
+                'max_ep_len': 200,
                 'image_size': 100,
                 'steps_per_second': 2,
                 'max_velocity': 20.0,
@@ -574,7 +581,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         'replay_pool_params': {
             'class_name': 'SimpleReplayPool',
             'config': {
-                'max_size': int(1e4),
+                'max_size': int(1e5),
             },
         },
         'sampler_params': {
@@ -585,7 +592,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         },
         'run_params': {
             'host_name': get_host_name(),
-            'seed': 9994, #tune.sample_from(lambda spec: np.random.randint(0, 10000)),
+            'seed': tune.sample_from(lambda spec: np.random.randint(0, 10000)),
             'checkpoint_at_end': True,
             'checkpoint_frequency': tune.sample_from(get_checkpoint_frequency),
             'checkpoint_replay_pool': True,
@@ -625,10 +632,10 @@ def get_variant_spec_image(universe,
         preprocessor_params = {
             'class_name': 'convnet_preprocessor',
             'config': {
-                'conv_filters': (16, 16, 32),
+                'conv_filters': (8, 16, 32),
                 'conv_kernel_sizes': (3, 3, 3),
                 'conv_strides': (2, 2, 1),
-                'normalization_type': 'layer',
+                'normalization_type': None,
                 'downsampling_type': 'conv',
             },
         }
