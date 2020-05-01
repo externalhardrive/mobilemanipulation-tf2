@@ -1,12 +1,15 @@
 import numpy as np
 
 from .utils import *
+from .objects import *
 
 def initialize_room(locobot_interface, name, room_params={}):
     if name == "simple":
         return SimpleRoom(locobot_interface, room_params)
     elif name == "simple_obstacles":
         return SimpleRoomWithObstacles(locobot_interface, room_params)
+    elif name == "medium":
+        return MediumRoom(locobot_interface, room_params)
     else:
         return NotImplementedError(f"no room has name {name}")
 
@@ -79,7 +82,6 @@ class SimpleRoomWithObstacles(SimpleRoom):
         self.no_spawn_zones = []
         self.no_spawn_zones.append(lambda x, y: is_in_circle(x, y, 0, 0, 1.0))
 
-
         # add 4 rectangular pillars to the 4 corners
         c = self._wall_size / 4
         pillar_size = 0.5
@@ -114,3 +116,72 @@ class SimpleRoomWithObstacles(SimpleRoom):
             if no_spawn(x, y):
                 return False
         return True
+
+class MediumRoom(Room):
+    """ Simple room that has a wall and objects inside, with simple immovable obstacles (not randomly generated). """
+    def __init__(self, interface, params):
+        defaults = dict(
+            num_objects=100, 
+            object_name="greensquareball", 
+            wall_size=5.0,
+            no_spawn_radius=1.0,
+        )
+        defaults.update(params)
+        super().__init__(interface, defaults)
+
+        self._wall_size = self.params["wall_size"]
+        self.wall_id = self.interface.spawn_object(URDF["walls_2"], scale=self._wall_size)
+
+        self._num_objects = self.params["num_objects"]
+        for i in range(self._num_objects):
+            self.objects_id.append(self.interface.spawn_object(URDF[self.params["object_name"]], np.array([0.0, 0.0, 10 + i])))
+
+        # don't spawn in 1m radius around the robot
+        self.no_spawn_zones = []
+        self.no_spawn_zones.append(lambda x, y: is_in_circle(x, y, 0, 0, self.params["no_spawn_radius"]))
+
+        self.interface.change_floor_texture("wood")
+
+        boxes_config = [
+            [[-2.259, 2.217, 0], 0, 0.219, "navy"],
+            [[-1.776, -1.660, 0], 0, 0.383, "crate"],
+            [[-1.12614, -2.08627, 0], 0, 0.321815, "crate"],
+            [[-1.31922, 0.195723, 0], 0, 0.270704, "red"],
+            [[1.39269, -2.35207, 0], 0, 0.577359, "marble"],
+            [[0.33328, -0.75906, 0], 0, 0.233632, "navy"],
+            [[2.08005, 1.24189, 0], 0, 0.361638, "crate"],
+            [[-1.1331, 2.21413, 0], 0, 0.270704, "red"],
+            [[-0.591208, 2.22201, 0], 0, 0.270704, "marble"],
+            [[2.13627, 2.1474, 0], 0, 0.270704, "marble"],
+            [[1.15959, 0.701976, 0], 0, 0.162524, "navy"],
+            [[1.05702, 0.952707, 0], 0, 0.131984, "red"],
+        ]
+
+        self.static_objects = []
+        for bc in boxes_config:
+            self.static_objects.append(TexturedBox(self.interface, *bc[:2], bc[2]*2, texture_name=bc[3]))
+
+    def is_valid_spawn_loc(self, x, y):
+        for no_spawn in self.no_spawn_zones:
+            if no_spawn(x, y):
+                return False
+        for so in self.static_objects:
+            if so.is_point_inside(x, y):
+                return False
+        return True
+
+    def reset(self):
+        for i in range(self._num_objects):
+            while True:
+                x, y = np.random.uniform(-self._wall_size * 0.5, self._wall_size * 0.5, size=(2,))
+                if self.is_valid_spawn_loc(x, y):
+                    break
+            self.interface.move_object(self.objects_id[i], [x, y, 0.02])
+    
+    @property
+    def num_objects(self):
+        return self._num_objects
+
+    @property
+    def extent(self):
+        return self._wall_size * 2.0

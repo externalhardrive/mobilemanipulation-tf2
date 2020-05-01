@@ -20,9 +20,16 @@ def save_obs(obs, path):
     mpimg.imsave(path, obs)
 
 def main(args):
-    room_name = "simple_obstacles"
+    # room_name = "simple_obstacles"
+    # room_params = dict(
+    #     num_objects=100, 
+    #     object_name="greensquareball", 
+    #     wall_size=5.0,
+    #     no_spawn_radius=0.8,
+    # )
+    room_name = "medium"
     room_params = dict(
-        num_objects=100, 
+        num_objects=80, 
         object_name="greensquareball", 
         wall_size=5.0,
         no_spawn_radius=0.8,
@@ -36,7 +43,7 @@ def main(args):
     #     )
     inner_env = MixedLocobotNavigationEnv(
             renders=True, grayscale=False, step_duration=1/60,
-            room_name="simple",
+            room_name=room_name,
             room_params=room_params,
             image_size=100,
             steps_per_second=2,
@@ -51,7 +58,7 @@ def main(args):
             'pixels_only': False,
         },
     )
-    
+
     obs = env.reset()
 
     # inner_env.interface.set_wheels_velocity(20, 20)

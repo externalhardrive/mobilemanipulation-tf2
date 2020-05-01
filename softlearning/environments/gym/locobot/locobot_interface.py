@@ -74,11 +74,11 @@ class PybulletInterface:
         else:
             self.p = bullet_client.BulletClient()
 
-        self.frames = []
+        self.texture_name_to_id = {}
 
-        self.max_objects = 1024
-        self.num_objects = 0
-        self.object_dict = {}
+        # self.max_objects = 1024
+        # self.num_objects = 0
+        # self.object_dict = {}
         self.default_ori = self.p.getQuaternionFromEuler([0,0,0])
 
         self.robot_urdf = URDF["locobot"]
@@ -87,7 +87,8 @@ class PybulletInterface:
         self.p.setAdditionalSearchPath(pybullet_data.getDataPath())
         self.p.setGravity(0, 0, -9.8)
 
-        self.plane_id = self.p.loadURDF("plane.urdf")
+        self.plane_id = self.p.loadURDF("plane_transparent.urdf")
+        
         # self.plane_visual_id = self.p.createVisualShape(self.p.GEOM_PLANE, rgbaColor=[0.9, 0.9, 0.9, 1], visualFramePosition=[0, 0, 0])
         # self.plane_collision_id = self.p.createCollisionShape(self.p.GEOM_BOX, halfExtents=[100, 100, 10], collisionFramePosition=[0, 0, -10])
         # self.plane_id = self.p.loadURDF("plane100.urdf", useMaximalCoordinates=True)
@@ -127,6 +128,17 @@ class PybulletInterface:
         # Save state
         self.save_state()
 
+    def change_floor_texture(self, texture_name):
+        self.p.changeVisualShape(self.plane_id, -1, textureUniqueId=self.load_texture(texture_name))
+
+    def load_texture(self, texture_name):
+        if texture_name in self.texture_name_to_id:
+            return self.texture_name_to_id[texture_name]
+        else:
+            tex_id = self.p.loadTexture(TEXTURE[texture_name])
+            self.texture_name_to_id[texture_name] = tex_id
+            return tex_id
+
     def save_state(self):
         self.saved_state = self.p.saveState()
         jointStates = self.p.getJointStates(self.robot, range(12,19))
@@ -144,23 +156,24 @@ class PybulletInterface:
         self.walls_id = self.p.loadURDF(URDF["walls"], globalScaling=size)
 
     def spawn_object(self, urdf, pos=[0,0,0], ori=None, scale=1.0):
-        assert self.num_objects <= self.max_objects, "Maximum Number of Objects reached"
+        # assert self.num_objects <= self.max_objects, "Maximum Number of Objects reached"
         if ori == None:
             ori = self.default_ori
         elif type(ori) == float or type(ori) == int:
             ori = self.p.getQuaternionFromEuler([0,0,ori])
-        self.num_objects += 1
-        self.object_dict[self.num_objects] = self.p.loadURDF(urdf, basePosition=pos, baseOrientation=ori, globalScaling=scale)
-        return self.num_objects
+        # self.num_objects += 1
+        # self.object_dict[self.num_objects] = self.p.loadURDF(urdf, basePosition=pos, baseOrientation=ori, globalScaling=scale)
+        # return self.num_objects
+        return self.p.loadURDF(urdf, basePosition=pos, baseOrientation=ori, globalScaling=scale)
 
     def get_object(self, object_id, relative=False):
         if relative:
             base_pos, base_ori = self.p.getBasePositionAndOrientation(self.robot)
             base_pos, base_ori = self.p.invertTransform(base_pos, base_ori)
-            obj_pos, obj_ori = self.p.getBasePositionAndOrientation(self.object_dict[object_id])
+            obj_pos, obj_ori = self.p.getBasePositionAndOrientation(object_id)
             obj_pos, obj_ori = self.p.multiplyTransforms(base_pos, base_ori, obj_pos, obj_ori)
         else:
-            obj_pos, obj_ori = self.p.getBasePositionAndOrientation(self.object_dict[object_id])
+            obj_pos, obj_ori = self.p.getBasePositionAndOrientation(object_id)
         return obj_pos, obj_ori
 
     def move_object(self, object_id, pos, ori=None, relative=False):
@@ -175,11 +188,11 @@ class PybulletInterface:
             base_pos, base_ori = self.p.getBasePositionAndOrientation(self.robot)
             pos, ori = self.p.multiplyTransforms(base_pos, base_ori, pos, ori)
 
-        self.p.resetBasePositionAndOrientation(self.object_dict[object_id], pos, ori)
+        self.p.resetBasePositionAndOrientation(object_id, pos, ori)
 
     def remove_object(self, object_id):
-        self.p.removeBody(self.object_dict[object_id])
-        del self.object_dict[object_id]
+        self.p.removeBody(object_id)
+        # del self.object_dict[object_id]
 
     # def get_affordance(self, image=None):
     #     if image is None:

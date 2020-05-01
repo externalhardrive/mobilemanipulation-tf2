@@ -20,7 +20,18 @@ URDF = {
     "walls": os.path.join(CURR_PATH, 'urdf/walls.urdf'),
     "plane": os.path.join(CURR_PATH, 'urdf/plane.urdf'),
     "rectangular_pillar": os.path.join(CURR_PATH, 'urdf/rectangular_pillar.urdf'),
-    "solid_box": os.path.join(CURR_PATH, 'urdf/solid_box.urdf')
+    "solid_box": os.path.join(CURR_PATH, 'urdf/solid_box.urdf'),
+    "walls_2": os.path.join(CURR_PATH, 'urdf/medium_room/walls.urdf'),
+    "textured_box": os.path.join(CURR_PATH, 'urdf/medium_room/box.urdf'),
+}
+
+TEXTURE = {
+    "wood": os.path.join(CURR_PATH, 'urdf/medium_room/wood2.png'),
+    "wall": os.path.join(CURR_PATH, 'urdf/medium_room/wall1.png'),
+    "marble": os.path.join(CURR_PATH, 'urdf/medium_room/marble.png'),
+    "crate": os.path.join(CURR_PATH, 'urdf/medium_room/crate.png'),
+    "navy": os.path.join(CURR_PATH, 'urdf/medium_room/navy_cloth.png'),
+    "red": os.path.join(CURR_PATH, 'urdf/medium_room/red_cloth.png'),
 }
 
 def load_convnet(path, image_size, **params):
