@@ -22,7 +22,10 @@ def save_obs(obs, path):
 def main(args):
     room_name = "simple_obstacles"
     room_params = dict(
-        num_objects=100, object_name="greensquareball", wall_size=5.0
+        num_objects=100, 
+        object_name="greensquareball", 
+        wall_size=5.0,
+        no_spawn_radius=0.8,
     )
     # inner_env = ImageLocobotNavigationEnv(
     #         renders=True, grayscale=False, step_duration=1/60,
@@ -36,8 +39,12 @@ def main(args):
             room_name="simple",
             room_params=room_params,
             image_size=100,
-            steps_per_second=2
+            steps_per_second=2,
+            max_ep_len=200,
+            max_velocity=20.0,
+            max_acceleration=4.0,
         )
+
     env = GymAdapter(None, None,
         env=inner_env,
         pixel_wrapper_kwargs={
@@ -63,7 +70,8 @@ def main(args):
         
     while True:
         # save_obs(obs["pixels"], f"../images/obs{i}.png")
-        # print("velocity:", obs["velocity"])
+        print("velocity:", obs["velocity"])
+        # print("target:", obs["target_velocity"])
         cmd = input().strip()
         try:
             if cmd == "exit":
