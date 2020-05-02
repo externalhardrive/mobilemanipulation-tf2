@@ -57,12 +57,14 @@ class GymAdapter(SoftlearningEnv):
                  goal_keys=(),
                  unwrap_time_limit=True,
                  pixel_wrapper_kwargs=None,
+                 reset_free=False,
                  **kwargs):
         assert not args, (
             "Gym environments don't support args. Use kwargs instead.")
 
         self.normalize = normalize
         self.unwrap_time_limit = unwrap_time_limit
+        self.reset_free = reset_free
 
         super(GymAdapter, self).__init__(
             domain, task, *args, goal_keys=goal_keys, **kwargs)
@@ -80,7 +82,7 @@ class GymAdapter(SoftlearningEnv):
             assert not kwargs
             assert domain is None and task is None, (domain, task)
 
-        if isinstance(env, wrappers.TimeLimit) and unwrap_time_limit:
+        if isinstance(env, wrappers.TimeLimit) and (unwrap_time_limit or reset_free):
             # Remove the TimeLimit wrapper that sets 'done = True' when
             # the time limit specified for each environment has been passed and
             # therefore the environment is not Markovian (terminal condition
@@ -125,6 +127,8 @@ class GymAdapter(SoftlearningEnv):
 
         self._action_space = self._env.action_space
 
+        self._curr_observation = None
+
     def step(self, action, *args, **kwargs):
         observation, reward, terminal, info = self._env.step(
             action, *args, **kwargs)
@@ -133,9 +137,18 @@ class GymAdapter(SoftlearningEnv):
             observation = {DEFAULT_OBSERVATION_KEY: observation}
 
         observation = self._filter_observation(observation)
+
+        self._curr_observation = observation
+
+        if self.reset_free:
+            terminal = False
+        
         return observation, reward, terminal, info
 
     def reset(self, *args, **kwargs):
+        if self.reset_free:
+            return self._curr_observation
+
         observation = self._env.reset()
 
         if not isinstance(self._env.observation_space, spaces.Dict):

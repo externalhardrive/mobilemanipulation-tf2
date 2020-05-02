@@ -100,6 +100,11 @@ GENERAL_ENVIRONMENT_SPECS = (
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
                         '.nav_grasp_envs:MixedLocobotNavigationEnv')
     },
+    {
+        'id': 'Locobot-ImageNavigationResetFree-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.nav_grasp_envs:ImageLocobotNavigationEnv')
+    }
 )
 
 MUJOCO_ENVIRONMENTS = tuple(

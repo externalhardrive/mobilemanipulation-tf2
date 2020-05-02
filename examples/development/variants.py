@@ -10,7 +10,7 @@ from softlearning.utils.dict import deep_update
 
 DEFAULT_KEY = "__DEFAULT_KEY__"
 
-M = 256
+M = 512
 NUM_COUPLING_LAYERS = 2
 
 
@@ -390,7 +390,7 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': False,
                 },
-                'observation_keys': ('velocity', 'pixels'),
+                'observation_keys': ('current_velocity', 'target_velocity', 'pixels'),
                 'room_name': 'simple',
                 'room_params': {
                     'num_objects': 80, 
@@ -404,6 +404,22 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'max_velocity': 20.0,
                 'max_acceleration': 4.0
             },
+            'ImageNavigationResetFree-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': True,
+                },
+                'reset_free': True,
+                'room_name': 'medium',
+                'room_params': {
+                    'num_objects': 100, 
+                    'object_name': "greensquareball", 
+                    'no_spawn_radius': 0.8,
+                },
+                'max_ep_len': float('inf'),
+                'image_size': 100,
+                'use_dist_reward': False,
+                'grasp_reward': 1,
+            }
         },
     },
     'dm_control': {
@@ -632,9 +648,9 @@ def get_variant_spec_image(universe,
         preprocessor_params = {
             'class_name': 'convnet_preprocessor',
             'config': {
-                'conv_filters': (8, 16, 32),
+                'conv_filters': (64, 64, 64),
                 'conv_kernel_sizes': (3, 3, 3),
-                'conv_strides': (2, 2, 1),
+                'conv_strides': (2, 2, 2),
                 'normalization_type': None,
                 'downsampling_type': 'conv',
             },
