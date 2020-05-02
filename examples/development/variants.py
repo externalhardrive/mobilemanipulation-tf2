@@ -125,6 +125,7 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
             DEFAULT_KEY: int(2e5),
             'ImageNavigation-v0': int(1e6),
             'MixedNavigation-v0': int(1e6),
+            'ImageNavigationResetFree-v0': int(1e6),
         },
     },
     'dm_control': {
@@ -250,7 +251,7 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
         'Locobot': {
             DEFAULT_KEY: 1000,
             'MixedNavigation-v0': 1000,
-            'ImageNavigationResetFree-v0': 1000
+            'ImageNavigationResetFree-v0': 1000,
         },
     },
 }

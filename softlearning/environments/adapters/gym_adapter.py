@@ -3,6 +3,8 @@
 from collections import defaultdict, OrderedDict
 import copy
 
+import numpy as np
+
 import gym
 from gym import spaces, wrappers
 from gym.wrappers.pixel_observation import PixelObservationWrapper
@@ -128,6 +130,29 @@ class GymAdapter(SoftlearningEnv):
         self._action_space = self._env.action_space
 
         self._curr_observation = None
+
+    def get_path_infos(self, paths, *args, **kwargs):
+        if self.reset_free:
+            combined_path_infos = defaultdict(list)
+            for path in reversed(paths):
+                for info_key, info_values in path.get('infos', {}).items():
+                    combined_path_infos[info_key].extend(info_values)
+            
+            combined_results = {}
+            for info_key, info_values in combined_path_infos.items():
+                info_values = np.array(info_values)
+                combined_results[info_key + '-first'] = info_values[0]
+                combined_results[info_key + '-last'] = info_values[-1]
+                combined_results[info_key + '-mean'] = np.mean(info_values)
+                combined_results[info_key + '-median'] = np.median(info_values)
+                combined_results[info_key + '-sum'] = np.sum(info_values)
+                combined_results[info_key + '-max'] = np.amax(info_values)
+                if np.array(info_values).dtype != np.dtype('bool'):
+                    combined_results[info_key + '-range'] = np.ptp(info_values)
+            return combined_results
+        else:
+            aggregated_results = super().get_path_infos(self, paths, *args, **kwargs)
+            return aggregated_results
 
     def step(self, action, *args, **kwargs):
         observation, reward, terminal, info = self._env.step(
