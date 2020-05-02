@@ -151,7 +151,7 @@ class GymAdapter(SoftlearningEnv):
                     combined_results[info_key + '-range'] = np.ptp(info_values)
             return combined_results
         else:
-            aggregated_results = super().get_path_infos(self, paths, *args, **kwargs)
+            aggregated_results = super().get_path_infos(paths, *args, **kwargs)
             return aggregated_results
 
     def step(self, action, *args, **kwargs):
