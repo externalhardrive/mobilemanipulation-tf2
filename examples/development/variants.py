@@ -238,6 +238,7 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageSingleGrasping-v0': 1,
             'ImageNavigation-v0': 200,
             'MixedNavigation-v0': 200,
+            'ImageNavigationResetFree-v0': 200,
         },
     },
 }
@@ -249,6 +250,7 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
         'Locobot': {
             DEFAULT_KEY: 1000,
             'MixedNavigation-v0': 1000,
+            'ImageNavigationResetFree-v0': 1000
         },
     },
 }
@@ -365,27 +367,6 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'min_other_blocks': 0,
                 'max_other_blocks': 6
             },
-            'ImageNavigation-v0': {
-                'pixel_wrapper_kwargs': {
-                    'pixels_only': True,
-                },
-                # 'room_name': 'simple_obstacles',
-                # 'room_params': {
-                #     'num_objects': 100, 
-                #     'object_name': "greensquareball", 
-                #     'wall_size': 5.0, 
-                # },
-                'room_name': 'simple',
-                'room_params': {
-                    'num_objects': 100, 
-                    'object_name': "greensquareball", 
-                    'wall_size': 5.0, 
-                },
-                'max_ep_len': 200,
-                'image_size': 100,
-                'use_dist_reward': False,
-                'grasp_reward': 1,
-            },
             'MixedNavigation-v0': {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': False,
@@ -404,6 +385,25 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'max_velocity': 20.0,
                 'max_acceleration': 4.0
             },
+            'ImageNavigation-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': True,
+                },
+                # 'room_name': 'simple_obstacles',
+                # 'room_params': {
+                #     'num_objects': 100, 
+                #     'object_name': "greensquareball", 
+                #     'wall_size': 5.0, 
+                # },
+                'room_name': 'medium',
+                'room_params': {
+                    'num_objects': 100, 
+                    'object_name': "greensquareball", 
+                    'no_spawn_radius': 0.8,
+                },
+                'max_ep_len': 200,
+                'image_size': 100,
+            },
             'ImageNavigationResetFree-v0': {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': True,
@@ -417,8 +417,6 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 },
                 'max_ep_len': float('inf'),
                 'image_size': 100,
-                'use_dist_reward': False,
-                'grasp_reward': 1,
             }
         },
     },

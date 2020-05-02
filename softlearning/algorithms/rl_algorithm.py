@@ -350,13 +350,6 @@ class RLAlgorithm(Checkpointable):
         diagnostics = tree.map_structure(
             lambda *d: tf.reduce_mean(d).numpy(), *diagnostics)
 
-        for k in diagnostics:
-            if np.isnan(diagnostics[k]) or np.isinf(diagnostics[k]):
-                import sys
-                print("WARNING:")
-                print("diagnostics:", diagnostics)
-                sys.stdout.flush()
-
         self._num_train_steps += self._n_train_repeat
         self._train_steps_this_epoch += self._n_train_repeat
 

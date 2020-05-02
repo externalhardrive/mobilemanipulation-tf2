@@ -137,7 +137,6 @@ class GymAdapter(SoftlearningEnv):
             observation = {DEFAULT_OBSERVATION_KEY: observation}
 
         observation = self._filter_observation(observation)
-
         self._curr_observation = observation
 
         if self.reset_free:
@@ -146,7 +145,7 @@ class GymAdapter(SoftlearningEnv):
         return observation, reward, terminal, info
 
     def reset(self, *args, **kwargs):
-        if self.reset_free:
+        if self.reset_free and self._curr_observation is not None:
             return self._curr_observation
 
         observation = self._env.reset()
@@ -155,6 +154,8 @@ class GymAdapter(SoftlearningEnv):
             observation = {DEFAULT_OBSERVATION_KEY: observation}
 
         observation = self._filter_observation(observation)
+        self._curr_observation = observation
+
         return observation
 
     def render(self, *args, width=100, height=100, **kwargs):

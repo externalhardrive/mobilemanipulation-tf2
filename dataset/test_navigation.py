@@ -34,29 +34,29 @@ def main(args):
         wall_size=5.0,
         no_spawn_radius=0.8,
     )
-    # inner_env = ImageLocobotNavigationEnv(
-    #         renders=True, grayscale=False, step_duration=1/60,
-    #         room_name=room_name,
-    #         room_params=room_params,
-    #         image_size=100,
-    #         use_dist_reward=False, grasp_reward=1
-    #     )
-    inner_env = MixedLocobotNavigationEnv(
+    inner_env = ImageLocobotNavigationEnv(
             renders=True, grayscale=False, step_duration=1/60,
             room_name=room_name,
             room_params=room_params,
             image_size=100,
-            steps_per_second=2,
-            max_ep_len=200,
-            max_velocity=20.0,
-            max_acceleration=4.0,
         )
+    # inner_env = MixedLocobotNavigationEnv(
+    #         renders=True, grayscale=False, step_duration=1/60,
+    #         room_name=room_name,
+    #         room_params=room_params,
+    #         image_size=100,
+    #         steps_per_second=2,
+    #         max_ep_len=200,
+    #         max_velocity=20.0,
+    #         max_acceleration=4.0,
+    #     )
 
     env = GymAdapter(None, None,
         env=inner_env,
         pixel_wrapper_kwargs={
-            'pixels_only': False,
+            'pixels_only': True,
         },
+        reset_free=False,
     )
 
     obs = env.reset()
@@ -77,7 +77,7 @@ def main(args):
         
     while True:
         # save_obs(obs["pixels"], f"../images/obs{i}.png")
-        print("velocity:", obs["velocity"])
+        # print("velocity:", obs["current_velocity"])
         # print("target:", obs["target_velocity"])
         cmd = input().strip()
         try:
@@ -95,10 +95,10 @@ def main(args):
             continue
 
         a = np.array([move[0], move[1]])
-        obs, rew, done, _ = env.step(a)
+        obs, rew, done, infos = env.step(a)
         i += 1
 
-        print(rew)
+        print(rew, infos)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
