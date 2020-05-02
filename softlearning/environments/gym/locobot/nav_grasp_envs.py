@@ -57,8 +57,6 @@ class BaseNavigationEnv(RoomEnv):
         obs = super().reset()
         self.total_grasped = 0
 
-        print("reset")
-
         return obs
 
     def do_move(self, action):
@@ -99,8 +97,6 @@ class BaseNavigationEnv(RoomEnv):
 
         # get observation
         obs = self.get_observation()
-
-        print("step:", self.num_steps)
 
         return obs, reward, done, infos
 
