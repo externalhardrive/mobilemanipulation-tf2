@@ -23,6 +23,8 @@ class R3L(RLAlgorithm):
             plotter=None,
 
             rnd_lr=3-4,
+            intrinsic_scale=1.0,
+            extrinsic_scale=1.0,
 
             save_full_state=False,
             **kwargs,
@@ -57,6 +59,8 @@ class R3L(RLAlgorithm):
         self._plotter = plotter
 
         self._rnd_lr = rnd_lr
+        self._intrinsic_scale = intrinsic_scale
+        self._extrinsic_scale = extrinsic_scale
 
         self._save_full_state = save_full_state
 
@@ -103,12 +107,14 @@ class R3L(RLAlgorithm):
         predictor_losses = self._update_rnd_predictor(batch)
 
         # compute intrinsic loss for this batch
-        
+        intrinsic_rewards = ...
 
         # update the current policy we are using
         if self._current_forward_policy: #something
+            batch['rewards'] = self._extrinsic_scale * batch['rewards'] + self._intrinsic_scale * intrinsic_rewards
             sac_diagnostics = self._forward_sac._do_training(iteration, batch)
         else:
+            batch['rewards'] = intrinsic_rewards
             sac_diagnostics = self._perturbation_sac._do_training(iteration, batch)
 
         diagnostics = OrderedDict({

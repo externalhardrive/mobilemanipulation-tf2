@@ -75,6 +75,8 @@ ALGORITHM_PARAMS_ADDITIONAL = {
         'class_name': 'R3L',
         'config': {
             'rnd_lr': 3e-4,
+            'intrinsic_scale': 1.0,
+            'extrinsic_scale': 1.0,
         },
     }
 }
