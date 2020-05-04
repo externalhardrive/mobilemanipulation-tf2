@@ -139,8 +139,6 @@ class ExperimentRunner(tune.Trainable):
 
         return diagnostics
 
-    # TODO(externalhardrive): Fix serialization and checkpointing
-
     @staticmethod
     def _pickle_path(checkpoint_dir):
         return os.path.join(checkpoint_dir, 'checkpoint.pkl')
@@ -158,8 +156,8 @@ class ExperimentRunner(tune.Trainable):
         return os.path.join(checkpoint_dir, 'sampler.pkl')
 
     @staticmethod
-    def _policy_save_path(checkpoint_dir):
-        return os.path.join(checkpoint_dir, 'policy')
+    def _policy_save_path(checkpoint_dir, prefix=''):
+        return os.path.join(checkpoint_dir, prefix + 'policy')
 
     def _save_replay_pool(self, checkpoint_dir):
         if not self._variant['run_params'].get(
@@ -195,30 +193,47 @@ class ExperimentRunner(tune.Trainable):
 
         self.sampler.__setstate__(sampler.__getstate__())
         self.sampler.initialize(
-            self.training_environment, self.policy, self.replay_pool)
+            self.training_environment, self.forward_policy, self.replay_pool)
 
     def _save_value_functions(self, checkpoint_dir):
         tree.map_structure_with_path(
             lambda path, Q: Q.save_weights(
                 os.path.join(
-                    checkpoint_dir, '-'.join(('Q', *[str(x) for x in path]))),
+                    checkpoint_dir, '-'.join(('forward_Q', *[str(x) for x in path]))),
                 save_format='tf'),
-            self.Qs)
+            self.forward_Qs)
+        tree.map_structure_with_path(
+            lambda path, Q: Q.save_weights(
+                os.path.join(
+                    checkpoint_dir, '-'.join(('perturbation_Q', *[str(x) for x in path]))),
+                save_format='tf'),
+            self.perturbation_Qs)
 
     def _restore_value_functions(self, checkpoint_dir):
         tree.map_structure_with_path(
             lambda path, Q: Q.load_weights(
                 os.path.join(
-                    checkpoint_dir, '-'.join(('Q', *[str(x) for x in path])))),
-            self.Qs)
+                    checkpoint_dir, '-'.join(('forward_Q', *[str(x) for x in path])))),
+            self.forward_Qs)
+        tree.map_structure_with_path(
+            lambda path, Q: Q.load_weights(
+                os.path.join(
+                    checkpoint_dir, '-'.join(('perturbation_Q', *[str(x) for x in path])))),
+            self.perturbation_Qs)
 
     def _save_policy(self, checkpoint_dir):
-        save_path = self._policy_save_path(checkpoint_dir)
-        self.policy.save(save_path)
+        save_path = self._policy_save_path(checkpoint_dir, prefix='forward_')
+        self.forward_policy.save(save_path)
+        save_path = self._policy_save_path(checkpoint_dir, prefix='perturbation_')
+        self.perturbation_policy.save(save_path)
 
     def _restore_policy(self, checkpoint_dir):
-        save_path = self._policy_save_path(checkpoint_dir)
-        status = self.policy.load_weights(save_path)
+        save_path = self._policy_save_path(checkpoint_dir, prefix='forward_')
+        status = self.forward_policy.load_weights(save_path)
+        status.assert_consumed().run_restore_ops()
+
+        save_path = self._policy_save_path(checkpoint_dir, prefix='perturbation_')
+        status = self.perturbation_policy.load_weights(save_path)
         status.assert_consumed().run_restore_ops()
 
     def _save_algorithm(self, checkpoint_dir):
@@ -251,9 +266,6 @@ class ExperimentRunner(tune.Trainable):
             tuple(self.Qs),
         )
 
-        # self.algorithm._alpha_optimizer.apply_gradients([(
-        #     tf.zeros_like(self.algorithm._alpha), self.algorithm._alpha
-        # )])
         self.algorithm._alpha_optimizer.apply_gradients([(
             tf.zeros_like(self.algorithm._log_alpha), self.algorithm._log_alpha
         )])
@@ -284,6 +296,9 @@ class ExperimentRunner(tune.Trainable):
         """Implements the checkpoint restore logic."""
         assert isinstance(checkpoint_dir, str), checkpoint_dir
         checkpoint_dir = checkpoint_dir.rstrip('/')
+
+        # TODO(externalhardrive): Fix checkpointing and restore
+        raise NotImplementedError("RESTORE IS NOT IMLEMENTED YET")
 
         self._build()
 

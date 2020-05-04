@@ -134,7 +134,7 @@ class R3L(RLAlgorithm):
         intrinsic_rewards = intrinsic_rewards / np.sqrt(self._rnd_running_var)
 
         # update the current policy we are using
-        if self._current_forward_policy: #something
+        if self._current_forward_policy:
             batch['rewards'] = self._extrinsic_scale * batch['rewards'] + self._intrinsic_scale * intrinsic_rewards
             sac_diagnostics = self._forward_sac._do_training(iteration, batch)
         else:
