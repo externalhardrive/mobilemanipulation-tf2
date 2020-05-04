@@ -8,5 +8,5 @@ softlearning run_example_local examples.development \
     --checkpoint-frequency 20 \
     --trial-cpus 6 \
     --trial-gpus 1 \
-    --run-eagerly True \
+    --run-eagerly False \
     --server-port 11112 \
