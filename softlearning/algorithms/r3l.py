@@ -68,8 +68,9 @@ class R3L(RLAlgorithm):
             learning_rate=self._policy_lr,
             name="rnd_predictor_optimizer")
 
-        self._rnd_running_mean = 0.0
-        self._rnd_running_variance = 1.0
+        self._rnd_running_mean = np.zeros((), np.float64)
+        self._rnd_running_var = np.ones((), np.float64)
+        self._rnd_running_count = 1e-4
 
         self._current_forward_policy = False
 
@@ -102,12 +103,35 @@ class R3L(RLAlgorithm):
 
         return predictor_losses
 
+    def _update_running_mean_and_var(self, batch_rewards):
+        """ Modified Welford's algorithm from the original RND paper
+            https://github.com/openai/random-network-distillation/blob/f75c0f1efa473d5109d487062fd8ed49ddce6634/mpi_util.py#L200-L214
+        """
+        batch_mean = np.mean(batch_rewards)
+        batch_var = np.var(batch_rewards)
+        batch_count = batch_rewards.shape[0]
+        
+        delta = batch_mean - self._rnd_running_mean
+        total_count = self._rnd_running_count + batch_count
+
+        new_mean = self._rnd_running_mean + delta * batch_count / total_count
+        m_a = self._rnd_running_var * self._rnd_running_count
+        m_b = batch_var * batch_count
+        m_2 = m_a + m_b + np.square(delta) * self._rnd_running_count * batch_count / total_count
+        new_var = m_2 / total_count
+
+        self._rnd_running_mean = new_mean
+        self._rnd_running_var = new_var
+        self._rnd_running_count = total_count
+
     def _do_training(self, iteration, batch):
         # update RND predictor loss
         predictor_losses = self._update_rnd_predictor(batch)
 
-        # compute intrinsic loss for this batch
-        intrinsic_rewards = ...
+        # compute intrinsic reward for this batch
+        intrinsic_rewards = predictor_losses.numpy()
+        self._update_running_mean_and_var(intrinsic_rewards)
+        intrinsic_rewards = intrinsic_rewards / np.sqrt(self._rnd_running_var)
 
         # update the current policy we are using
         if self._current_forward_policy: #something
@@ -119,7 +143,8 @@ class R3L(RLAlgorithm):
 
         diagnostics = OrderedDict({
             **sac_diagnostics,
-            'rnd_predictor_loss-mean': tf.reduce_mean(predictor_losses)
+            'rnd_predictor_loss-mean': tf.reduce_mean(predictor_losses),
+            'intrinsic_reward-mean': np.mean(intrinsic_rewards),
         })
 
         return diagnostics
