@@ -41,7 +41,7 @@ ALGORITHM_PARAMS_ADDITIONAL = {
             'tau': 5e-3,
             'target_entropy': 'auto',
 
-            'discount': 0.99,
+            'discount': 0.995,
             'reward_scale': 1.0,
         },
     },
@@ -74,7 +74,7 @@ ALGORITHM_PARAMS_ADDITIONAL = {
     'R3L': {
         'class_name': 'R3L',
         'config': {
-            'rnd_lr': 3e-4,
+            'rnd_lr': 1e-4,
             'intrinsic_scale': 1.0,
             'extrinsic_scale': 1.0,
         },
@@ -613,7 +613,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         'rnd_params': {
             'class_name': 'rnd_predictor_and_target',
             'config': {
-                'output_shape': (1,),
+                'output_shape': (16,),
                 'hidden_layer_sizes': (M, M),
                 'observation_keys': None,
                 'preprocessors': None,
@@ -716,13 +716,11 @@ def get_variant_spec_image(universe,
             )))
         )
         variant_spec['rnd_params']['config']['preprocessors'] = tune.sample_from(
-            lambda spec: (
-                deepcopy(
-                    spec.get('config', spec)
-                    ['policy_params']
-                    ['config']
-                    ['preprocessors']),
-                None,  # Action preprocessor is None
+            lambda spec: deepcopy(
+                spec.get('config', spec)
+                ['policy_params']
+                ['config']
+                ['preprocessors']
             ))
 
     return variant_spec

@@ -65,24 +65,26 @@ class R3L(RLAlgorithm):
         self._save_full_state = save_full_state
 
         self._rnd_predictor_optimizer = tf.optimizers.Adam(
-            learning_rate=self._policy_lr,
+            learning_rate=self._rnd_lr,
             name="rnd_predictor_optimizer")
 
         self._rnd_running_mean = np.zeros((), np.float64)
         self._rnd_running_var = np.ones((), np.float64)
         self._rnd_running_count = 1e-4
 
+        # start with perturbation policy because the start of first epoch will switch policy
         self._current_forward_policy = False
+        self._policy = self._perturbation_sac._policy
 
     def _epoch_before_hook(self):
         super()._epoch_before_hook()
 
         # switch between forward and perturbation policy
         if self._current_forward_policy:
-            self.sampler.switch_policy(self._perturbation_sac.policy)
+            self.sampler.switch_policy(self._perturbation_sac._policy)
             self._current_forward_policy = False 
         else:
-            self.sampler.switch_policy(self._forward_sac.policy)
+            self.sampler.switch_policy(self._forward_sac._policy)
             self._current_forward_policy = True 
 
     @tf.function(experimental_relax_shapes=True)
@@ -129,7 +131,7 @@ class R3L(RLAlgorithm):
         predictor_losses = self._update_rnd_predictor(batch)
 
         # compute intrinsic reward for this batch
-        intrinsic_rewards = predictor_losses.numpy()
+        intrinsic_rewards = predictor_losses.numpy().reshape(-1, 1)
         self._update_running_mean_and_var(intrinsic_rewards)
         intrinsic_rewards = intrinsic_rewards / np.sqrt(self._rnd_running_var)
 
@@ -162,6 +164,7 @@ class R3L(RLAlgorithm):
         diagnostics = OrderedDict((
             ('forward_sac', self._forward_sac.get_diagnostics(iteration, batch, training_paths, evaluation_paths)),
             ('perturbation_sac', self._perturbation_sac.get_diagnostics(iteration, batch, training_paths, evaluation_paths)),
+            ('current_policy', 'forward' if self._current_forward_policy else 'perturbation'),
         ))
 
         if self._plotter:

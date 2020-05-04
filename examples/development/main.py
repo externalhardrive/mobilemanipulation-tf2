@@ -95,7 +95,7 @@ class ExperimentRunner(tune.Trainable):
             'pool': self.replay_pool,
             'sampler': self.sampler
         })
-        self.forward_sac = algorithms.get(variant['sac_params'])
+        self.forward_sac = algorithms.get(variant['forward_sac_params'])
 
         variant['perturbation_sac_params']['config'].update({
             'training_environment': self.training_environment,
@@ -105,7 +105,7 @@ class ExperimentRunner(tune.Trainable):
             'pool': self.replay_pool,
             'sampler': self.sampler
         })
-        self.perturbation_sac = algorithms
+        self.perturbation_sac = algorithms.get(variant['perturbation_sac_params'])
 
         # initialize the rnd networks
         variant['rnd_params']['config'].update({
