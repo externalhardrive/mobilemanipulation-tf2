@@ -71,6 +71,12 @@ ALGORITHM_PARAMS_ADDITIONAL = {
             )),
         },
     },
+    'R3L': {
+        'class_name': 'R3L',
+        'config': {
+            'rnd_lr': 3e-4,
+        },
+    }
 }
 
 
@@ -547,6 +553,16 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         ALGORITHM_PARAMS_ADDITIONAL.get(algorithm, {}),
         get_algorithm_params(universe, domain, task),
     )
+    forward_sac_params = deep_update(
+        ALGORITHM_PARAMS_BASE,
+        ALGORITHM_PARAMS_ADDITIONAL.get('SAC', {}),
+        get_algorithm_params(universe, domain, task),
+    )
+    perturbation_sac_params = deep_update(
+        ALGORITHM_PARAMS_BASE,
+        ALGORITHM_PARAMS_ADDITIONAL.get('SAC', {}),
+        get_algorithm_params(universe, domain, task),
+    )
     variant_spec = {
         'git_sha': get_git_rev(__file__),
 
@@ -592,6 +608,17 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
                 'preprocessors': None,
             },
         },
+        'rnd_params': {
+            'class_name': 'rnd_predictor_and_target',
+            'config': {
+                'output_shape': (1,),
+                'hidden_layer_sizes': (M, M),
+                'observation_keys': None,
+                'preprocessors': None,
+            },
+        },
+        'forward_sac_params': forward_sac_params,
+        'perturbation_sac_params': perturbation_sac_params,
         'algorithm_params': algorithm_params,
         'replay_pool_params': {
             'class_name': 'SimpleReplayPool',
@@ -600,7 +627,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
             },
         },
         'sampler_params': {
-            'class_name': 'SimpleSampler',
+            'class_name': 'MultiSampler',
             'config': {
                 'max_path_length': get_max_path_length(universe, domain, task),
             }
@@ -669,6 +696,24 @@ def get_variant_spec_image(universe,
             )))
         )
         variant_spec['Q_params']['config']['preprocessors'] = tune.sample_from(
+            lambda spec: (
+                deepcopy(
+                    spec.get('config', spec)
+                    ['policy_params']
+                    ['config']
+                    ['preprocessors']),
+                None,  # Action preprocessor is None
+            ))
+
+        variant_spec['rnd_params']['config']['hidden_layer_sizes'] = (
+            tune.sample_from(lambda spec: (deepcopy(
+                spec.get('config', spec)
+                ['policy_params']
+                ['config']
+                ['hidden_layer_sizes']
+            )))
+        )
+        variant_spec['rnd_params']['config']['preprocessors'] = tune.sample_from(
             lambda spec: (
                 deepcopy(
                     spec.get('config', spec)

@@ -16,6 +16,7 @@ from softlearning import policies
 from softlearning import value_functions
 from softlearning import replay_pools
 from softlearning import samplers
+from softlearning import rnd
 
 from softlearning.utils.misc import set_seed
 from softlearning.utils.tensorflow import set_gpu_memory_growth
@@ -43,49 +44,85 @@ class ExperimentRunner(tune.Trainable):
 
     def _build(self):
         variant = copy.deepcopy(self._variant)
+
+        # get the environments
         environment_params = variant['environment_params']
-        training_environment = self.training_environment = (
-            get_environment_from_params(environment_params['training']))
-        evaluation_environment = self.evaluation_environment = (
+        self.training_environment = get_environment_from_params(environment_params['training'])
+        self.evaluation_environment = (
             get_environment_from_params(environment_params['evaluation'])
             if 'evaluation' in environment_params
-            else training_environment)
+            else self.training_environment)
 
+        # replay pool is shared
+        variant['replay_pool_params']['config'].update({
+            'environment': self.training_environment,
+        })
+        self.replay_pool = replay_pools.get(variant['replay_pool_params'])
+
+        # initialize the forward and perturbation Q functions
         variant['Q_params']['config'].update({
             'input_shapes': (
-                training_environment.observation_shape,
-                training_environment.action_shape),
+                self.training_environment.observation_shape,
+                self.training_environment.action_shape),
         })
-        Qs = self.Qs = value_functions.get(variant['Q_params'])
+        self.forward_Qs = value_functions.get(variant['Q_params'])
+        self.perturbation_Qs = value_functions.get(variant['Q_params'])
 
+        # initialize the forward and perturbation policies
         variant['policy_params']['config'].update({
-            'action_range': (training_environment.action_space.low,
-                             training_environment.action_space.high),
-            'input_shapes': training_environment.observation_shape,
-            'output_shape': training_environment.action_shape,
+            'action_range': (self.training_environment.action_space.low,
+                            self.training_environment.action_space.high),
+            'input_shapes': self.training_environment.observation_shape,
+            'output_shape': self.training_environment.action_shape,
         })
-        policy = self.policy = policies.get(variant['policy_params'])
+        self.forward_policy = policies.get(variant['policy_params'])
+        self.perturbation_policy = policies.get(variant['policy_params'])
 
-        variant['replay_pool_params']['config'].update({
-            'environment': training_environment,
-        })
-        replay_pool = self.replay_pool = replay_pools.get(
-            variant['replay_pool_params'])
-
+        # initialize the multi-sampler with the forward policy first
         variant['sampler_params']['config'].update({
-            'environment': training_environment,
-            'policy': policy,
-            'pool': replay_pool,
+            'environment': self.training_environment,
+            'policy': self.forward_policy,
+            'pool': self.replay_pool
         })
-        sampler = self.sampler = samplers.get(variant['sampler_params'])
+        self.sampler = samplers.get(variant['sampler_params'])
 
+        # initialize both sac algorithms
+        variant['forward_sac_params']['config'].update({
+            'training_environment': self.training_environment,
+            'evaluation_environment': self.evaluation_environment,
+            'policy': self.forward_policy,
+            'Qs': self.forward_Qs,
+            'pool': self.replay_pool,
+            'sampler': self.sampler
+        })
+        self.forward_sac = algorithms.get(variant['sac_params'])
+
+        variant['perturbation_sac_params']['config'].update({
+            'training_environment': self.training_environment,
+            'evaluation_environment': self.evaluation_environment,
+            'policy': self.perturbation_policy,
+            'Qs': self.perturbation_Qs,
+            'pool': self.replay_pool,
+            'sampler': self.sampler
+        })
+        self.perturbation_sac = algorithms
+
+        # initialize the rnd networks
+        variant['rnd_params']['config'].update({
+            'input_shapes': self.training_environment.observation_shape,
+        })
+        self.rnd_predictor, self.rnd_target = rnd.get(variant['rnd_params'])
+
+        # initialize the main R3L algorithm
         variant['algorithm_params']['config'].update({
-            'training_environment': training_environment,
-            'evaluation_environment': evaluation_environment,
-            'policy': policy,
-            'Qs': Qs,
-            'pool': replay_pool,
-            'sampler': sampler
+            'training_environment': self.training_environment,
+            'evaluation_environment': self.evaluation_environment,
+            'pool': self.replay_pool,
+            'sampler': self.sampler,
+            'forward_sac': self.forward_sac,
+            'perturbation_sac': self.perturbation_sac,
+            'rnd_predictor': self.rnd_predictor,
+            'rnd_target': self.rnd_target,
         })
         self.algorithm = algorithms.get(variant['algorithm_params'])
 
@@ -101,6 +138,8 @@ class ExperimentRunner(tune.Trainable):
         diagnostics = next(self.train_generator)
 
         return diagnostics
+
+    # TODO(externalhardrive): Fix serialization and checkpointing
 
     @staticmethod
     def _pickle_path(checkpoint_dir):
