@@ -146,6 +146,7 @@ class R3L(RLAlgorithm):
         diagnostics = OrderedDict({
             **sac_diagnostics,
             'rnd_predictor_loss-mean': tf.reduce_mean(predictor_losses),
+            'rnd_running_var': self._rnd_running_var,
             'intrinsic_reward-mean': np.mean(intrinsic_rewards),
         })
 

@@ -74,8 +74,8 @@ ALGORITHM_PARAMS_ADDITIONAL = {
     'R3L': {
         'class_name': 'R3L',
         'config': {
-            'rnd_lr': 1e-4,
-            'intrinsic_scale': 1.0,
+            'rnd_lr': 4e-5,
+            'intrinsic_scale': 4.0,
             'extrinsic_scale': 1.0,
         },
     }
@@ -613,7 +613,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         'rnd_params': {
             'class_name': 'rnd_predictor_and_target',
             'config': {
-                'output_shape': (16,),
+                'output_shape': (32,),
                 'hidden_layer_sizes': (M, M),
                 'observation_keys': None,
                 'preprocessors': None,
