@@ -1,5 +1,5 @@
 #!/bin/bash
-softlearning run_example_local examples.development \
+softlearning run_example_local examples.r3l \
     --algorithm R3L \
     --universe gym \
     --domain Locobot \
