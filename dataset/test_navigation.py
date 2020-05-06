@@ -35,7 +35,7 @@ def main(args):
         no_spawn_radius=0.8,
     )
     inner_env = ImageLocobotNavigationEnv(
-            renders=True, grayscale=False, step_duration=1/60,
+            renders=False, grayscale=False, step_duration=1/60,
             room_name=room_name,
             room_params=room_params,
             image_size=100,
@@ -59,7 +59,47 @@ def main(args):
         reset_free=False,
     )
 
+    inner_env2 = ImageLocobotNavigationEnv(
+            renders=False, grayscale=False, step_duration=1/60,
+            room_name=room_name,
+            room_params=room_params,
+            image_size=100,
+        )
+    env2 = GymAdapter(None, None,
+        env=inner_env2,
+        pixel_wrapper_kwargs={
+            'pixels_only': True,
+        },
+        reset_free=False,
+    )
+
     obs = env.reset()
+    obs2 = env2.reset()
+
+    print(env.interface.robot)
+    print(env2.interface.robot)
+
+    p1 = env.interface.p
+    p2 = env2.interface.p
+
+    a1 = p1.loadURDF("plane.urdf", basePosition=[0, 0, 100])
+    a2 = p2.loadURDF("plane.urdf", basePosition=[0, 0, 100])
+    print(a1, a2)
+    print(p1.getBasePositionAndOrientation(a1))
+    print(p2.getBasePositionAndOrientation(a2))
+
+    p1.resetBasePositionAndOrientation(a1, [0, 0, 200], [1, 0, 0, 0])
+    print(p1.getBasePositionAndOrientation(a1))
+    print(p2.getBasePositionAndOrientation(a2))
+
+    
+    b1 = p1.loadURDF("plane.urdf", basePosition=[0, 0, 200])
+    print(b1)
+    print(p1.getBasePositionAndOrientation(b1))
+    print(p2.getBasePositionAndOrientation(b1))
+
+
+
 
     # inner_env.interface.set_wheels_velocity(20, 20)
     # for _ in range(1000):
@@ -85,6 +125,7 @@ def main(args):
                 break
             if cmd == "r":
                 obs = env.reset()
+                obs2 = env2.reset()
                 i = 0
                 continue
             else:
