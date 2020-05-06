@@ -64,6 +64,13 @@ class GymAdapter(SoftlearningEnv):
         assert not args, (
             "Gym environments don't support args. Use kwargs instead.")
 
+        print("GymAdapter params:", dict(
+            domain=domain, task=task, args=args,
+            env=env, normalize=normalize, observation_keys=observation_keys, goal_keys=goal_keys,
+            unwrap_time_limit=unwrap_time_limit, pixel_wrapper_kwargs=pixel_wrapper_kwargs, reset_free=reset_free,
+            kwargs=kwargs)
+        )
+
         self.normalize = normalize
         self.unwrap_time_limit = unwrap_time_limit
         self.reset_free = reset_free

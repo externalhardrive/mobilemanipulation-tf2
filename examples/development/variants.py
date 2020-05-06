@@ -560,7 +560,7 @@ def get_environment_params(universe, domain, task):
     return environment_params
 
 def get_evaluation_environment_params(universe, domain, task):
-    environment_params = get_environment_params(universe, domain, task)
+    environment_params = deepcopy(get_environment_params(universe, domain, task))
     extra_params = (
         EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK
         .get(universe, {}).get(domain, {}).get(task, {}))
