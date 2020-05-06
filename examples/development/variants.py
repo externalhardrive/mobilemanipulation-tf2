@@ -41,7 +41,7 @@ ALGORITHM_PARAMS_ADDITIONAL = {
             'tau': 5e-3,
             'target_entropy': 'auto',
 
-            'discount': 0.995,
+            'discount': 0.99,
             'reward_scale': 1.0,
         },
     },
@@ -621,7 +621,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
             },
         },
         'sampler_params': {
-            'class_name': 'MultiSampler',
+            'class_name': 'SimpleSampler',
             'config': {
                 'max_path_length': get_max_path_length(universe, domain, task),
             }
