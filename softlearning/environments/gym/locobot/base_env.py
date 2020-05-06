@@ -4,6 +4,8 @@ from gym import spaces
 
 from . import locobot_interface
 
+import pprint
+
 class LocobotBaseEnv(gym.Env):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
@@ -13,6 +15,14 @@ class LocobotBaseEnv(gym.Env):
     def __init__(self, **params):
         self.interface = locobot_interface.PybulletInterface(**params)
         self.params = self.interface.params
+
+        print()
+        print("LocobotBaseEnv params:")
+        pprint.pprint(dict(
+            self=self,
+            **self.params
+        ))
+        print()
 
         if "observation_space" in params:
             self.observation_space = params["observation_space"]

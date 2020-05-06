@@ -16,6 +16,7 @@ from softlearning import policies
 from softlearning import value_functions
 from softlearning import replay_pools
 from softlearning import samplers
+from softlearning import rnd
 
 from softlearning.utils.misc import set_seed
 from softlearning.utils.tensorflow import set_gpu_memory_growth
@@ -43,49 +44,85 @@ class ExperimentRunner(tune.Trainable):
 
     def _build(self):
         variant = copy.deepcopy(self._variant)
+
+        # get the environments
         environment_params = variant['environment_params']
-        training_environment = self.training_environment = (
-            get_environment_from_params(environment_params['training']))
-        evaluation_environment = self.evaluation_environment = (
+        self.training_environment = get_environment_from_params(environment_params['training'])
+        self.evaluation_environment = (
             get_environment_from_params(environment_params['evaluation'])
             if 'evaluation' in environment_params
-            else training_environment)
+            else self.training_environment)
 
+        # replay pool is shared
+        variant['replay_pool_params']['config'].update({
+            'environment': self.training_environment,
+        })
+        self.replay_pool = replay_pools.get(variant['replay_pool_params'])
+
+        # initialize the forward and perturbation Q functions
         variant['Q_params']['config'].update({
             'input_shapes': (
-                training_environment.observation_shape,
-                training_environment.action_shape),
+                self.training_environment.observation_shape,
+                self.training_environment.action_shape),
         })
-        Qs = self.Qs = value_functions.get(variant['Q_params'])
+        self.forward_Qs = value_functions.get(variant['Q_params'])
+        self.perturbation_Qs = value_functions.get(variant['Q_params'])
 
+        # initialize the forward and perturbation policies
         variant['policy_params']['config'].update({
-            'action_range': (training_environment.action_space.low,
-                             training_environment.action_space.high),
-            'input_shapes': training_environment.observation_shape,
-            'output_shape': training_environment.action_shape,
+            'action_range': (self.training_environment.action_space.low,
+                            self.training_environment.action_space.high),
+            'input_shapes': self.training_environment.observation_shape,
+            'output_shape': self.training_environment.action_shape,
         })
-        policy = self.policy = policies.get(variant['policy_params'])
+        self.forward_policy = policies.get(variant['policy_params'])
+        self.perturbation_policy = policies.get(variant['policy_params'])
 
-        variant['replay_pool_params']['config'].update({
-            'environment': training_environment,
-        })
-        replay_pool = self.replay_pool = replay_pools.get(
-            variant['replay_pool_params'])
-
+        # initialize the multi-sampler with the forward policy first
         variant['sampler_params']['config'].update({
-            'environment': training_environment,
-            'policy': policy,
-            'pool': replay_pool,
+            'environment': self.training_environment,
+            'policy': self.forward_policy,
+            'pool': self.replay_pool
         })
-        sampler = self.sampler = samplers.get(variant['sampler_params'])
+        self.sampler = samplers.get(variant['sampler_params'])
 
+        # initialize both sac algorithms
+        variant['forward_sac_params']['config'].update({
+            'training_environment': self.training_environment,
+            'evaluation_environment': self.evaluation_environment,
+            'policy': self.forward_policy,
+            'Qs': self.forward_Qs,
+            'pool': self.replay_pool,
+            'sampler': self.sampler
+        })
+        self.forward_sac = algorithms.get(variant['forward_sac_params'])
+
+        variant['perturbation_sac_params']['config'].update({
+            'training_environment': self.training_environment,
+            'evaluation_environment': self.evaluation_environment,
+            'policy': self.perturbation_policy,
+            'Qs': self.perturbation_Qs,
+            'pool': self.replay_pool,
+            'sampler': self.sampler
+        })
+        self.perturbation_sac = algorithms.get(variant['perturbation_sac_params'])
+
+        # initialize the rnd networks
+        variant['rnd_params']['config'].update({
+            'input_shapes': self.training_environment.observation_shape,
+        })
+        self.rnd_predictor, self.rnd_target = rnd.get(variant['rnd_params'])
+
+        # initialize the main R3L algorithm
         variant['algorithm_params']['config'].update({
-            'training_environment': training_environment,
-            'evaluation_environment': evaluation_environment,
-            'policy': policy,
-            'Qs': Qs,
-            'pool': replay_pool,
-            'sampler': sampler
+            'training_environment': self.training_environment,
+            'evaluation_environment': self.evaluation_environment,
+            'pool': self.replay_pool,
+            'sampler': self.sampler,
+            'forward_sac': self.forward_sac,
+            'perturbation_sac': self.perturbation_sac,
+            'rnd_predictor': self.rnd_predictor,
+            'rnd_target': self.rnd_target,
         })
         self.algorithm = algorithms.get(variant['algorithm_params'])
 
@@ -119,8 +156,8 @@ class ExperimentRunner(tune.Trainable):
         return os.path.join(checkpoint_dir, 'sampler.pkl')
 
     @staticmethod
-    def _policy_save_path(checkpoint_dir):
-        return os.path.join(checkpoint_dir, 'policy')
+    def _policy_save_path(checkpoint_dir, prefix=''):
+        return os.path.join(checkpoint_dir, prefix + 'policy')
 
     def _save_replay_pool(self, checkpoint_dir):
         if not self._variant['run_params'].get(
@@ -156,30 +193,47 @@ class ExperimentRunner(tune.Trainable):
 
         self.sampler.__setstate__(sampler.__getstate__())
         self.sampler.initialize(
-            self.training_environment, self.policy, self.replay_pool)
+            self.training_environment, self.forward_policy, self.replay_pool)
 
     def _save_value_functions(self, checkpoint_dir):
         tree.map_structure_with_path(
             lambda path, Q: Q.save_weights(
                 os.path.join(
-                    checkpoint_dir, '-'.join(('Q', *[str(x) for x in path]))),
+                    checkpoint_dir, '-'.join(('forward_Q', *[str(x) for x in path]))),
                 save_format='tf'),
-            self.Qs)
+            self.forward_Qs)
+        tree.map_structure_with_path(
+            lambda path, Q: Q.save_weights(
+                os.path.join(
+                    checkpoint_dir, '-'.join(('perturbation_Q', *[str(x) for x in path]))),
+                save_format='tf'),
+            self.perturbation_Qs)
 
     def _restore_value_functions(self, checkpoint_dir):
         tree.map_structure_with_path(
             lambda path, Q: Q.load_weights(
                 os.path.join(
-                    checkpoint_dir, '-'.join(('Q', *[str(x) for x in path])))),
-            self.Qs)
+                    checkpoint_dir, '-'.join(('forward_Q', *[str(x) for x in path])))),
+            self.forward_Qs)
+        tree.map_structure_with_path(
+            lambda path, Q: Q.load_weights(
+                os.path.join(
+                    checkpoint_dir, '-'.join(('perturbation_Q', *[str(x) for x in path])))),
+            self.perturbation_Qs)
 
     def _save_policy(self, checkpoint_dir):
-        save_path = self._policy_save_path(checkpoint_dir)
-        self.policy.save(save_path)
+        save_path = self._policy_save_path(checkpoint_dir, prefix='forward_')
+        self.forward_policy.save(save_path)
+        save_path = self._policy_save_path(checkpoint_dir, prefix='perturbation_')
+        self.perturbation_policy.save(save_path)
 
     def _restore_policy(self, checkpoint_dir):
-        save_path = self._policy_save_path(checkpoint_dir)
-        status = self.policy.load_weights(save_path)
+        save_path = self._policy_save_path(checkpoint_dir, prefix='forward_')
+        status = self.forward_policy.load_weights(save_path)
+        status.assert_consumed().run_restore_ops()
+
+        save_path = self._policy_save_path(checkpoint_dir, prefix='perturbation_')
+        status = self.perturbation_policy.load_weights(save_path)
         status.assert_consumed().run_restore_ops()
 
     def _save_algorithm(self, checkpoint_dir):
@@ -243,6 +297,9 @@ class ExperimentRunner(tune.Trainable):
         assert isinstance(checkpoint_dir, str), checkpoint_dir
         checkpoint_dir = checkpoint_dir.rstrip('/')
 
+        # TODO(externalhardrive): Fix checkpointing and restore
+        raise NotImplementedError("RESTORE IS NOT IMLEMENTED YET")
+
         self._build()
 
         self._restore_replay_pool(checkpoint_dir)
@@ -266,7 +323,7 @@ def main(argv=None):
     Run 'softlearning launch_example_{gce,ec2} --help' for further
     instructions.
     """
-    run_example_local('examples.development', argv)
+    run_example_local('examples.r3l', argv)
 
 
 if __name__ == '__main__':

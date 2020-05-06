@@ -41,36 +41,18 @@ ALGORITHM_PARAMS_ADDITIONAL = {
             'tau': 5e-3,
             'target_entropy': 'auto',
 
-            'discount': 0.99,
+            'discount': 0.995,
             'reward_scale': 1.0,
         },
     },
-    'SQL': {
-        'class_name': 'SQL',
+    'R3L': {
+        'class_name': 'R3L',
         'config': {
-            'policy_lr': 3e-4,
-            'target_update_interval': 1,
-            'discount': 0.99,
-            'tau': 5e-3,
-            'reward_scale': tune.sample_from(lambda spec: (
-                {
-                    'Swimmer': 30,
-                    'Hopper': 30,
-                    'HalfCheetah': 30,
-                    'Walker2d': 10,
-                    'Ant': 300,
-                    'Humanoid': 100,
-                    'Pendulum': 1,
-                }.get(
-                    spec.get('config', spec)
-                    ['environment_params']
-                    ['training']
-                    ['domain'],
-                    1.0
-                ),
-            )),
+            'rnd_lr': 4e-5,
+            'intrinsic_scale': 4.0,
+            'extrinsic_scale': 1.0,
         },
-    },
+    }
 }
 
 
@@ -88,136 +70,11 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
     DEFAULT_KEY: int(1e4),
     'gym': {
         DEFAULT_KEY: int(1e4),
-        'Swimmer': {
-            DEFAULT_KEY: int(1e5),
-            'v3': int(5e5),
-        },
-        'Hopper': {
-            DEFAULT_KEY: int(5e6),
-            'v3': int(5e6),
-        },
-        'HalfCheetah': {
-            DEFAULT_KEY: int(3e6),
-            'v3': int(3e6),
-        },
-        'Walker2d': {
-            DEFAULT_KEY: int(5e6),
-            'v3': int(5e6),
-        },
-        'Ant': {
-            DEFAULT_KEY: int(3e6),
-            'v3': int(3e6),
-        },
-        'Humanoid': {
-            DEFAULT_KEY: int(3e6),
-            'Stand-v3': int(1e8),
-            'SimpleStand-v3': int(1e8),
-            'v3': int(1e8),
-        },
-        'Pendulum': {
-            DEFAULT_KEY: int(1e4),
-            'v3': int(1e4),
-        },
-        'Point2DEnv': {
-            DEFAULT_KEY: int(5e4),
-        },
         'Locobot': {
             DEFAULT_KEY: int(2e5),
             'ImageNavigation-v0': int(1e6),
             'MixedNavigation-v0': int(1e6),
             'ImageNavigationResetFree-v0': int(1e6),
-        },
-    },
-    'dm_control': {
-        # BENCHMARKING
-        DEFAULT_KEY: int(3e6),
-        'acrobot': {
-            DEFAULT_KEY: int(3e6),
-            # 'swingup': int(None),
-            # 'swingup_sparse': int(None),
-        },
-        'ball_in_cup': {
-            DEFAULT_KEY: int(3e6),
-            # 'catch': int(None),
-        },
-        'cartpole': {
-            DEFAULT_KEY: int(3e6),
-            # 'balance': int(None),
-            # 'balance_sparse': int(None),
-            # 'swingup': int(None),
-            # 'swingup_sparse': int(None),
-            # 'three_poles': int(None),
-            # 'two_poles': int(None),
-        },
-        'cheetah': {
-            DEFAULT_KEY: int(3e6),
-            'run': int(1e7),
-        },
-        'finger': {
-            DEFAULT_KEY: int(3e6),
-            # 'spin': int(None),
-            # 'turn_easy': int(None),
-            # 'turn_hard': int(None),
-        },
-        'fish': {
-            DEFAULT_KEY: int(3e6),
-            # 'upright': int(None),
-            # 'swim': int(None),
-        },
-        'hopper': {
-            DEFAULT_KEY: int(3e6),
-            # 'stand': int(None),
-            'hop': int(1e7),
-        },
-        'humanoid': {
-            DEFAULT_KEY: int(1e7),
-            'stand': int(1e7),
-            'walk': int(1e7),
-            'run': int(1e7),
-            # 'run_pure_state': int(1e7),
-        },
-        'manipulator': {
-            DEFAULT_KEY: int(3e6),
-            'bring_ball': int(1e7),
-            # 'bring_peg': int(None),
-            # 'insert_ball': int(None),
-            # 'insert_peg': int(None),
-        },
-        'pendulum': {
-            DEFAULT_KEY: int(3e6),
-            # 'swingup': int(None),
-        },
-        'point_mass': {
-            DEFAULT_KEY: int(3e6),
-            # 'easy': int(None),
-            # 'hard': int(None),
-        },
-        'reacher': {
-            DEFAULT_KEY: int(3e6),
-            # 'easy': int(None),
-            # 'hard': int(None),
-        },
-        'swimmer': {
-            DEFAULT_KEY: int(3e6),
-            # 'swimmer6': int(None),
-            # 'swimmer15': int(None),
-        },
-        'walker': {
-            DEFAULT_KEY: int(3e6),
-            # 'stand': int(None),
-            'walk': int(1e7),
-            'run': int(1e7),
-        },
-        # EXTRA
-        'humanoid_CMU': {
-            DEFAULT_KEY: int(3e6),
-            'run': int(1e7),
-            # 'stand': int(None),
-        },
-        'quadruped': {
-            DEFAULT_KEY: int(3e6),
-            'run': int(1e7),
-            'walk': int(1e7),
         },
     },
 }
@@ -227,12 +84,6 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
     DEFAULT_KEY: 1000,
     'gym': {
         DEFAULT_KEY: 1000,
-        'Point2DEnv': {
-            DEFAULT_KEY: 50,
-        },
-        'Pendulum': {
-            DEFAULT_KEY: 200,
-        },
         'Locobot': {
             DEFAULT_KEY: 200,
             'ImageMultiGrasping-v0': 1,
@@ -259,84 +110,6 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
 
 ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
     'gym': {
-        'Swimmer': {  # 2 DoF
-        },
-        'Hopper': {  # 3 DoF
-        },
-        'HalfCheetah': {  # 6 DoF
-        },
-        'Walker2d': {  # 6 DoF
-        },
-        'Ant': {  # 8 DoF
-            'Parameterizable-v3': {
-                'healthy_reward': 0.0,
-                'healthy_z_range': (-np.inf, np.inf),
-                'exclude_current_positions_from_observation': False,
-            }
-        },
-        'Humanoid': {  # 17 DoF
-            'Parameterizable-v3': {
-                'healthy_reward': 0.0,
-                'healthy_z_range': (-np.inf, np.inf),
-                'exclude_current_positions_from_observation': False,
-            }
-        },
-        'Pusher2d': {  # 3 DoF
-            'Default-v3': {
-                'arm_object_distance_cost_coeff': 0.0,
-                'goal_object_distance_cost_coeff': 1.0,
-                'goal': (0, -1),
-            },
-            'DefaultReach-v0': {
-                'arm_goal_distance_cost_coeff': 1.0,
-                'arm_object_distance_cost_coeff': 0.0,
-            },
-            'ImageDefault-v0': {
-                'image_shape': (32, 32, 3),
-                'arm_object_distance_cost_coeff': 0.0,
-                'goal_object_distance_cost_coeff': 3.0,
-            },
-            'ImageReach-v0': {
-                'image_shape': (32, 32, 3),
-                'arm_goal_distance_cost_coeff': 1.0,
-                'arm_object_distance_cost_coeff': 0.0,
-            },
-            'BlindReach-v0': {
-                'image_shape': (32, 32, 3),
-                'arm_goal_distance_cost_coeff': 1.0,
-                'arm_object_distance_cost_coeff': 0.0,
-            }
-        },
-        'Point2DEnv': {
-            'Default-v0': {
-                'observation_keys': ('observation', 'desired_goal'),
-            },
-            'Wall-v0': {
-                'observation_keys': ('observation', 'desired_goal'),
-            },
-        },
-        'Sawyer': {
-            task_name: {
-                'has_renderer': False,
-                'has_offscreen_renderer': False,
-                'use_camera_obs': False,
-                'reward_shaping': tune.grid_search([True, False]),
-            }
-            for task_name in (
-                    'Lift',
-                    'NutAssembly',
-                    'NutAssemblyRound',
-                    'NutAssemblySingle',
-                    'NutAssemblySquare',
-                    'PickPlace',
-                    'PickPlaceBread',
-                    'PickPlaceCan',
-                    'PickPlaceCereal',
-                    'PickPlaceMilk',
-                    'PickPlaceSingle',
-                    'Stack',
-            )
-        },
         'Locobot': {
             'ImageGrasping-v0': {
                 'pixel_wrapper_kwargs': {
@@ -419,44 +192,6 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'max_ep_len': float('inf'),
                 'image_size': 100,
             }
-        },
-    },
-    'dm_control': {
-        'ball_in_cup': {
-            'catch': {
-                'pixel_wrapper_kwargs': {
-                    'pixels_only': True,
-                    'render_kwargs': {
-                        'width': 84,
-                        'height': 84,
-                        'camera_id': 0,
-                    },
-                },
-            },
-        },
-        'cheetah': {
-            'run': {
-                'pixel_wrapper_kwargs': {
-                    'pixels_only': True,
-                    'render_kwargs': {
-                        'width': 84,
-                        'height': 84,
-                        'camera_id': 0,
-                    },
-                },
-            },
-        },
-        'finger': {
-            'spin': {
-                'pixel_wrapper_kwargs': {
-                    'pixels_only': True,
-                    'render_kwargs': {
-                        'width': 84,
-                        'height': 84,
-                        'camera_id': 0,
-                    },
-                },
-            },
         },
     },
 }
@@ -567,6 +302,16 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         deepcopy(ALGORITHM_PARAMS_ADDITIONAL.get(algorithm, {})),
         deepcopy(get_algorithm_params(universe, domain, task)),
     )
+    forward_sac_params = deep_update(
+        deepcopy(ALGORITHM_PARAMS_BASE),
+        deepcopy(ALGORITHM_PARAMS_ADDITIONAL.get('SAC', {})),
+        deepcopy(get_algorithm_params(universe, domain, task)),
+    )
+    perturbation_sac_params = deep_update(
+        deepcopy(ALGORITHM_PARAMS_BASE),
+        deepcopy(ALGORITHM_PARAMS_ADDITIONAL.get('SAC', {})),
+        deepcopy(get_algorithm_params(universe, domain, task)),
+    )
     variant_spec = {
         'git_sha': get_git_rev(__file__),
 
@@ -613,6 +358,17 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
                 'preprocessors': None,
             },
         },
+        'rnd_params': {
+            'class_name': 'rnd_predictor_and_target',
+            'config': {
+                'output_shape': (32,),
+                'hidden_layer_sizes': (M, M),
+                'observation_keys': None,
+                'preprocessors': None,
+            },
+        },
+        'forward_sac_params': forward_sac_params,
+        'perturbation_sac_params': perturbation_sac_params,
         'algorithm_params': algorithm_params,
         'replay_pool_params': {
             'class_name': 'SimpleReplayPool',
@@ -621,7 +377,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
             },
         },
         'sampler_params': {
-            'class_name': 'SimpleSampler',
+            'class_name': 'MultiSampler',
             'config': {
                 'max_path_length': get_max_path_length(universe, domain, task),
             }
@@ -697,6 +453,22 @@ def get_variant_spec_image(universe,
                     ['config']
                     ['preprocessors']),
                 None,  # Action preprocessor is None
+            ))
+
+        variant_spec['rnd_params']['config']['hidden_layer_sizes'] = (
+            tune.sample_from(lambda spec: (deepcopy(
+                spec.get('config', spec)
+                ['policy_params']
+                ['config']
+                ['hidden_layer_sizes']
+            )))
+        )
+        variant_spec['rnd_params']['config']['preprocessors'] = tune.sample_from(
+            lambda spec: deepcopy(
+                spec.get('config', spec)
+                ['policy_params']
+                ['config']
+                ['preprocessors']
             ))
 
     return variant_spec

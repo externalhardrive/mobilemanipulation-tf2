@@ -3,6 +3,7 @@ from softlearning.utils.serialization import (
 
 from .sql import SQL  # noqa: unused-import
 from .sac import SAC  # noqa: unused-import
+from .r3l import R3L  # noqa: unused-import
 
 
 def serialize(algorithm):

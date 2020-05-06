@@ -55,48 +55,6 @@ class SimpleSampler(BaseSampler):
             self.reset()
 
         action = self.policy.action(self._policy_input).numpy()
-        
-        if np.any(np.abs(action) >= 1.0):
-            print("WARNING:")
-            print("ACTION:", action)
-            sys.stdout.flush()
-
-        if np.any(np.isnan(action)):
-            print("WARNING:")
-            print("observation:", self._policy_input)
-            print("action:", action)
-            save_path = f"/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/error/error_policy_{self._total_samples}/"
-            os.makedirs(save_path, exist_ok=True)
-            self.policy.save(save_path + "policy")
-            np.save(save_path + "observation", self._policy_input)
-            np.save(save_path + "curr_path", np.array(self._current_path))
-            
-            from pprint import pprint
-            all_observations = self.pool.last_n_batch(self.pool.size)['observations']
-            print("min:")
-            pprint(tree.map_structure(lambda x: np.min(x, axis=0), all_observations))
-            print()
-
-            print("max:")
-            pprint(tree.map_structure(lambda x: np.max(x, axis=0), all_observations))
-            print()
-
-            print("mean:")
-            pprint(tree.map_structure(lambda x: np.mean(x, axis=0), all_observations))
-            print()
-
-            print("std:")
-            pprint(tree.map_structure(lambda x: np.std(x, axis=0), all_observations))
-            print()
-
-            breakpoint()
-            pass
-
-            sys.stdout.flush()
-            time.sleep(600)
-            # temporary
-            raise RuntimeError("NAN IN OUTPUT")
-            action = np.zeros(action.shape)
 
         next_observation, reward, terminal, info = self.environment.step(
             action)

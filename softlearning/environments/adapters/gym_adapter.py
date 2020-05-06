@@ -5,6 +5,8 @@ import copy
 
 import numpy as np
 
+import pprint
+
 import gym
 from gym import spaces, wrappers
 from gym.wrappers.pixel_observation import PixelObservationWrapper
@@ -63,6 +65,16 @@ class GymAdapter(SoftlearningEnv):
                  **kwargs):
         assert not args, (
             "Gym environments don't support args. Use kwargs instead.")
+
+        print()
+        print("GymAdapter params:")
+        pprint.pprint(dict(
+            self=self, domain=domain, task=task, args=args,
+            env=env, normalize=normalize, observation_keys=observation_keys, goal_keys=goal_keys,
+            unwrap_time_limit=unwrap_time_limit, pixel_wrapper_kwargs=pixel_wrapper_kwargs, reset_free=reset_free,
+            kwargs=kwargs)
+        )
+        print()
 
         self.normalize = normalize
         self.unwrap_time_limit = unwrap_time_limit
