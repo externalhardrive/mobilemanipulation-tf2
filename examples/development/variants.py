@@ -469,6 +469,17 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
     },
 }
 
+EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
+    'gym': {
+        'Locobot': {
+            'ImageNavigationResetFree-v0': {
+                'reset_free': False,
+                'max_ep_len': 200,
+            }
+        },
+    },
+}
+
 
 def get_epoch_length(universe, domain, task):
     level_result = EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK.copy()
@@ -548,6 +559,15 @@ def get_environment_params(universe, domain, task):
 
     return environment_params
 
+def get_evaluation_environment_params(universe, domain, task):
+    environment_params = get_environment_params(universe, domain, task)
+    extra_params = (
+        EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK
+        .get(universe, {}).get(domain, {}).get(task, {}))
+    
+    environment_params.update(extra_params)
+    return environment_params
+
 
 def get_variant_spec_base(universe, domain, task, policy, algorithm):
     algorithm_params = deep_update(
@@ -575,11 +595,12 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
                 'universe': universe,
                 'kwargs': get_environment_params(universe, domain, task),
             },
-            'evaluation': tune.sample_from(lambda spec: (
-                spec.get('config', spec)
-                ['environment_params']
-                ['training']
-            )),
+            'evaluation': {
+                'domain': domain,
+                'task': task,
+                'universe': universe,
+                'kwargs': get_evaluation_environment_params(universe, domain, task),
+            },
         },
         # 'policy_params': tune.sample_from(get_policy_params),
         'policy_params': {
