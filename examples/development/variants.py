@@ -571,19 +571,19 @@ def get_evaluation_environment_params(universe, domain, task):
 
 def get_variant_spec_base(universe, domain, task, policy, algorithm):
     algorithm_params = deep_update(
-        ALGORITHM_PARAMS_BASE,
-        ALGORITHM_PARAMS_ADDITIONAL.get(algorithm, {}),
-        get_algorithm_params(universe, domain, task),
+        deepcopy(ALGORITHM_PARAMS_BASE),
+        deepcopy(ALGORITHM_PARAMS_ADDITIONAL.get(algorithm, {})),
+        deepcopy(get_algorithm_params(universe, domain, task)),
     )
     forward_sac_params = deep_update(
-        ALGORITHM_PARAMS_BASE,
-        ALGORITHM_PARAMS_ADDITIONAL.get('SAC', {}),
-        get_algorithm_params(universe, domain, task),
+        deepcopy(ALGORITHM_PARAMS_BASE),
+        deepcopy(ALGORITHM_PARAMS_ADDITIONAL.get('SAC', {})),
+        deepcopy(get_algorithm_params(universe, domain, task)),
     )
     perturbation_sac_params = deep_update(
-        ALGORITHM_PARAMS_BASE,
-        ALGORITHM_PARAMS_ADDITIONAL.get('SAC', {}),
-        get_algorithm_params(universe, domain, task),
+        deepcopy(ALGORITHM_PARAMS_BASE),
+        deepcopy(ALGORITHM_PARAMS_ADDITIONAL.get('SAC', {})),
+        deepcopy(get_algorithm_params(universe, domain, task)),
     )
     variant_spec = {
         'git_sha': get_git_rev(__file__),

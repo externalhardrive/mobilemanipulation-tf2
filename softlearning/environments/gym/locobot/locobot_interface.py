@@ -2,6 +2,7 @@ import os
 import time
 from os.path import expanduser
 import sys
+import pprint
 
 import gym
 import numpy as np
@@ -61,6 +62,14 @@ class PybulletInterface:
         }
         defaults.update(params)
         self.params = defaults
+
+        print()
+        print("LocobotInterface params:")
+        pprint.pprint(dict(
+            self=self,
+            **self.params,
+        ))
+        print()
 
         self.renders = self.params["renders"]
         self.recording = False

@@ -2,6 +2,8 @@ from copy import deepcopy
 from collections import OrderedDict
 from numbers import Number
 
+import pprint
+
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -94,6 +96,30 @@ class SAC(RLAlgorithm):
         """
 
         super(SAC, self).__init__(**kwargs)
+
+        print()
+        print("SAC params:")
+        pprint.pprint(dict(
+            self=self,
+            training_environment=training_environment,
+            evaluation_environment=evaluation_environment,
+            policy=policy,
+            Qs=Qs,
+            plotter=plotter,
+
+            policy_lr=policy_lr,
+            Q_lr=Q_lr,
+            alpha_lr=alpha_lr,
+            reward_scale=reward_scale,
+            target_entropy=target_entropy,
+            discount=discount,
+            tau=tau,
+            target_update_interval=target_update_interval,
+
+            save_full_state=save_full_state,
+            kwargs=kwargs,
+        ))
+        print()
 
         self._training_environment = training_environment
         self._evaluation_environment = evaluation_environment

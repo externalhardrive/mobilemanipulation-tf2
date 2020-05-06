@@ -132,6 +132,10 @@ class RLAlgorithm(Checkpointable):
         return self._training_batch(*args, **kwargs)
 
     @property
+    def _evaluation_policy(self):
+        return self._policy
+
+    @property
     def _training_started(self):
         return self._total_timestep > 0
 
@@ -149,12 +153,10 @@ class RLAlgorithm(Checkpointable):
 
         Args:
             env (`SoftlearningEnv`): Environment used for training.
-            policy (`Policy`): Policy used for training
             pool (`PoolBase`): Sample pool to add samples to
         """
         training_environment = self._training_environment
         evaluation_environment = self._evaluation_environment
-        policy = self._policy
 
         gt.reset_root()
         gt.rename_root('RLAlgorithm')
@@ -200,7 +202,7 @@ class RLAlgorithm(Checkpointable):
                 math.ceil(self._epoch_length / self.sampler._max_path_length))
             gt.stamp('training_paths')
             evaluation_paths = self._evaluation_paths(
-                policy, evaluation_environment)
+                self._evaluation_policy, evaluation_environment)
             gt.stamp('evaluation_paths')
 
             training_metrics = self._evaluate_rollouts(

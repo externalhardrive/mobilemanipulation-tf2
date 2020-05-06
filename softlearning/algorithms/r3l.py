@@ -1,6 +1,8 @@
 from copy import deepcopy
 from collections import OrderedDict
 
+import pprint
+
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -47,6 +49,27 @@ class R3L(RLAlgorithm):
 
         super().__init__(**kwargs)
 
+        print()
+        print("R3L params:")
+        pprint.pprint(dict(
+            self=self,
+            training_environment=training_environment,
+            evaluation_environment=evaluation_environment,
+            forward_sac=forward_sac,
+            perturbation_sac=perturbation_sac,
+            rnd_predictor=rnd_predictor,
+            rnd_target=rnd_target,
+            plotter=plotter,
+
+            rnd_lr=rnd_lr,
+            intrinsic_scale=intrinsic_scale,
+            extrinsic_scale=extrinsic_scale,
+
+            save_full_state=save_full_state,
+            kwargs=kwargs,
+        ))
+        print()
+
         self._training_environment = training_environment
         self._evaluation_environment = evaluation_environment
 
@@ -86,6 +109,10 @@ class R3L(RLAlgorithm):
         else:
             self.sampler.switch_policy(self._forward_sac._policy)
             self._current_forward_policy = True 
+
+    @property
+    def _evaluation_policy(self):
+        return self._forward_sac._policy
 
     @tf.function(experimental_relax_shapes=True)
     def _update_rnd_predictor(self, batch):
@@ -147,7 +174,7 @@ class R3L(RLAlgorithm):
             **sac_diagnostics,
             'rnd_predictor_loss-mean': tf.reduce_mean(predictor_losses),
             'rnd_running_var': self._rnd_running_var,
-            'intrinsic_reward-mean': np.mean(intrinsic_rewards),
+            'rnd_intrinsic_reward-mean': np.mean(intrinsic_rewards),
         })
 
         return diagnostics
