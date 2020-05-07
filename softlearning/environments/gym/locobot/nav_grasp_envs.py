@@ -142,7 +142,7 @@ class MixedLocobotNavigationEnv(BaseNavigationEnv):
 
         self.num_sim_steps_per_env_step = int(60 / self.params["steps_per_second"])
         self.max_velocity = self.params["max_velocity"]
-        self.velocity_change_scale = self.params["max_acceleration"] / self.params["steps_per_second"]
+        # self.velocity_change_scale = self.params["max_acceleration"] / self.params["steps_per_second"]
         self.target_velocity = np.array([0.0, 0.0])
 
     def reset(self):
@@ -172,8 +172,9 @@ class MixedLocobotNavigationEnv(BaseNavigationEnv):
         return obs
 
     def do_move(self, action):
-        self.target_velocity += np.array(action) * self.velocity_change_scale
-        self.target_velocity = np.clip(self.target_velocity, -self.max_velocity, self.max_velocity)
+        # self.target_velocity += np.array(action) * self.velocity_change_scale
+        # self.target_velocity = np.clip(self.target_velocity, -self.max_velocity, self.max_velocity)
+        self.target_velocity = np.array(action) * self.max_velocity
         new_left, new_right = self.target_velocity
 
         self.interface.set_wheels_velocity(new_left, new_right)

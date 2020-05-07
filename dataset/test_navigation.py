@@ -20,86 +20,84 @@ def save_obs(obs, path):
     mpimg.imsave(path, obs)
 
 def main(args):
+    room_name = "simple"
     # room_name = "simple_obstacles"
-    # room_params = dict(
-    #     num_objects=100, 
-    #     object_name="greensquareball", 
-    #     wall_size=5.0,
-    #     no_spawn_radius=0.8,
-    # )
-    room_name = "medium"
     room_params = dict(
-        num_objects=80, 
+        num_objects=100, 
         object_name="greensquareball", 
         wall_size=5.0,
         no_spawn_radius=0.8,
     )
-    inner_env = ImageLocobotNavigationEnv(
-            renders=False, grayscale=False, step_duration=1/60,
-            room_name=room_name,
-            room_params=room_params,
-            image_size=100,
-        )
-    # inner_env = MixedLocobotNavigationEnv(
-    #         renders=True, grayscale=False, step_duration=1/60,
+    # room_name = "medium"
+    # room_params = dict(
+    #     num_objects=80, 
+    #     object_name="greensquareball", 
+    #     wall_size=5.0,
+    #     no_spawn_radius=0.8,
+    # )
+    # inner_env = ImageLocobotNavigationEnv(
+    #         renders=False, grayscale=False, step_duration=1/60,
     #         room_name=room_name,
     #         room_params=room_params,
     #         image_size=100,
-    #         steps_per_second=2,
-    #         max_ep_len=200,
-    #         max_velocity=20.0,
-    #         max_acceleration=4.0,
     #     )
+    inner_env = MixedLocobotNavigationEnv(
+            renders=True, grayscale=False, step_duration=1/60,
+            room_name=room_name,
+            room_params=room_params,
+            image_size=100,
+            steps_per_second=2,
+            max_ep_len=200,
+            max_velocity=20.0,
+            max_acceleration=4.0,
+        )
 
     env = GymAdapter(None, None,
         env=inner_env,
         pixel_wrapper_kwargs={
-            'pixels_only': True,
+            'pixels_only': False,
         },
         reset_free=False,
     )
 
-    inner_env2 = ImageLocobotNavigationEnv(
-            renders=False, grayscale=False, step_duration=1/60,
-            room_name=room_name,
-            room_params=room_params,
-            image_size=100,
-        )
-    env2 = GymAdapter(None, None,
-        env=inner_env2,
-        pixel_wrapper_kwargs={
-            'pixels_only': True,
-        },
-        reset_free=False,
-    )
+    # inner_env2 = ImageLocobotNavigationEnv(
+    #         renders=False, grayscale=False, step_duration=1/60,
+    #         room_name=room_name,
+    #         room_params=room_params,
+    #         image_size=100,
+    #     )
+    # env2 = GymAdapter(None, None,
+    #     env=inner_env2,
+    #     pixel_wrapper_kwargs={
+    #         'pixels_only': True,
+    #     },
+    #     reset_free=False,
+    # )
 
     obs = env.reset()
-    obs2 = env2.reset()
+    # obs2 = env2.reset()
 
-    print(env.interface.robot)
-    print(env2.interface.robot)
+    # print(env.interface.robot)
+    # print(env2.interface.robot)
 
-    p1 = env.interface.p
-    p2 = env2.interface.p
+    # p1 = env.interface.p
+    # p2 = env2.interface.p
 
-    a1 = p1.loadURDF("plane.urdf", basePosition=[0, 0, 100])
-    a2 = p2.loadURDF("plane.urdf", basePosition=[0, 0, 100])
-    print(a1, a2)
-    print(p1.getBasePositionAndOrientation(a1))
-    print(p2.getBasePositionAndOrientation(a2))
+    # a1 = p1.loadURDF("plane.urdf", basePosition=[0, 0, 100])
+    # a2 = p2.loadURDF("plane.urdf", basePosition=[0, 0, 100])
+    # print(a1, a2)
+    # print(p1.getBasePositionAndOrientation(a1))
+    # print(p2.getBasePositionAndOrientation(a2))
 
-    p1.resetBasePositionAndOrientation(a1, [0, 0, 200], [1, 0, 0, 0])
-    print(p1.getBasePositionAndOrientation(a1))
-    print(p2.getBasePositionAndOrientation(a2))
+    # p1.resetBasePositionAndOrientation(a1, [0, 0, 200], [1, 0, 0, 0])
+    # print(p1.getBasePositionAndOrientation(a1))
+    # print(p2.getBasePositionAndOrientation(a2))
 
     
-    b1 = p1.loadURDF("plane.urdf", basePosition=[0, 0, 200])
-    print(b1)
-    print(p1.getBasePositionAndOrientation(b1))
-    print(p2.getBasePositionAndOrientation(b1))
-
-
-
+    # b1 = p1.loadURDF("plane.urdf", basePosition=[0, 0, 200])
+    # print(b1)
+    # print(p1.getBasePositionAndOrientation(b1))
+    # print(p2.getBasePositionAndOrientation(b1))
 
     # inner_env.interface.set_wheels_velocity(20, 20)
     # for _ in range(1000):
@@ -117,7 +115,7 @@ def main(args):
         
     while True:
         # save_obs(obs["pixels"], f"../images/obs{i}.png")
-        # print("velocity:", obs["current_velocity"])
+        print("velocity:", obs["current_velocity"])
         # print("target:", obs["target_velocity"])
         cmd = input().strip()
         try:
