@@ -90,6 +90,11 @@ class BaseNavigationEnv(RoomEnv):
         reward += num_grasped
         infos["success"] = num_grasped
         infos["total_grasped"] = self.total_grasped
+        base_pos = self.interface.get_base_pos()
+        infos["base_x"] = base_pos[0]
+        infos["base_y"] = base_pos[1]
+        infos["action_left"] = action[0]
+        infos["action_right"] = action[1]
         
         # steps update
         self.num_steps += 1

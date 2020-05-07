@@ -103,6 +103,8 @@ class GymAdapter(SoftlearningEnv):
             # depends on time rather than state).
             env = env.env
 
+        self._unwrapped_env = env
+
         if normalize and is_continuous_space(env.action_space):
             env = wrappers.RescaleAction(env, -1.0, 1.0)
 
@@ -161,6 +163,11 @@ class GymAdapter(SoftlearningEnv):
                 combined_results[info_key + '-max'] = np.amax(info_values)
                 if np.array(info_values).dtype != np.dtype('bool'):
                     combined_results[info_key + '-range'] = np.ptp(info_values)
+
+            if hasattr(self.unwrapped, 'get_path_infos'):
+                env_path_infos = self.unwrapped.get_path_infos(paths, *args, **kwargs)
+                combined_results.update(env_path_infos)
+
             return combined_results
         else:
             aggregated_results = super().get_path_infos(paths, *args, **kwargs)
@@ -206,4 +213,4 @@ class GymAdapter(SoftlearningEnv):
 
     @property
     def unwrapped(self):
-        return self._env.unwrapped
+        return self._unwrapped_env

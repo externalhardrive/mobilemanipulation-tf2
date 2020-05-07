@@ -175,6 +175,8 @@ class R3L(RLAlgorithm):
             'rnd_predictor_loss-mean': tf.reduce_mean(predictor_losses),
             'rnd_running_var': self._rnd_running_var,
             'rnd_intrinsic_reward-mean': np.mean(intrinsic_rewards),
+            'rnd_intrinsic_reward-min': np.min(intrinsic_rewards),
+            'rnd_intrinsic_reward-max': np.max(intrinsic_rewards),
         })
 
         return diagnostics

@@ -226,6 +226,10 @@ class PybulletInterface:
         base_pos, base_ori = self.p.getBasePositionAndOrientation(self.robot)
         return np.array([base_pos[0], base_pos[1], self.p.getEulerFromQuaternion(base_ori)[2]])
 
+    def get_base_pos(self):
+        base_pos, _ = self.p.getBasePositionAndOrientation(self.robot)
+        return np.array([base_pos[0], base_pos[1]])
+
     def set_base_pos_and_yaw(self, pos=np.array([0.0, 0.0]), yaw=0.0):
         base_pos, base_ori = self.p.getBasePositionAndOrientation(self.robot)
         new_pos = [pos[0], pos[1], base_pos[2]]
