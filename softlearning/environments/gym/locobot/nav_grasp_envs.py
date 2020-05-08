@@ -5,7 +5,6 @@ import os
 from collections import OrderedDict
 
 from . import locobot_interface
-from softlearning.environments.helpers import random_point_in_circle
 
 from .base_env import LocobotBaseEnv
 from .utils import *
@@ -112,7 +111,7 @@ class ImageLocobotNavigationEnv(BaseNavigationEnv):
 
         defaults["observation_type"] = "image"
         defaults["action_dim"] = 2
-        defaults["image_size"] = locobot_interface.IMAGE_SIZE
+        defaults["image_size"] = 100
         defaults["camera_fov"] = 55
         defaults.update(params)
 

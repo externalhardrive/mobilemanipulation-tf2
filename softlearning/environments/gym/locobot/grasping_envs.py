@@ -72,7 +72,7 @@ class ImageLocobotGraspingEnv(LocobotGraspingEnv):
     def __init__(self, **params):
         defaults = {
             "observation_type": "image",
-            "image_size": locobot_interface.IMAGE_SIZE,
+            "image_size": 100,
             "action_dim": 2,
         }
         defaults.update(params)
@@ -92,7 +92,7 @@ class ImageLocobotMultiGraspingEnv(LocobotBaseEnv):
     def __init__(self, min_blocks=25, max_blocks=55, max_ep_len=1, **params):
         defaults = {
             "observation_type": "image",
-            "image_size": locobot_interface.IMAGE_SIZE,
+            "image_size": 100,
             "action_dim": 3,
         }
         defaults.update(params)
@@ -215,7 +215,7 @@ class ImageLocobotSingleGraspingEnv(LocobotBaseEnv):
             defaults["camera_fov"] = 25
             defaults["camera_look_pos"] = np.array([0.42, 0, 0.02])
         else:
-            defaults["image_size"] = locobot_interface.IMAGE_SIZE
+            defaults["image_size"] = 100
         defaults.update(params)
 
         super().__init__(**defaults)

@@ -57,9 +57,3 @@ class LocobotBaseEnv(gym.Env):
 
     def get_pixels(self, *args, **kwargs):
         return self.render(*args, **kwargs)
-
-    def enable_recording(self):
-        self.interface.enable_recording()
-
-    def get_frames(self):
-        return self.interface.get_frames()
