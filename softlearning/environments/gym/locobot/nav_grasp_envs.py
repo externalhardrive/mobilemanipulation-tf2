@@ -182,8 +182,7 @@ class MixedLocobotNavigationEnv(BaseNavigationEnv):
         new_left, new_right = self.target_velocity
 
         self.interface.set_wheels_velocity(new_left, new_right)
-        for _ in range(self.num_sim_steps_per_env_step):
-            self.interface.step()
+        self.interface.do_steps(self.num_sim_steps_per_env_step)
 
 # class ImageLocobotNavigationGraspingEnv(ImageLocobotNavigationEnv):
 #     """ A field with walls containing lots of balls, the robot grasps one and it disappears.

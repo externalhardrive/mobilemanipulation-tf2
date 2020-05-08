@@ -3,6 +3,7 @@ import time
 from os.path import expanduser
 import sys
 import pprint
+from numbers import Number
 
 import gym
 import numpy as np
@@ -162,14 +163,14 @@ class PybulletInterface:
             object_id: the ID of the object
             pos: (3,) vector of the object position
             ori: None - default orientation. 
-                 float or int - yaw rotation.
+                 Number - yaw rotation.
                  (3,) vec - euler rotation (rpy)
                  (4,) vec - quaternion
             scale: float scale of the oject
         """
         if ori is None:
             ori = self.default_ori
-        elif type(ori) == float or type(ori) == int:
+        elif isinstance(ori, Number):
             ori = self.p.getQuaternionFromEuler([0, 0, ori])
         elif len(ori) == 3:
             ori = self.p.getQuaternionFromEuler(ori)
@@ -191,14 +192,14 @@ class PybulletInterface:
             object_id: the ID of the object
             pos: (3,) vector of the object position
             ori: None - default orientation. 
-                 float or int - yaw rotation.
+                 Number - yaw rotation.
                  (3,) vec - euler rotation (rpy)
                  (4,) vec - quaternion
             relative: if True, interpret args as local coordinates relative to the robot's frame of ref 
         """
         if ori is None:
             ori = self.default_ori
-        elif type(ori) == float or type(ori) == int:
+        elif isinstance(ori, Number):
             ori = self.p.getQuaternionFromEuler([0, 0, ori])
         elif len(ori) == 3:
             ori = self.p.getQuaternionFromEuler(ori)
