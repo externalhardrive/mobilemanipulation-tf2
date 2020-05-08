@@ -136,9 +136,11 @@ class PybulletInterface:
     # ----- TEXTURES METHOD -----
 
     def change_floor_texture(self, texture_name):
+        """ Changes the floor texture to texture_name (key in utils.TEXTURE). """
         self.p.changeVisualShape(self.plane_id, -1, textureUniqueId=self.load_texture(texture_name))
 
     def load_texture(self, texture_name):
+        """ Returns the ID of the texture object with the texture_name (key in utils.TEXTURE). """
         if texture_name in self.texture_name_to_id:
             return self.texture_name_to_id[texture_name]
         else:
