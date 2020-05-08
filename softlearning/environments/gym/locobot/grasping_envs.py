@@ -345,3 +345,144 @@ class ImageLocobotSingleGraspingEnv(LocobotBaseEnv):
         # obs = self.reset(same_pos=False)
         
         return None, reward, True, {}
+
+    
+
+class ImageLocobotMultistepGraspingEnv(LocobotBaseEnv):
+    """ Environment contains a graspable blocks only block.
+        Runs a single step grasp action, grasping x,y action, and reload back to same starting point
+    """
+    def __init__(self, min_blocks=0, max_blocks=6, min_other_blocks=0, max_other_blocks=6, 
+        random_orientation=False, crop_output=True, object_name="greenball", collision_check=True, **params):
+        defaults = dict()
+        defaults["interface_args"] = dict()
+        defaults["observation_type"] = "image"
+        defaults["action_dim"] = 3 if random_orientation else 2
+        if crop_output:
+            defaults["image_size"] = 84
+            defaults["camera_fov"] = 25
+            defaults["camera_look_pos"] = np.array([0.42, 0, 0.02])
+        else:
+            defaults["image_size"] = locobot_interface.IMAGE_SIZE
+        defaults.update(params)
+
+        super().__init__(**defaults)
+        
+        all_args = dict(min_blocks=min_blocks, max_blocks=max_blocks, min_other_blocks=min_other_blocks, max_other_blocks=max_other_blocks, random_orientation=random_orientation, crop_output=crop_output)
+        all_args.update(self.params)
+
+        print("ImageLocobotSingleGraspingEnv:", all_args)
+
+        self.robot_yaw = 0.0
+        self.robot_pos = np.array([0.0, 0.0])
+
+        self.random_orientation = random_orientation
+        self.collision_check = collision_check
+        self.crop_output = crop_output
+
+        self.min_blocks = min_blocks
+        self.max_blocks = max_blocks
+        self.num_blocks = max_blocks
+        self.blocks_id = [self.interface.spawn_object(URDF[object_name], np.array([0.0, 0.0, 10 + i])) for i in range(max_blocks)]
+        self.blocks_pos_relative = [np.array([0.0, 0.0, 10]) for _ in range(max_blocks)]
+        self.blocks_ori_relative = [np.array([0.0, 0.0, 0.0, 0.0]) for _ in range(max_blocks)]
+
+        self.min_other_blocks = min_other_blocks
+        self.max_other_blocks = max_other_blocks
+        self.other_blocks_id = [self.interface.spawn_object(URDF[object_name], np.array([0.5, 0.0, 10 + i])) for i in range(max_other_blocks)]
+
+        self.interface.save_state()
+
+    def is_colliding(self, i, x, y):
+        for j in range(i):
+            x1, y1, _ = self.blocks_pos_relative[j]
+            if (x - x1) ** 2 + (y - y1) ** 2 <= (0.015 * 2) ** 2:
+                return True
+        return False
+
+    def reset(self, same_pos=False):
+        # move robot
+        if not same_pos:
+            if self.params.get("fixed_pos", False):
+                self.robot_yaw = 0
+                self.robot_pos = np.array([0, 0])
+            else:
+                self.robot_yaw = np.random.uniform(0, 2 * np.pi)
+                self.robot_pos = np.random.uniform(-1, 1, size=(2,))
+        self.interface.set_base_pos_and_yaw(self.robot_pos, self.robot_yaw)
+
+        # generate graspable blocks
+        if not same_pos:
+            self.num_blocks = np.random.randint(self.min_blocks, self.max_blocks+1)
+            for i in range(self.num_blocks):
+                for _ in range(50):
+                    x = np.random.uniform(0.42 - 0.04, 0.42 + 0.04)
+                    y = np.random.uniform(-0.12, 0.12)
+                    if not self.is_colliding(i, x, y):
+                        break
+                self.blocks_pos_relative[i] = np.array([x, y, 0.02])
+
+                if self.random_orientation:
+                    block_row = np.random.uniform(0, 2 * np.pi)
+                    block_pitch = 0 if np.random.rand() < 0.5 else np.pi/2
+                    block_yaw = 0
+                    self.blocks_ori_relative[i] = self.interface.p.getQuaternionFromEuler([block_row, block_pitch, block_yaw])
+                else:
+                    self.blocks_ori_relative[i] = 0.0
+
+                self.interface.move_object(self.blocks_id[i], self.blocks_pos_relative[i], 
+                                            ori=self.blocks_ori_relative[i], relative=True)
+            
+            for i in range(self.num_blocks, self.max_blocks):
+                self.interface.move_object(self.blocks_id[i], np.array([-1.0, 0.0, 10.0 + i]), relative=True)
+
+        # generate other non-graspable blocks
+        if not same_pos:
+            num_other_blocks = np.random.randint(self.min_other_blocks, self.max_other_blocks+1)
+            
+            for i in range(num_other_blocks):
+                while True:
+                    pos = np.array([0.0, 0.0, 0.02])
+                    if self.crop_output:
+                        pos[0] = np.random.uniform(0.42 - 0.16, 0.42 + 0.22)
+                        pos[1] = np.random.uniform(-0.18, 0.18)
+                    else:
+                        pos[:2] = random_point_in_circle(radius=(0.2, 2), angle_range=(-np.pi/3, np.pi/3))
+                    if not (0.42 - 0.04 - 0.03 < pos[0] < 0.42 + 0.04 + 0.03 and -0.12 - 0.03 < pos[1] < 0.12 + 0.03):
+                        break
+                
+                if self.random_orientation:
+                    block_row = np.random.uniform(0, 2 * np.pi)
+                    block_pitch = 0 if np.random.rand() < 0.5 else np.pi/2
+                    block_yaw = 0
+                    ori = self.interface.p.getQuaternionFromEuler([block_row, block_pitch, block_yaw])
+                else:
+                    ori = 0.0
+
+                self.interface.move_object(self.other_blocks_id[i], pos, ori=ori, relative=True)
+
+            for i in range(num_other_blocks, self.max_other_blocks):
+                self.interface.move_object(self.other_blocks_id[i], np.array([0.0, 0.0, 10.0 + i]), relative=True)
+
+        self.interface.move_joints_to_start()
+
+        obs = self.render()
+
+        # import matplotlib.image as mpimg
+        # mpimg.imsave(f"/home/externalhardrive/RAIL/debugimages/obs_{np.random.randint(1000)}.png", obs) 
+
+        return obs
+
+    def step(self, a):
+        curr_pos, curr_ori = self.interface.get_ee()
+        self.move_ee(pos, wrist_rotate=0, steps=30, velocity_constrained=True)
+
+        reward = 0.0
+        for i in range(self.num_blocks):
+            block_pos, _ = self.interface.get_object(self.blocks_id[i])
+            if block_pos[2] > 0.08:
+                reward += 1
+                break
+        # obs = self.reset(same_pos=False)
+        
+        return None, reward, True, {}

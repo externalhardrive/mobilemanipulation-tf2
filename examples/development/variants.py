@@ -16,16 +16,16 @@ NUM_COUPLING_LAYERS = 2
 
 ALGORITHM_PARAMS_BASE = {
     'config': {
-        'train_every_n_steps': 5,   # 1
-        'n_train_repeat': 5,        # 1
+        'train_every_n_steps': 1,
+        'n_train_repeat': 1,
         'eval_render_kwargs': {},
         'eval_n_episodes': 1,
-        'num_warmup_samples': tune.sample_from(lambda spec: (
-            5 * (spec.get('config', spec)
-                  ['sampler_params']
-                  ['config']
-                  ['max_path_length'])
-        )),
+        'num_warmup_samples': 3000,# tune.sample_from(lambda spec: (
+#             10 * (spec.get('config', spec)
+#                   ['sampler_params']
+#                   ['config']
+#                   ['max_path_length'])
+#         )),
     }
 }
 
@@ -125,6 +125,7 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
             DEFAULT_KEY: int(2e5),
             'ImageNavigation-v0': int(1e6),
             'MixedNavigation-v0': int(1e6),
+            'ImageKukaGrasping': int(2e7)
         },
     },
     'dm_control': {
@@ -238,6 +239,7 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageSingleGrasping-v0': 1,
             'ImageNavigation-v0': 200,
             'MixedNavigation-v0': 1000,
+            'ImageKukaGrasping': 15,
         },
     },
 }
@@ -247,8 +249,9 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
     'gym': {
         DEFAULT_KEY: 1000,
         'Locobot': {
-            DEFAULT_KEY: 1000,
+            DEFAULT_KEY: 100,
             'MixedNavigation-v0': 5000,
+            #'ImageKukaGrasping': 15
         },
     },
 }
@@ -393,8 +396,15 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                     'object_name': "greensquareball", 
                     'wall_size': 5.0, 
                 },
-                'max_ep_len': 1000,
+                'max_ep_len': 100,
                 'image_size': 100,
+            },
+            'ImageKukaGrasping-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': True,
+                },
+                'observation_keys': ( 'pixels',),
+                'max_ep_len': 15,
             },
         },
     },
@@ -622,6 +632,16 @@ def get_variant_spec_image(universe,
         #     },
         # }
         
+#         preprocessor_params = {
+#             'class_name': 'convnet_preprocessor',
+#             'config': {
+#                 'conv_filters': (32,32),
+#                 'conv_kernel_sizes': (3, 3),
+#                 'conv_strides': (2, 2),
+#                 'normalization_type': None,
+#                 'downsampling_type': 'pool',
+#             },
+#         }
         preprocessor_params = {
             'class_name': 'convnet_preprocessor',
             'config': {
@@ -632,7 +652,6 @@ def get_variant_spec_image(universe,
                 'downsampling_type': 'conv',
             },
         }
-
         variant_spec['policy_params']['config']['hidden_layer_sizes'] = (M, M)
         variant_spec['policy_params']['config']['preprocessors'] = {
             'pixels': deepcopy(preprocessor_params)

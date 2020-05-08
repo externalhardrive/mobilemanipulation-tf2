@@ -11,6 +11,7 @@ import gym
 CUSTOM_GYM_ENVIRONMENTS_PATH = __package__
 MUJOCO_ENVIRONMENTS_PATH = f'{CUSTOM_GYM_ENVIRONMENTS_PATH}.mujoco'
 LOCOBOT_ENVIRONMENTS_PATH = f'{CUSTOM_GYM_ENVIRONMENTS_PATH}.locobot'
+KUKA_ENV = f'{CUSTOM_GYM_ENVIRONMENTS_PATH}.dql_grasping'
 
 MUJOCO_ENVIRONMENT_SPECS = (
     {
@@ -100,6 +101,10 @@ GENERAL_ENVIRONMENT_SPECS = (
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
                         '.nav_grasp_envs:MixedLocobotNavigationEnv')
     },
+        {
+        'id': 'Locobot-ImageKukaGrasping-v0',
+        'entry_point': (f'{KUKA_ENV}.grasping_env:KukaGraspingProceduralEnv')
+    }
 )
 
 MUJOCO_ENVIRONMENTS = tuple(

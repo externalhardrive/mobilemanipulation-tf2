@@ -58,6 +58,7 @@ class RLAlgorithm(Checkpointable):
             num_warmup_samples ('int'): Number of random samples to warmup the
                 replay pool with.
         """
+        print("epoch_length", epoch_length, "num_warmup_samples", num_warmup_samples)
         self.sampler = sampler
         self.pool = pool
 
@@ -87,6 +88,7 @@ class RLAlgorithm(Checkpointable):
         self._num_train_steps = 0
 
     def _do_warmup_samples(self):
+        print("starting warmup samples")
         num_warmup_samples = self._num_warmup_samples - self.pool.size
         if num_warmup_samples < 1:
             return
@@ -99,6 +101,7 @@ class RLAlgorithm(Checkpointable):
         while self.pool.size < num_warmup_samples:
             self.sampler.sample()
         self.sampler.policy = old_policy
+        print("Done warmup samples")
 
     def _training_before_hook(self):
         """Method called before the actual training loops."""
@@ -152,6 +155,7 @@ class RLAlgorithm(Checkpointable):
             policy (`Policy`): Policy used for training
             pool (`PoolBase`): Sample pool to add samples to
         """
+        print("starting training")
         training_environment = self._training_environment
         evaluation_environment = self._evaluation_environment
         policy = self._policy
@@ -163,6 +167,7 @@ class RLAlgorithm(Checkpointable):
         self._training_before_hook()
 
         for self._epoch in gt.timed_for(range(self._epoch, self._n_epochs)):
+            print("epoch")
             self._epoch_before_hook()
             gt.stamp('epoch_before_hook')
 
@@ -184,14 +189,19 @@ class RLAlgorithm(Checkpointable):
                 gt.stamp('sample')
 
                 if self.ready_to_train:
-                    update_diagnostics.append(self._do_training_repeats(
-                        timestep=self._total_timestep))
+                    diags = self._do_training_repeats(
+                        timestep=self._total_timestep)
+                    #print("recieved diag", diags)
+                    if diags is not  None:
+                        
+                        update_diagnostics.append(diags)
 
                 gt.stamp('train')
 
                 self._timestep_after_hook()
                 gt.stamp('timestep_after_hook')
-
+            #import pdb; pdb.set_trace()
+            #print("total diags", update_diagnostics)
             update_diagnostics = tree.map_structure(
                 lambda *d: np.mean(d), *update_diagnostics)
 
@@ -261,8 +271,10 @@ class RLAlgorithm(Checkpointable):
         self._training_after_hook()
 
         yield {'done': True, **diagnostics}
+        print("done training")
 
     def _evaluation_paths(self, policy, evaluation_env):
+        print("start eval")
         if self._eval_n_episodes < 1: return ()
 
         paths = rollouts(
@@ -278,6 +290,7 @@ class RLAlgorithm(Checkpointable):
                  or (self._epoch + 1) % self._video_save_frequency == 0))
 
         if should_save_video:
+            print("eval video")
             fps = 1 // getattr(self._training_environment, 'dt', 1/30)
             for i, path in enumerate(paths):
                 video_frames = path.pop('images')
@@ -285,7 +298,7 @@ class RLAlgorithm(Checkpointable):
                 video_file_path = os.path.join(
                     os.getcwd(), 'videos', video_file_name)
                 save_video(video_frames, video_file_path, fps=fps)
-
+        print("done eval")
         return paths
 
     def _evaluate_rollouts(self,
@@ -335,11 +348,17 @@ class RLAlgorithm(Checkpointable):
 
     def _do_training_repeats(self, timestep):
         """Repeat training _n_train_repeat times every _train_every_n_steps"""
-        if timestep % self._train_every_n_steps > 0: return
+        #print("training timestep", timestep)
+        if timestep % self._train_every_n_steps > 0: 
+            #print("timestep", timestep, "_train_every_n_steps", self._train_every_n_steps, "not training")
+            return
         trained_enough = (
             self._train_steps_this_epoch
             > self._max_train_repeat_per_timestep * self._timestep)
-        if trained_enough: return
+        if trained_enough: 
+#             print("slf._timestep", self._timestep, "_train_steps_this_epoch", self._train_steps_this_epoch, "_max_train_repeat_per_timestep", self._max_train_repeat_per_timestep, "not training")
+
+            return
 
         diagnostics = [
             self._do_training(iteration=timestep, batch=self._training_batch())
@@ -351,7 +370,9 @@ class RLAlgorithm(Checkpointable):
 
         self._num_train_steps += self._n_train_repeat
         self._train_steps_this_epoch += self._n_train_repeat
-
+        #print("Returning diagnostics", diagnostics)
+        #if diagnostics is None:
+        #    import pdb; pdb.set_trace()
         return diagnostics
 
     @abc.abstractmethod

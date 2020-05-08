@@ -240,10 +240,52 @@ class PybulletInterface:
         for i in range(55):
             self.step(i % 5 == 0)
 
+            
+    def get_ee(self):
+        """ Returns ee position and orientation relative to the robot's base. """
+        ee_pos, ee_ori, local_ee_pos, local_ee_ori, _, _  = self.p.getLinkState(self.robot, 16)
+        return ee_pos, ee_ori#local_ee_pos, local_ee_ori
+    
+    def apply_continuous_action(self, action):
+        """Args:
+          action: 5-vector parameterizing XYZ offset, vertical angle offset
+          (radians), and grasp (value between 0.001 (close) and 0.2 (open)."""
+        curr_ee, curr_ori = self.get_ee()
+        print("curr_ee", curr_ee)
+        new_ee = curr_ee + action[:3]
+        print("new_ee", new_ee)
+        self.move_ee_world(new_ee, curr_ori, wrist_rotate=action[3], steps=30)
+        #self.move_ee(new_ee, wrist_rotate=action[3], steps=30)
+        self.p.setJointMotorControl2(self.robot, 17, self.p.POSITION_CONTROL, -1*action[4])
+        self.p.setJointMotorControl2(self.robot, 18, self.p.POSITION_CONTROL, action[4])
+        for i in range(30): #25):
+            self.step(i % 5 == 0)
+        return
+
+    
     def move_ee(self, pos, wrist_rotate=0, steps=30, velocity_constrained=True):
         base_pos, base_ori = self.p.getBasePositionAndOrientation(self.robot)
         pos, ori = self.p.multiplyTransforms(base_pos, base_ori, pos, self.params["down_quat"])
+        print("desired pos world staet", pos)
         jointStates = self.p.calculateInverseKinematics(self.robot, 16, pos, ori, maxNumIterations=70)[2:6]
+        print("joint states", jointStates)
+        if velocity_constrained:
+            if type(velocity_constrained) == bool:
+                max_velocity = 5 
+            else:
+                max_velocity = velocity_constrained
+        else:
+            max_velocity = float("inf")
+        for i in range(4):
+            self.p.setJointMotorControl2(self.robot, i+12, self.p.POSITION_CONTROL, jointStates[i], maxVelocity=max_velocity)
+        self.p.setJointMotorControl2(self.robot, 16, self.p.POSITION_CONTROL, wrist_rotate, maxVelocity=max_velocity)
+
+        for i in range(steps):
+            self.step(i % 5 == 0)
+            
+    def move_ee_world(self, world_pos, world_ori, wrist_rotate=0, steps=30, velocity_constrained=True):
+        print("desired pos world staet", world_pos)
+        jointStates = self.p.calculateInverseKinematics(self.robot, 16, world_pos, world_ori, maxNumIterations=70)[2:6]
         
         if velocity_constrained:
             if type(velocity_constrained) == bool:
@@ -294,6 +336,7 @@ class PybulletInterface:
         
         if self.recording and record:
             camera_pos, camera_ori, _, _, _, _ = self.p.getLinkState(self.robot, 23)
+            #State(self.robot, 23)
             base_pos, base_ori = self.p.getBasePositionAndOrientation(self.robot)
             block_pos, block_ori = self.p.multiplyTransforms(base_pos, base_ori, self.params["camera_look_pos"], self.default_ori)
             self.camera.update(camera_pos, block_pos)
