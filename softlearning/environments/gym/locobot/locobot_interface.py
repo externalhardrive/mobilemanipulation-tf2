@@ -15,9 +15,8 @@ from . import bullet_client
 
 from .utils import *
 
-# GRASP_CLASSIFIER = load_convnet('classifier/model', IMAGE_SIZE, relative_path=True)
-
 class Viewer:
+    """ Wrapper for a pybullet camera. """
     def __init__(self, p, camera_pos, look_pos, fov=25, near_pos=.02, far_pos=1.):
         self.p = p
         self.proj_matrix = self.p.computeProjectionMatrixFOV(fov, 1, near_pos, far_pos)
@@ -35,14 +34,15 @@ class Viewer:
 
 class PybulletInterface:
 
-    # START_JOINTS = np.array([0., -0.6, 1.3, 0.5, 1.6])
-    # # PREGRASP_POS = np.array((0.4568896949291229, -0.00021789505262859166, 0.3259587585926056))
-    # PREGRASP_POS = np.array((0.5, 0, 0.3))
-    # DOWN_QUAT = np.array((0.00011637622083071619, 0.6645175218582153, 0.00046503773774020374, 0.7472725510597229))
-    # BLOCK_POS = np.array([.45, 0., .02])
-    # GRIPPER_REF_POS = np.array([.45, 0., .0])
-    # CAMERA_LOOK_POS = np.array([0.5, 0., .2])
-    # # BLOCK_POS = np.array([0.5, 0, 0.2])
+    # Legacy constants for reference only
+        # START_JOINTS = np.array([0., -0.6, 1.3, 0.5, 1.6])
+        # # PREGRASP_POS = np.array((0.4568896949291229, -0.00021789505262859166, 0.3259587585926056))
+        # PREGRASP_POS = np.array((0.5, 0, 0.3))
+        # DOWN_QUAT = np.array((0.00011637622083071619, 0.6645175218582153, 0.00046503773774020374, 0.7472725510597229))
+        # BLOCK_POS = np.array([.45, 0., .02])
+        # GRIPPER_REF_POS = np.array([.45, 0., .0])
+        # CAMERA_LOOK_POS = np.array([0.5, 0., .2])
+        # # BLOCK_POS = np.array([0.5, 0, 0.2])
 
     def __init__(self, **params):
         defaults = {
@@ -132,8 +132,6 @@ class PybulletInterface:
             for joint in range(7):
                 self.p.setJointMotorControl2(self.robot,joint+12,self.p.POSITION_CONTROL,self.saved_joints[joint])
                 self.p.setJointMotorControl2(self.robot,joint+12,self.p.VELOCITY_CONTROL,0)
-        self.frames = []
-    
 
     # ----- TEXTURES METHOD -----
 
