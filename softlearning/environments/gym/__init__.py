@@ -104,6 +104,11 @@ GENERAL_ENVIRONMENT_SPECS = (
         'id': 'Locobot-ImageNavigationResetFree-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
                         '.nav_grasp_envs:ImageLocobotNavigationEnv')
+    },
+    {
+        'id': 'Locobot-MixedNavigationResetFree-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.nav_grasp_envs:MixedLocobotNavigationEnv')
     }
 )
 

@@ -75,6 +75,7 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageNavigation-v0': int(1e6),
             'MixedNavigation-v0': int(1e6),
             'ImageNavigationResetFree-v0': int(1e6),
+            'MixedNavigationResetFree-v0': int(1e6),
         },
     },
 }
@@ -91,6 +92,7 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageNavigation-v0': 200,
             'MixedNavigation-v0': 200,
             'ImageNavigationResetFree-v0': 200,
+            'MixedNavigationResetFree-v0': 200,
         },
     },
 }
@@ -103,6 +105,7 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             DEFAULT_KEY: 1000,
             'MixedNavigation-v0': 1000,
             'ImageNavigationResetFree-v0': 1000,
+            'MixedNavigationResetFree-v0': 1000,
         },
     },
 }
@@ -141,24 +144,6 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'min_other_blocks': 0,
                 'max_other_blocks': 6
             },
-            'MixedNavigation-v0': {
-                'pixel_wrapper_kwargs': {
-                    'pixels_only': False,
-                },
-                'observation_keys': ('current_velocity', 'target_velocity', 'pixels'),
-                'room_name': 'simple',
-                'room_params': {
-                    'num_objects': 80, 
-                    'object_name': "greensquareball", 
-                    'wall_size': 5.0, 
-                    'no_spawn_radius': 0.8,
-                },
-                'max_ep_len': 200,
-                'image_size': 100,
-                'steps_per_second': 2,
-                'max_velocity': 20.0,
-                'max_acceleration': 4.0
-            },
             'ImageNavigation-v0': {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': True,
@@ -191,6 +176,42 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 },
                 'max_ep_len': float('inf'),
                 'image_size': 100,
+            },
+            'MixedNavigation-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
+                },
+                'observation_keys': ('current_velocity', 'target_velocity', 'pixels'),
+                'room_name': 'simple',
+                'room_params': {
+                    'num_objects': 80, 
+                    'object_name': "greensquareball", 
+                    'wall_size': 5.0, 
+                    'no_spawn_radius': 0.8,
+                },
+                'max_ep_len': 200,
+                'image_size': 100,
+                'steps_per_second': 2,
+                'max_velocity': 20.0,
+                'max_acceleration': 4.0
+            },
+            'MixedNavigationResetFree-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
+                },
+                'observation_keys': ('current_velocity', 'target_velocity', 'pixels'),
+                'reset_free': True,
+                'room_name': 'medium',
+                'room_params': {
+                    'num_objects': 100, 
+                    'object_name': "greensquareball", 
+                    'no_spawn_radius': 0.8,
+                },
+                'max_ep_len': float('inf'),
+                'image_size': 100,
+                'steps_per_second': 2,
+                'max_velocity': 20.0,
+                'max_acceleration': 4.0
             }
         },
     },
@@ -200,6 +221,10 @@ EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
     'gym': {
         'Locobot': {
             'ImageNavigationResetFree-v0': {
+                'reset_free': False,
+                'max_ep_len': 200,
+            },
+            'MixedNavigationResetFree-v0': {
                 'reset_free': False,
                 'max_ep_len': 200,
             }

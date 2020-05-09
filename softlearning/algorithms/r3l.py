@@ -9,6 +9,47 @@ import tensorflow_probability as tfp
 
 from .rl_algorithm import RLAlgorithm
 
+class RunningMeanVar:
+    def __init__(self, eps=1e-6):
+        self._mean = np.zeros((), np.float64)
+        self._var = np.ones((), np.float64)
+        self._count = eps
+        self._eps = eps
+
+    def update_batch(self, batch):
+        batch_mean = np.mean(batch)
+        batch_var = np.var(batch)
+        batch_count = batch.shape[0]
+        
+        delta = batch_mean - self._mean
+        total_count = self._count + batch_count
+
+        new_mean = self._mean + delta * batch_count / total_count
+        m_a = self._var * self._count
+        m_b = batch_var * batch_count
+        m_2 = m_a + m_b + np.square(delta) * self._count * batch_count / total_count
+        new_var = m_2 / total_count
+
+        self._mean = new_mean
+        self._var = new_var
+        self._count = total_count
+
+    @property
+    def count(self):
+        return self._count
+
+    @property
+    def mean(self):
+        return self._mean
+
+    @property
+    def var(self):
+        return self._var + self._eps
+
+    @property
+    def std(self):
+        return np.sqrt(self._var + self._eps)
+
 class R3L(RLAlgorithm):
     """ Loosely based off of R3L 
         https://openreview.net/pdf?id=rJe2syrtvS
@@ -91,9 +132,8 @@ class R3L(RLAlgorithm):
             learning_rate=self._rnd_lr,
             name="rnd_predictor_optimizer")
 
-        self._rnd_running_mean = np.zeros((), np.float64)
-        self._rnd_running_var = np.ones((), np.float64)
-        self._rnd_running_count = 1e-4
+        self._intrinsic_running_mean_var = RunningMeanVar()
+        self._extrinsic_running_mean_var = RunningMeanVar()
 
         # start with perturbation policy because the start of first epoch will switch policy
         self._current_forward_policy = False
@@ -132,39 +172,23 @@ class R3L(RLAlgorithm):
 
         return predictor_losses
 
-    def _update_running_mean_and_var(self, batch_rewards):
-        """ Modified Welford's algorithm from the original RND paper
-            https://github.com/openai/random-network-distillation/blob/f75c0f1efa473d5109d487062fd8ed49ddce6634/mpi_util.py#L200-L214
-        """
-        batch_mean = np.mean(batch_rewards)
-        batch_var = np.var(batch_rewards)
-        batch_count = batch_rewards.shape[0]
-        
-        delta = batch_mean - self._rnd_running_mean
-        total_count = self._rnd_running_count + batch_count
-
-        new_mean = self._rnd_running_mean + delta * batch_count / total_count
-        m_a = self._rnd_running_var * self._rnd_running_count
-        m_b = batch_var * batch_count
-        m_2 = m_a + m_b + np.square(delta) * self._rnd_running_count * batch_count / total_count
-        new_var = m_2 / total_count
-
-        self._rnd_running_mean = new_mean
-        self._rnd_running_var = new_var
-        self._rnd_running_count = total_count
-
     def _do_training(self, iteration, batch):
         # update RND predictor loss
         predictor_losses = self._update_rnd_predictor(batch)
 
         # compute intrinsic reward for this batch
         intrinsic_rewards = predictor_losses.numpy().reshape(-1, 1)
-        self._update_running_mean_and_var(intrinsic_rewards)
-        intrinsic_rewards = intrinsic_rewards / np.sqrt(self._rnd_running_var)
+        self._intrinsic_running_mean_var.update_batch(intrinsic_rewards)
+        intrinsic_rewards = intrinsic_rewards / self._intrinsic_running_mean_var.std
 
         # update the current policy we are using
         if self._current_forward_policy:
-            batch['rewards'] = self._extrinsic_scale * batch['rewards'] + self._intrinsic_scale * intrinsic_rewards
+            # update extrinsic rewards
+            extrinsic_rewards = batch['rewards']
+            self._extrinsic_running_mean_var.update_batch(extrinsic_rewards)
+            extrinsic_rewards = extrinsic_rewards / self._extrinsic_running_mean_var.std
+
+            batch['rewards'] = self._extrinsic_scale * extrinsic_rewards + self._intrinsic_scale * intrinsic_rewards
             sac_diagnostics = self._forward_sac._do_training(iteration, batch)
         else:
             batch['rewards'] = intrinsic_rewards
@@ -173,11 +197,19 @@ class R3L(RLAlgorithm):
         diagnostics = OrderedDict({
             **sac_diagnostics,
             'rnd_predictor_loss-mean': tf.reduce_mean(predictor_losses),
-            'rnd_running_var': self._rnd_running_var,
-            'rnd_intrinsic_reward-mean': np.mean(intrinsic_rewards),
-            'rnd_intrinsic_reward-min': np.min(intrinsic_rewards),
-            'rnd_intrinsic_reward-max': np.max(intrinsic_rewards),
+            'intrinsic_running_std': self._intrinsic_running_mean_var.std,
+            'intrinsic_reward-mean': np.mean(intrinsic_rewards),
+            'intrinsic_reward-min': np.min(intrinsic_rewards),
+            'intrinsic_reward-max': np.max(intrinsic_rewards),
         })
+
+        if self._current_forward_policy:
+            diagnostics.update({
+                'extrinsic_running_std': self._extrinsic_running_mean_var.std,
+                'extrinsic_reward-mean': np.mean(extrinsic_rewards),
+                'extrinsic_reward-min': np.min(extrinsic_rewards),
+                'extrinsic_reward-max': np.max(extrinsic_rewards),
+            })
 
         return diagnostics
 
