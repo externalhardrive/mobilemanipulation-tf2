@@ -17,6 +17,7 @@ URDF = {
     "largerminiblock": os.path.join(CURR_PATH, 'urdf/largerminiblock.urdf'),
     "greenball": os.path.join(CURR_PATH, 'urdf/greenball.urdf'),
     "greensquareball": os.path.join(CURR_PATH, 'urdf/greensquareball_v2.urdf'),
+    "greensquareball_large": os.path.join(CURR_PATH, 'urdf/greensquareball_large.urdf'),
     "walls": os.path.join(CURR_PATH, 'urdf/walls.urdf'),
     "plane": os.path.join(CURR_PATH, 'urdf/plane.urdf'),
     "rectangular_pillar": os.path.join(CURR_PATH, 'urdf/rectangular_pillar.urdf'),

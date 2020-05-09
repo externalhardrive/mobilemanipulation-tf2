@@ -20,21 +20,21 @@ def save_obs(obs, path):
     mpimg.imsave(path, obs)
 
 def main(args):
-    room_name = "simple"
+    # room_name = "simple"
     # room_name = "simple_obstacles"
-    room_params = dict(
-        num_objects=100, 
-        object_name="greensquareball", 
-        wall_size=5.0,
-        no_spawn_radius=0.8,
-    )
-    # room_name = "medium"
     # room_params = dict(
-    #     num_objects=80, 
+    #     num_objects=100, 
     #     object_name="greensquareball", 
     #     wall_size=5.0,
     #     no_spawn_radius=0.8,
     # )
+    room_name = "medium"
+    room_params = dict(
+        num_objects=80, 
+        object_name="greensquareball_large", 
+        wall_size=5.0,
+        no_spawn_radius=0.8,
+    )
     # inner_env = ImageLocobotNavigationEnv(
     #         renders=False, grayscale=False, step_duration=1/60,
     #         room_name=room_name,
