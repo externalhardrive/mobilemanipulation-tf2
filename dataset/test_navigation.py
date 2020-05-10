@@ -30,10 +30,10 @@ def main(args):
     # )
     room_name = "medium"
     room_params = dict(
-        num_objects=80, 
-        object_name="greensquareball_large", 
-        wall_size=5.0,
-        no_spawn_radius=0.8,
+        num_objects=200, 
+        object_name="greensquareball", 
+        wall_size=7,
+        no_spawn_radius=0.75,
     )
     # inner_env = ImageLocobotNavigationEnv(
     #         renders=False, grayscale=False, step_duration=1/60,

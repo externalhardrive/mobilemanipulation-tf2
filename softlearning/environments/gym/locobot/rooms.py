@@ -124,11 +124,12 @@ class MediumRoom(Room):
             num_objects=100, 
             object_name="greensquareball", 
             no_spawn_radius=1.0,
+            wall_size=5.0,
         )
         defaults.update(params)
         super().__init__(interface, defaults)
 
-        self._wall_size = 5.0
+        self._wall_size = self.params["wall_size"]
         self.wall_id = self.interface.spawn_object(URDF["walls_2"], scale=self._wall_size)
 
         self._num_objects = self.params["num_objects"]

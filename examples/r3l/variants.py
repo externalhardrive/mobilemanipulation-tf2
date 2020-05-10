@@ -203,9 +203,10 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'reset_free': True,
                 'room_name': 'medium',
                 'room_params': {
-                    'num_objects': 100, 
+                    'num_objects': 200, 
                     'object_name': "greensquareball", 
-                    'no_spawn_radius': 0.8,
+                    'no_spawn_radius': 0.7,
+                    'wall_size': 7.0
                 },
                 'max_ep_len': float('inf'),
                 'image_size': 100,
