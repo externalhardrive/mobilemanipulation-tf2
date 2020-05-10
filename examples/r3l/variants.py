@@ -211,7 +211,9 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'image_size': 100,
                 'steps_per_second': 2,
                 'max_velocity': 20.0,
-                'max_acceleration': 4.0
+                'max_acceleration': 4.0,
+                'trajectory_log_dir': '/home/externalhardrive/mobilemanipulation-tf2/nohup_output/trajectories/', 
+                'trajectory_log_freq': 1000
             }
         },
     },
@@ -227,6 +229,8 @@ EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
             'MixedNavigationResetFree-v0': {
                 'reset_free': False,
                 'max_ep_len': 200,
+                'trajectory_log_dir': None, 
+                'trajectory_log_freq': 0
             }
         },
     },

@@ -42,13 +42,23 @@ class RoomEnv(LocobotBaseEnv):
 
 class BaseNavigationEnv(RoomEnv):
     def __init__(self, **params):
-        defaults = dict()
+        defaults = dict(trajectory_log_dir=None, trajectory_log_freq=0)
 
         defaults["max_ep_len"] = 200
         defaults.update(params)
 
         super().__init__(**defaults)
         print("BaseNavigationEnv params:", self.params)
+
+        self.trajectory_log_dir = self.params["trajectory_log_dir"]
+        self.trajectory_log_freq = self.params["trajectory_log_freq"]
+        if self.trajectory_log_dir and self.trajectory_log_freq > 0:
+            os.makedirs(self.trajectory_log_dir, exist_ok=True)
+            uid = str(np.random.randint(1e6))
+            self.trajectory_log_path = os.path.join(self.trajectory_log_dir, "trajectory_" + uid + "_")
+            self.trajectory_num = 0
+            self.trajectory_step = 0
+            self.trajectory_data = np.zeros((self.trajectory_log_freq, 2))
 
         self.total_grasped = 0
     
@@ -94,7 +104,16 @@ class BaseNavigationEnv(RoomEnv):
         infos["base_y"] = base_pos[1]
         infos["action_left"] = action[0]
         infos["action_right"] = action[1]
-        
+
+        if self.trajectory_log_dir and self.trajectory_log_freq > 0:
+            self.trajectory_data[self.trajectory_step, 0] = base_pos[0]
+            self.trajectory_data[self.trajectory_step, 1] = base_pos[1]
+            self.trajectory_step += 1
+            if self.trajectory_step == self.trajectory_log_freq:
+                self.trajectory_step = 0
+                self.trajectory_num += 1
+                np.save(self.trajectory_log_path + str(self.trajectory_num), self.trajectory_data)
+
         # steps update
         self.num_steps += 1
         done = self.num_steps >= self.max_ep_len

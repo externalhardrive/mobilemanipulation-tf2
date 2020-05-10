@@ -17,6 +17,7 @@ class RunningMeanVar:
         self._eps = eps
 
     def update_batch(self, batch):
+        """ https://github.com/openai/random-network-distillation/blob/f75c0f1efa473d5109d487062fd8ed49ddce6634/mpi_util.py#L200-L214 """
         batch_mean = np.mean(batch)
         batch_var = np.var(batch)
         batch_count = batch.shape[0]
