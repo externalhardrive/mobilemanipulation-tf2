@@ -195,13 +195,26 @@ class MixedLocobotNavigationEnv(BaseNavigationEnv):
         return obs
 
     def do_move(self, action):
-        # self.target_velocity += np.array(action) * self.velocity_change_scale
-        # self.target_velocity = np.clip(self.target_velocity, -self.max_velocity, self.max_velocity)
         self.target_velocity = np.array(action) * self.max_velocity
         new_left, new_right = self.target_velocity
 
         self.interface.set_wheels_velocity(new_left, new_right)
         self.interface.do_steps(self.num_sim_steps_per_env_step)
+
+class MixedLocobotNavigationReachEnv(MixedLocobotNavigationEnv):
+    """ Object wouldn't be picked up. The goal is to stop at a block. """
+
+    def do_grasp(self, action):
+        """ returns number of object picked up """
+        success = 0
+        for i in range(self.room.num_objects):
+            object_pos, _ = self.interface.get_object(self.room.objects_id[i], relative=True)
+            if is_in_rect(object_pos[0], object_pos[1], 0.42 - 0.04, -0.12, 0.42 + 0.04, 0.12):
+                success += 1
+                self.total_grasped += 1
+                break
+
+        return success 
 
 # class ImageLocobotNavigationGraspingEnv(ImageLocobotNavigationEnv):
 #     """ A field with walls containing lots of balls, the robot grasps one and it disappears.
