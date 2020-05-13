@@ -200,6 +200,7 @@ class R3L(RLAlgorithm):
             'rnd_predictor_loss-mean': tf.reduce_mean(predictor_losses),
             'intrinsic_running_std': self._intrinsic_running_mean_var.std,
             'intrinsic_reward-mean': np.mean(intrinsic_rewards),
+            'intrinsic_reward-std': np.std(intrinsic_rewards),
             'intrinsic_reward-min': np.min(intrinsic_rewards),
             'intrinsic_reward-max': np.max(intrinsic_rewards),
         })
@@ -208,6 +209,7 @@ class R3L(RLAlgorithm):
             diagnostics.update({
                 'extrinsic_running_std': self._extrinsic_running_mean_var.std,
                 'extrinsic_reward-mean': np.mean(extrinsic_rewards),
+                'extrinsic_reward-std': np.std(extrinsic_rewards),
                 'extrinsic_reward-min': np.min(extrinsic_rewards),
                 'extrinsic_reward-max': np.max(extrinsic_rewards),
             })
