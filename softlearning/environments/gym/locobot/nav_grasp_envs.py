@@ -58,7 +58,8 @@ class BaseNavigationEnv(RoomEnv):
             self.trajectory_log_path = os.path.join(self.trajectory_log_dir, "trajectory_" + uid + "_")
             self.trajectory_num = 0
             self.trajectory_step = 0
-            self.trajectory_data = np.zeros((self.trajectory_log_freq, 2))
+            self.trajectory_base = np.zeros((self.trajectory_log_freq, 2))
+            self.trajectory_objects = OrderedDict({})
 
         self.total_grasped = 0
     
@@ -66,7 +67,18 @@ class BaseNavigationEnv(RoomEnv):
         obs = super().reset()
         self.total_grasped = 0
 
+        self.update_trajectory_objects()
+
         return obs
+
+    def update_trajectory_objects(self):
+        if self.trajectory_log_dir and self.trajectory_log_freq > 0:
+            objects = np.zeros((self.room.num_objects, 2))
+            for i in range(self.room.num_objects):
+                object_pos, _ = self.interface.get_object(self.room.objects_id[i], relative=False)
+                objects[i, 0] = object_pos[0]
+                objects[i, 1] = object_pos[1]
+            self.trajectory_objects[self.trajectory_step] = objects
 
     def do_move(self, action):
         self.interface.move_base(action[0] * 10.0, action[1] * 10.0)
@@ -80,6 +92,9 @@ class BaseNavigationEnv(RoomEnv):
                 success += 1
                 self.total_grasped += 1
                 self.interface.move_object(self.room.objects_id[i], [self.room.extent * 3.0, 0, 1])
+                
+                self.update_trajectory_objects()
+
                 break
 
         return success
@@ -106,13 +121,23 @@ class BaseNavigationEnv(RoomEnv):
         infos["action_right"] = action[1]
 
         if self.trajectory_log_dir and self.trajectory_log_freq > 0:
-            self.trajectory_data[self.trajectory_step, 0] = base_pos[0]
-            self.trajectory_data[self.trajectory_step, 1] = base_pos[1]
+            self.trajectory_base[self.trajectory_step, 0] = base_pos[0]
+            self.trajectory_base[self.trajectory_step, 1] = base_pos[1]
             self.trajectory_step += 1
+            
             if self.trajectory_step == self.trajectory_log_freq:
+                self.trajectory_step -= 1 # for updating trajectory
+                self.update_trajectory_objects()
+
                 self.trajectory_step = 0
                 self.trajectory_num += 1
-                np.save(self.trajectory_log_path + str(self.trajectory_num), self.trajectory_data)
+
+                data = OrderedDict({
+                    "base": self.trajectory_base,
+                    "objects": self.trajectory_objects
+                })
+
+                np.save(self.trajectory_log_path + str(self.trajectory_num), data)
 
         # steps update
         self.num_steps += 1

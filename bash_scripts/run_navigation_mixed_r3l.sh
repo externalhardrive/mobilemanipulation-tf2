@@ -9,5 +9,5 @@ softlearning run_example_local examples.r3l \
     --trial-cpus 6 \
     --trial-gpus 1 \
     --run-eagerly False \
-    --server-port 11112 \
+    --server-port 11122 \
     --num-samples 1 \

@@ -213,7 +213,7 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'steps_per_second': 2,
                 'max_velocity': 20.0,
                 'max_acceleration': 4.0,
-                'trajectory_log_dir': '/home/externalhardrive/mobilemanipulation-tf2/nohup_output/trajectories/', 
+                'trajectory_log_dir': '/home/externalhardrive/mobilemanipulation-tf2/nohup_output/mixed_nav_rf_rnd_newton_3_traj/', 
                 'trajectory_log_freq': 1000
             }
         },
