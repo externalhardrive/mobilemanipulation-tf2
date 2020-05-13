@@ -28,12 +28,19 @@ def main(args):
     #     wall_size=5.0,
     #     no_spawn_radius=0.8,
     # )
-    room_name = "medium"
+    # room_name = "medium"
+    # room_params = dict(
+    #     num_objects=200, 
+    #     object_name="greensquareball", 
+    #     wall_size=7,
+    #     no_spawn_radius=0.75,
+    # )
+    room_name = "simple"
     room_params = dict(
-        num_objects=200, 
+        num_objects=20, 
         object_name="greensquareball", 
-        wall_size=7,
-        no_spawn_radius=0.75,
+        wall_size=3.0,
+        no_spawn_radius=0.6,
     )
     # inner_env = ImageLocobotNavigationEnv(
     #         renders=False, grayscale=False, step_duration=1/60,
