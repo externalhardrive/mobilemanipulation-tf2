@@ -174,46 +174,81 @@ class R3L(RLAlgorithm):
         return predictor_losses
 
     def _do_training(self, iteration, batch):
-        # update RND predictor loss
-        predictor_losses = self._update_rnd_predictor(batch)
+        # # update RND predictor loss
+        # predictor_losses = self._update_rnd_predictor(batch)
 
-        # compute intrinsic reward for this batch
-        intrinsic_rewards = predictor_losses.numpy().reshape(-1, 1)
-        self._intrinsic_running_mean_var.update_batch(intrinsic_rewards)
-        intrinsic_rewards = intrinsic_rewards / self._intrinsic_running_mean_var.std
+        # # compute intrinsic reward for this batch
+        # intrinsic_rewards = predictor_losses.numpy().reshape(-1, 1)
+        # self._intrinsic_running_mean_var.update_batch(intrinsic_rewards)
+        # intrinsic_rewards = intrinsic_rewards / self._intrinsic_running_mean_var.std
+
+        # # update the current policy we are using
+        # if self._current_forward_policy:
+        #     # update extrinsic rewards
+        #     extrinsic_rewards = batch['rewards']
+        #     self._extrinsic_running_mean_var.update_batch(extrinsic_rewards)
+        #     extrinsic_rewards = extrinsic_rewards / self._extrinsic_running_mean_var.std
+
+        #     batch['rewards'] = self._extrinsic_scale * extrinsic_rewards + self._intrinsic_scale * intrinsic_rewards
+        #     sac_diagnostics = self._forward_sac._do_training(iteration, batch)
+        # else:
+        #     batch['rewards'] = intrinsic_rewards
+        #     sac_diagnostics = self._perturbation_sac._do_training(iteration, batch)
+        
+        # diagnostics = OrderedDict({
+        #     **sac_diagnostics,
+        #     'rnd_predictor_loss-mean': tf.reduce_mean(predictor_losses),
+        #     'intrinsic_running_std': self._intrinsic_running_mean_var.std,
+        #     'intrinsic_reward-mean': np.mean(intrinsic_rewards),
+        #     'intrinsic_reward-std': np.std(intrinsic_rewards),
+        #     'intrinsic_reward-min': np.min(intrinsic_rewards),
+        #     'intrinsic_reward-max': np.max(intrinsic_rewards),
+        # })
+
+        # if self._current_forward_policy:
+        #     diagnostics.update({
+        #         'extrinsic_running_std': self._extrinsic_running_mean_var.std,
+        #         'extrinsic_reward-mean': np.mean(extrinsic_rewards),
+        #         'extrinsic_reward-std': np.std(extrinsic_rewards),
+        #         'extrinsic_reward-min': np.min(extrinsic_rewards),
+        #         'extrinsic_reward-max': np.max(extrinsic_rewards),
+        #     })
 
         # update the current policy we are using
         if self._current_forward_policy:
-            # update extrinsic rewards
-            extrinsic_rewards = batch['rewards']
-            self._extrinsic_running_mean_var.update_batch(extrinsic_rewards)
-            extrinsic_rewards = extrinsic_rewards / self._extrinsic_running_mean_var.std
-
-            batch['rewards'] = self._extrinsic_scale * extrinsic_rewards + self._intrinsic_scale * intrinsic_rewards
+            # directly use the external rewards
             sac_diagnostics = self._forward_sac._do_training(iteration, batch)
+
+            diagnostics = OrderedDict({
+                **sac_diagnostics,
+                'extrinsic_reward-mean': np.mean(batch['rewards']),
+                'extrinsic_reward-std': np.std(batch['rewards']),
+                'extrinsic_reward-min': np.min(batch['rewards']),
+                'extrinsic_reward-max': np.max(batch['rewards']),
+            })
+
         else:
+            # update RND predictor loss
+            predictor_losses = self._update_rnd_predictor(batch)
+
+            # compute intrinsic reward for this batch
+            intrinsic_rewards = predictor_losses.numpy().reshape(-1, 1)
+            self._intrinsic_running_mean_var.update_batch(intrinsic_rewards)
+            intrinsic_rewards = intrinsic_rewards / self._intrinsic_running_mean_var.std
+
             batch['rewards'] = intrinsic_rewards
             sac_diagnostics = self._perturbation_sac._do_training(iteration, batch)
 
-        diagnostics = OrderedDict({
-            **sac_diagnostics,
-            'rnd_predictor_loss-mean': tf.reduce_mean(predictor_losses),
-            'intrinsic_running_std': self._intrinsic_running_mean_var.std,
-            'intrinsic_reward-mean': np.mean(intrinsic_rewards),
-            'intrinsic_reward-std': np.std(intrinsic_rewards),
-            'intrinsic_reward-min': np.min(intrinsic_rewards),
-            'intrinsic_reward-max': np.max(intrinsic_rewards),
-        })
-
-        if self._current_forward_policy:
-            diagnostics.update({
-                'extrinsic_running_std': self._extrinsic_running_mean_var.std,
-                'extrinsic_reward-mean': np.mean(extrinsic_rewards),
-                'extrinsic_reward-std': np.std(extrinsic_rewards),
-                'extrinsic_reward-min': np.min(extrinsic_rewards),
-                'extrinsic_reward-max': np.max(extrinsic_rewards),
+            diagnostics = OrderedDict({
+                **sac_diagnostics,
+                'rnd_predictor_loss-mean': tf.reduce_mean(predictor_losses),
+                'intrinsic_running_std': self._intrinsic_running_mean_var.std,
+                'intrinsic_reward-mean': np.mean(intrinsic_rewards),
+                'intrinsic_reward-std': np.std(intrinsic_rewards),
+                'intrinsic_reward-min': np.min(intrinsic_rewards),
+                'intrinsic_reward-max': np.max(intrinsic_rewards),
             })
-
+        
         return diagnostics
 
     def get_diagnostics(self,
