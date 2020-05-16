@@ -138,6 +138,7 @@ class BaseNavigationEnv(RoomEnv):
                 })
 
                 np.save(self.trajectory_log_path + str(self.trajectory_num), data)
+                self.trajectory_objects = OrderedDict({})
 
         # steps update
         self.num_steps += 1
