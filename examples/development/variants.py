@@ -41,7 +41,7 @@ ALGORITHM_PARAMS_ADDITIONAL = {
             'tau': 5e-3,
             'target_entropy': 'auto',
 
-            'discount': 0.99,
+            'discount': 0.995,
             'reward_scale': 1.0,
         },
     },
@@ -127,6 +127,7 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
             'MixedNavigation-v0': int(1e6),
             'MixedNavigationReach-v0': int(1e6),
             'ImageNavigationResetFree-v0': int(1e6),
+            'MixedNavigationResetFree-v0': int(1e5),
         },
     },
     'dm_control': {
@@ -242,6 +243,7 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'MixedNavigation-v0': 200,
             'MixedNavigationReach-v0': 100,
             'ImageNavigationResetFree-v0': 200,
+            'MixedNavigationResetFree-v0': 200,
         },
     },
 }
@@ -254,6 +256,7 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             DEFAULT_KEY: 1000,
             'MixedNavigation-v0': 1000,
             'ImageNavigationResetFree-v0': 1000,
+            'MixedNavigationResetFree-v0': 1000,
         },
     },
 }
@@ -370,30 +373,6 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'min_other_blocks': 0,
                 'max_other_blocks': 6
             },
-            'MixedNavigation-v0': {
-                'pixel_wrapper_kwargs': {
-                    'pixels_only': False,
-                },
-                'observation_keys': ('current_velocity', 'target_velocity', 'pixels'),
-                # 'room_name': 'simple',
-                # 'room_params': {
-                #     'num_objects': 80, 
-                #     'object_name': "greensquareball", 
-                #     'wall_size': 5.0, 
-                #     'no_spawn_radius': 0.8,
-                # },
-                'room_name': 'medium',
-                'room_params': {
-                    'num_objects': 100, 
-                    'object_name': "greensquareball", 
-                    'no_spawn_radius': 0.8,
-                },
-                'max_ep_len': 200,
-                'image_size': 100,
-                'steps_per_second': 2,
-                'max_velocity': 20.0,
-                'max_acceleration': 4.0
-            },
             'MixedNavigationReach-v0': {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': False,
@@ -444,7 +423,52 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 },
                 'max_ep_len': float('inf'),
                 'image_size': 100,
-            }
+            },
+            'MixedNavigation-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
+                },
+                'observation_keys': ('current_velocity', 'target_velocity', 'pixels'),
+                # 'room_name': 'simple',
+                # 'room_params': {
+                #     'num_objects': 80, 
+                #     'object_name': "greensquareball", 
+                #     'wall_size': 5.0, 
+                #     'no_spawn_radius': 0.8,
+                # },
+                'room_name': 'medium',
+                'room_params': {
+                    'num_objects': 100, 
+                    'object_name': "greensquareball", 
+                    'no_spawn_radius': 0.8,
+                },
+                'max_ep_len': 200,
+                'image_size': 100,
+                'steps_per_second': 2,
+                'max_velocity': 20.0,
+                'max_acceleration': 4.0
+            },
+            'MixedNavigationResetFree-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
+                },
+                'observation_keys': ('current_velocity', 'target_velocity', 'pixels'),
+                'reset_free': True,
+                'room_name': 'medium',
+                'room_params': {
+                    'num_objects': 200, 
+                    'object_name': "greensquareball", 
+                    'no_spawn_radius': 0.7,
+                    'wall_size': 7.0
+                },
+                'max_ep_len': float('inf'),
+                'image_size': 100,
+                'steps_per_second': 2,
+                'max_velocity': 20.0,
+                'max_acceleration': 4.0,
+                'trajectory_log_dir': '/home/charlesjsun/mobilemanipulation-tf2/nohup_output/mixed_nav_rf_sac_newton5_2_traj/', 
+                'trajectory_log_freq': 1000
+            },
         },
     },
     'dm_control': {
@@ -493,6 +517,12 @@ EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageNavigationResetFree-v0': {
                 'reset_free': False,
                 'max_ep_len': 200,
+            },
+            'MixedNavigationResetFree-v0': {
+                'reset_free': False,
+                'max_ep_len': 200,
+                'trajectory_log_dir': None, 
+                'trajectory_log_freq': 0
             }
         },
     },
