@@ -4,6 +4,7 @@ from softlearning.utils.serialization import (
 from .base_policy import BasePolicy, LatentSpacePolicy, ContinuousPolicy  # noqa: unused-import
 from .gaussian_policy import GaussianPolicy, FeedforwardGaussianPolicy  # noqa: unused-import
 from .uniform_policy import UniformPolicyMixin, ContinuousUniformPolicy  # noqa: unused-import
+from .one_hot_gaussian_policy import OneHotGaussianPolicy, FeedforwardOneHotGaussianPolicy  # noqa: unused-import
 
 
 def serialize(policy):

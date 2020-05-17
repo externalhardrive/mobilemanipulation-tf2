@@ -643,7 +643,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         },
         # 'policy_params': tune.sample_from(get_policy_params),
         'policy_params': {
-            'class_name': 'FeedforwardGaussianPolicy',
+            'class_name': 'FeedforwardOneHotGaussianPolicy',
             'config': {
                 'hidden_layer_sizes': (M, M),
                 'squash': True,

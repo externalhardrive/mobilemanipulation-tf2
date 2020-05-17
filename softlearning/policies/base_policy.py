@@ -254,7 +254,7 @@ class ContinuousPolicy(BasePolicy):
             False: tfp.bijectors.Identity(),
         }[squash]
 
-        return super(ContinuousPolicy, self).__init__(*args, **kwargs)
+        super(ContinuousPolicy, self).__init__(*args, **kwargs)
 
     def get_config(self):
         base_config = super(ContinuousPolicy, self).get_config()
