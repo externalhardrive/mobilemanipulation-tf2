@@ -124,7 +124,7 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
         'Locobot': {
             DEFAULT_KEY: int(2e5),
             'ImageNavigation-v0': int(1e6),
-            'MixedNavigation-v0': int(1e6),
+            'MixedNavigation-v0': int(1e5),
             'MixedNavigationReach-v0': int(1e6),
             'ImageNavigationResetFree-v0': int(1e6),
             'MixedNavigationResetFree-v0': int(1e5),
@@ -428,7 +428,7 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': False,
                 },
-                'observation_keys': ('current_velocity', 'target_velocity', 'pixels'),
+                'observation_keys': ('current_velocity', 'pixels'),
                 # 'room_name': 'simple',
                 # 'room_params': {
                 #     'num_objects': 80, 
@@ -438,9 +438,10 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 # },
                 'room_name': 'medium',
                 'room_params': {
-                    'num_objects': 100, 
+                    'num_objects': 200, 
                     'object_name': "greensquareball", 
-                    'no_spawn_radius': 0.8,
+                    'no_spawn_radius': 0.7,
+                    'wall_size': 7.0
                 },
                 'max_ep_len': 200,
                 'image_size': 100,

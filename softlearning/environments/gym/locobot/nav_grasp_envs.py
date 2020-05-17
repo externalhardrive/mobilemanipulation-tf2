@@ -178,7 +178,7 @@ class MixedLocobotNavigationEnv(BaseNavigationEnv):
 
         defaults["observation_space"] = spaces.Dict({
             "current_velocity": spaces.Box(low=-1.0, high=1.0, shape=(2,)),
-            "target_velocity": spaces.Box(low=-1.0, high=1.0, shape=(2,)),
+            # "target_velocity": spaces.Box(low=-1.0, high=1.0, shape=(2,)),
             # "pixels": added by PixelObservationWrapper
         })
         defaults["action_dim"] = 2
@@ -216,7 +216,7 @@ class MixedLocobotNavigationEnv(BaseNavigationEnv):
         
         velocity = self.interface.get_wheels_velocity()
         obs["current_velocity"] = np.clip(velocity / self.max_velocity, -1.0, 1.0)
-        obs["target_velocity"] = np.clip(self.target_velocity / self.max_velocity, -1.0, 1.0)
+        # obs["target_velocity"] = np.clip(self.target_velocity / self.max_velocity, -1.0, 1.0)
         
         return obs
 
