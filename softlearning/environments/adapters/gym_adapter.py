@@ -4,6 +4,8 @@ from collections import defaultdict, OrderedDict
 import copy
 
 import numpy as np
+import tensorflow as tf
+import tree
 
 import pprint
 
@@ -15,7 +17,7 @@ from gym.envs.mujoco.mujoco_env import MujocoEnv
 from .softlearning_env import SoftlearningEnv
 from softlearning.environments.gym import register_environments
 from softlearning.utils.gym import is_continuous_space
-
+from softlearning.environments.gym.spaces import DiscreteBox
 
 def parse_domain_task(gym_id):
     domain_task_parts = gym_id.split('-')
@@ -108,12 +110,12 @@ class GymAdapter(SoftlearningEnv):
         if normalize and is_continuous_space(env.action_space):
             env = wrappers.RescaleAction(env, -1.0, 1.0)
 
-        # TODO(hartikainen): We need the clip action wrapper because sometimes
-        # the tfp.bijectors.Tanh() produces values strictly greater than 1 or
-        # strictly less than -1, which causes the env fail without clipping.
-        # The error is in the order of 1e-7, which should not cause issues.
-        # See https://github.com/tensorflow/probability/issues/664.
-        env = wrappers.ClipAction(env)
+            # TODO(hartikainen): We need the clip action wrapper because sometimes
+            # the tfp.bijectors.Tanh() produces values strictly greater than 1 or
+            # strictly less than -1, which causes the env fail without clipping.
+            # The error is in the order of 1e-7, which should not cause issues.
+            # See https://github.com/tensorflow/probability/issues/664.
+            env = wrappers.ClipAction(env)
 
         if pixel_wrapper_kwargs is not None:
             env = PixelObservationWrapper(env, **pixel_wrapper_kwargs)
@@ -174,6 +176,9 @@ class GymAdapter(SoftlearningEnv):
             return aggregated_results
 
     def step(self, action, *args, **kwargs):
+        if isinstance(self._action_space, DiscreteBox):
+            action = self._action_space.from_one_hot(action)
+
         observation, reward, terminal, info = self._env.step(
             action, *args, **kwargs)
 
@@ -210,6 +215,16 @@ class GymAdapter(SoftlearningEnv):
 
     def seed(self, *args, **kwargs):
         return self._env.seed(*args, **kwargs)
+
+    @property
+    def action_shape(self, *args, **kwargs):
+        if isinstance(self._action_space, DiscreteBox):
+            action_shape = tree.map_structure(
+                lambda shape: tf.TensorShape(shape),
+                self._action_space.get_one_hot_shape())
+            return action_shape
+        else:
+            return super().action_shape(self, *args, **kwargs)
 
     @property
     def unwrapped(self):

@@ -1,4 +1,4 @@
-"""OneHotGaussainPolicy."""
+"""DiscreteGaussainPolicy."""
 
 from collections import OrderedDict
 
@@ -11,13 +11,14 @@ from softlearning.models.feedforward import feedforward_model
 
 from .base_policy import LatentSpacePolicy
 
-class OneHotGaussianPolicy(LatentSpacePolicy):
+class DiscreteGaussianPolicy(LatentSpacePolicy):
     def __init__(self, *args, **kwargs):
-        super(OneHotGaussianPolicy, self).__init__(*args, **kwargs)
+        super(DiscreteGaussianPolicy, self).__init__(*args, **kwargs)
 
-        self.shift_and_scale_model = self._shift_and_scale_diag_net(
+        self.shift_scale_onehot_model = self._shift_scale_diag_one_hot_net(
             inputs=self.inputs,
-            output_size=np.prod(self._output_shape) * 2)
+            num_choices=np.prod(self._output_shape) * 2
+            num_total_actions=)
     
     @tf.function(experimental_relax_shapes=True)
     def actions(self, observations):
@@ -167,7 +168,7 @@ class OneHotGaussianPolicy(LatentSpacePolicy):
         ))
 
 
-class FeedforwardOneHotGaussianPolicy(OneHotGaussianPolicy):
+class FeedforwardDiscreteGaussianPolicy(OneHotGaussianPolicy):
     def __init__(self,
                  hidden_layer_sizes,
                  activation='relu',
@@ -178,9 +179,9 @@ class FeedforwardOneHotGaussianPolicy(OneHotGaussianPolicy):
         self._activation = activation
         self._output_activation = output_activation
 
-        super(FeedforwardOneHotGaussianPolicy, self).__init__(*args, **kwargs)
+        super(FeedforwardDiscreteGaussianPolicy, self).__init__(*args, **kwargs)
 
-    def _shift_and_scale_diag_net(self, inputs, output_size):
+    def _shift_scale_diag_one_hot_net(self, inputs, output_size):
         preprocessed_inputs = self._preprocess_inputs(inputs)
         shift_and_scale_diag = feedforward_model(
             hidden_layer_sizes=self._hidden_layer_sizes,
@@ -196,6 +197,7 @@ class FeedforwardOneHotGaussianPolicy(OneHotGaussianPolicy):
         shift_and_scale_diag_model = tf.keras.Model(inputs, (shift, scale))
 
         return shift_and_scale_diag_model
+
 
     def get_config(self):
         base_config = super(FeedforwardOneHotGaussianPolicy, self).get_config()
