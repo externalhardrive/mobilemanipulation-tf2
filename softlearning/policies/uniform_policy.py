@@ -34,3 +34,7 @@ class ContinuousUniformPolicy(UniformPolicyMixin, ContinuousPolicy):
         self.distribution = tfp.distributions.Independent(
             tfp.distributions.Uniform(low=low, high=high),
             reinterpreted_batch_ndims=1)
+
+class DiscreteContinuousUniformPolicy(ContinuousPolicy):
+    def __init__(self, *args, **kwargs):
+        pass

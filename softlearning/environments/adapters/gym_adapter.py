@@ -219,10 +219,7 @@ class GymAdapter(SoftlearningEnv):
     @property
     def action_shape(self, *args, **kwargs):
         if isinstance(self._action_space, DiscreteBox):
-            action_shape = tree.map_structure(
-                lambda shape: tf.TensorShape(shape),
-                self._action_space.get_one_hot_shape())
-            return action_shape
+            return tf.TensorShape(self._action_space.get_one_hot_shape())
         else:
             return super().action_shape(self, *args, **kwargs)
 

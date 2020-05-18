@@ -529,6 +529,20 @@ EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
     },
 }
 
+EXTRA_POLICY_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
+    'gym': {
+        'Locobot': {
+            '????-v0': {
+                'class_name': 'FeedforwardDiscreteGaussianPolicy',
+                'config': {
+                    'num_discrete': 2,
+                    'num_continuous': 2,
+                },
+            },
+        },
+    },
+}
+
 
 def get_epoch_length(universe, domain, task):
     level_result = EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK.copy()
@@ -643,7 +657,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         },
         # 'policy_params': tune.sample_from(get_policy_params),
         'policy_params': {
-            'class_name': 'FeedforwardOneHotGaussianPolicy',
+            'class_name': 'FeedforwardGaussianPolicy',
             'config': {
                 'hidden_layer_sizes': (M, M),
                 'squash': True,

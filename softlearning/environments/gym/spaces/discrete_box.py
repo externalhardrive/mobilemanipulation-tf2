@@ -86,10 +86,7 @@ class DiscreteBox(Space):
         return np.all(sample >= self.low) and np.all(sample <= self.high)
 
     def get_one_hot_shape(self):
-        return OrderedDict((
-                ("onehot", (self.discrete_keys,)),
-                ("params", (self.total_dimension,))
-            ))
+        return (self.total_dimension + self.discrete_keys,)
 
     def from_one_hot(self, x):
         """ 
@@ -99,7 +96,7 @@ class DiscreteBox(Space):
 
         >>> s = DiscreteBox(low=-1.0, high=1.0, dimensions=OrderedDict((("move", 2), ("grasp", 1), ("shutoff", 0))))
         >>> s.from_one_hot(np.array([
-            0.0, 1.0, 0.0, # one-hot encoding for the 3 discrete actions ["move", "grasp", "shutoff"]
+            0.0, 1.0, 0.0,  # one-hot encoding for the 3 discrete actions ["move", "grasp", "shutoff"]
             -0.2, 1.0,      # "move" has 2 dims
             0.5,            # "grasp" has 1 dims
                             # "shutoff" has 0 dims
