@@ -12,15 +12,15 @@ from softlearning.models.feedforward import feedforward_model
 from .base_policy import LatentSpacePolicy
 
 class DiscreteGaussianPolicy(LatentSpacePolicy):
-    def __init__(self, num_dicrete, num_gaussian, *args, **kwargs):
+    def __init__(self, num_discrete, num_gaussian, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._num_discrete = num_dicrete
+        self._num_discrete = num_discrete
         self._num_gaussian = num_gaussian
 
         self.onehot_shift_scale_model = self._onehot_shift_scale_diag_net(
             inputs=self.inputs,
-            num_discrete=num_dicrete,
+            num_discrete=num_discrete,
             num_gaussian=num_gaussian)
     
     @tf.function(experimental_relax_shapes=True)
@@ -110,7 +110,7 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
         Returns the mean, min, max, and standard deviation of means and
         covariances.
         """
-        # onehot, shifts, scales = self.onehot_shift_scale_model(inputs)
+        onehot, shifts, scales = self.onehot_shift_scale_model(inputs)
         actions, log_pis = self.actions_and_log_probs(inputs)
 
         return OrderedDict((
@@ -119,6 +119,10 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
 
             # ('scales-mean', tf.reduce_mean(scales)),
             # ('scales-std', tf.math.reduce_std(scales)),
+
+            *(
+                (f'onehot_{i}-mean', tf.reduce_mean(onehot[:, i])) for i in range(self._num_discrete) 
+            ),
 
             ('entropy-mean', tf.reduce_mean(-log_pis)),
             ('entropy-std', tf.math.reduce_std(-log_pis)),

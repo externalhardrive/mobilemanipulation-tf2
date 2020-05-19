@@ -86,7 +86,7 @@ class DiscreteBox(Space):
         return np.all(sample >= self.low) and np.all(sample <= self.high)
 
     def get_one_hot_shape(self):
-        return (self.total_dimension + self.discrete_keys,)
+        return (self.total_dimension + self.num_discrete,)
 
     def from_one_hot(self, x):
         """ 

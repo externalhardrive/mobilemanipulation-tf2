@@ -471,6 +471,23 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'trajectory_log_freq': 1000
             },
         },
+        'NavigationVacuum-v0': {
+            'pixel_wrapper_kwargs': {
+                'pixels_only': False,
+            },
+            'room_name': 'medium',
+            'room_params': {
+                'num_objects': 100, 
+                'object_name': "greensquareball", 
+                'no_spawn_radius': 0.7,
+                'wall_size': 5.0
+            },
+            'max_ep_len': 200,
+            'image_size': 100,
+            'steps_per_second': 2,
+            'max_velocity': 20.0,
+            'max_acceleration': 4.0
+        },
     },
     'dm_control': {
         'ball_in_cup': {
@@ -532,11 +549,11 @@ EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
 EXTRA_POLICY_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
     'gym': {
         'Locobot': {
-            '????-v0': {
+            'NavigationVacuum-v0': {
                 'class_name': 'FeedforwardDiscreteGaussianPolicy',
                 'config': {
                     'num_discrete': 2,
-                    'num_continuous': 2,
+                    'num_gaussian': 2,
                 },
             },
         },
@@ -638,6 +655,24 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         deepcopy(ALGORITHM_PARAMS_ADDITIONAL.get(algorithm, {})),
         deepcopy(get_algorithm_params(universe, domain, task)),
     )
+
+    policy_params = {
+        'class_name': 'FeedforwardGaussianPolicy',
+        'config': {
+            'hidden_layer_sizes': (M, M),
+            'squash': True,
+            'observation_keys': None,
+            'preprocessors': None,
+        },
+    }
+    policy_params = deep_update(
+        policy_params,
+        deepcopy(
+            EXTRA_POLICY_PARAMS_PER_UNIVERSE_DOMAIN_TASK
+            .get(universe, {}).get(domain, {}).get(task, {}))
+    )
+    
+
     variant_spec = {
         'git_sha': get_git_rev(__file__),
 
@@ -656,26 +691,18 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
             },
         },
         # 'policy_params': tune.sample_from(get_policy_params),
-        'policy_params': {
-            'class_name': 'FeedforwardGaussianPolicy',
-            'config': {
-                'hidden_layer_sizes': (M, M),
-                'squash': True,
-                'observation_keys': None,
-                'preprocessors': None,
-            },
-        },
-        'exploration_policy_params': {
-            'class_name': 'ContinuousUniformPolicy',
-            'config': {
-                'observation_keys': tune.sample_from(lambda spec: (
-                    spec.get('config', spec)
-                    ['policy_params']
-                    ['config']
-                    .get('observation_keys')
-                ))
-            },
-        },
+        'policy_params': policy_params,
+        # 'exploration_policy_params': {
+        #     'class_name': 'ContinuousUniformPolicy',
+        #     'config': {
+        #         'observation_keys': tune.sample_from(lambda spec: (
+        #             spec.get('config', spec)
+        #             ['policy_params']
+        #             ['config']
+        #             .get('observation_keys')
+        #         ))
+        #     },
+        # },
         'Q_params': {
             'class_name': 'double_feedforward_Q_function',
             'config': {
@@ -725,17 +752,7 @@ def get_variant_spec_image(universe,
         universe, domain, task, policy, algorithm, *args, **kwargs)
 
     if is_image_env(universe, domain, task, variant_spec):
-        # preprocessor_params = {
-        #     'class_name': 'convnet_preprocessor',
-        #     'config': {
-        #         'conv_filters': (64, ) * 3,
-        #         'conv_kernel_sizes': (3, ) * 3,
-        #         'conv_strides': (2, ) * 3,
-        #         'normalization_type': 'layer',
-        #         'downsampling_type': 'conv',
-        #     },
-        # }
-        
+
         preprocessor_params = {
             'class_name': 'convnet_preprocessor',
             'config': {

@@ -138,7 +138,7 @@ class GymAdapter(SoftlearningEnv):
             if name in self.observation_keys + self.goal_keys
         ])
 
-        if len(self._env.action_space.shape) > 1:
+        if not isinstance(self._env.action_space, DiscreteBox) and len(self._env.action_space.shape) > 1:
             raise NotImplementedError(
                 "Shape of the action space ({}) is not flat, make sure to"
                 " check the implemenation.".format(self._env.action_space))
@@ -221,7 +221,7 @@ class GymAdapter(SoftlearningEnv):
         if isinstance(self._action_space, DiscreteBox):
             return tf.TensorShape(self._action_space.get_one_hot_shape())
         else:
-            return super().action_shape(self, *args, **kwargs)
+            return super().action_shape
 
     @property
     def unwrapped(self):
