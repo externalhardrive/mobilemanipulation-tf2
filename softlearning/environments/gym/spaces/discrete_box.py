@@ -85,17 +85,17 @@ class DiscreteBox(Space):
             return False
         return np.all(sample >= self.low) and np.all(sample <= self.high)
 
-    def get_one_hot_shape(self):
+    def get_onehot_shape(self):
         return (self.total_dimension + self.num_discrete,)
 
-    def from_one_hot(self, x):
+    def from_onehot(self, x):
         """ 
         Convert sample from a onehot encoding representation. 
         
         Example:
 
         >>> s = DiscreteBox(low=-1.0, high=1.0, dimensions=OrderedDict((("move", 2), ("grasp", 1), ("shutoff", 0))))
-        >>> s.from_one_hot(np.array([
+        >>> s.from_onehot(np.array([
             0.0, 1.0, 0.0,  # one-hot encoding for the 3 discrete actions ["move", "grasp", "shutoff"]
             -0.2, 1.0,      # "move" has 2 dims
             0.5,            # "grasp" has 1 dims

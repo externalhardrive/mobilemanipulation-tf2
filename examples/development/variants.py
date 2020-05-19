@@ -244,6 +244,7 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'MixedNavigationReach-v0': 100,
             'ImageNavigationResetFree-v0': 200,
             'MixedNavigationResetFree-v0': 200,
+            'NavigationVacuum-v0': 200,
         },
     },
 }
@@ -257,6 +258,7 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'MixedNavigation-v0': 1000,
             'ImageNavigationResetFree-v0': 1000,
             'MixedNavigationResetFree-v0': 1000,
+            'NavigationVacuum-v0': 1000,
         },
     },
 }
@@ -671,7 +673,6 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
             EXTRA_POLICY_PARAMS_PER_UNIVERSE_DOMAIN_TASK
             .get(universe, {}).get(domain, {}).get(task, {}))
     )
-    
 
     variant_spec = {
         'git_sha': get_git_rev(__file__),

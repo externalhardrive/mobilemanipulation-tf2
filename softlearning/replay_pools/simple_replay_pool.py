@@ -15,7 +15,7 @@ def field_from_gym_space(name, space):
         return tree.map_structure_with_path(
             field_from_gym_space, space.spaces)
     elif isinstance(space, DiscreteBox):
-        return Field(name=name, dtype=space.dtype, shape=space.get_one_hot_shape())
+        return Field(name=name, dtype=space.dtype, shape=space.get_onehot_shape())
     else:
         raise NotImplementedError(space)
 

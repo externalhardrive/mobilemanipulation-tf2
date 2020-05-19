@@ -177,7 +177,7 @@ class GymAdapter(SoftlearningEnv):
 
     def step(self, action, *args, **kwargs):
         if isinstance(self._action_space, DiscreteBox):
-            action = self._action_space.from_one_hot(action)
+            action = self._action_space.from_onehot(action)
 
         observation, reward, terminal, info = self._env.step(
             action, *args, **kwargs)
@@ -219,7 +219,7 @@ class GymAdapter(SoftlearningEnv):
     @property
     def action_shape(self, *args, **kwargs):
         if isinstance(self._action_space, DiscreteBox):
-            return tf.TensorShape(self._action_space.get_one_hot_shape())
+            return tf.TensorShape(self._action_space.get_onehot_shape())
         else:
             return super().action_shape
 
