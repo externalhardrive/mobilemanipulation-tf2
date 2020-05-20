@@ -128,6 +128,7 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
             'MixedNavigationReach-v0': int(1e6),
             'ImageNavigationResetFree-v0': int(1e6),
             'MixedNavigationResetFree-v0': int(1e5),
+            'NavigationVacuum-v0': int(1e6),
         },
     },
     'dm_control': {
@@ -472,23 +473,23 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'trajectory_log_dir': '/home/charlesjsun/mobilemanipulation-tf2/nohup_output/mixed_nav_rf_sac_newton5_2_traj/', 
                 'trajectory_log_freq': 1000
             },
-        },
-        'NavigationVacuum-v0': {
-            'pixel_wrapper_kwargs': {
-                'pixels_only': False,
+            'NavigationVacuum-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
+                },
+                'room_name': 'medium',
+                'room_params': {
+                    'num_objects': 100, 
+                    'object_name': "greensquareball", 
+                    'no_spawn_radius': 0.7,
+                    'wall_size': 5.0
+                },
+                'max_ep_len': 200,
+                'image_size': 100,
+                'steps_per_second': 2,
+                'max_velocity': 20.0,
+                'max_acceleration': 4.0
             },
-            'room_name': 'medium',
-            'room_params': {
-                'num_objects': 100, 
-                'object_name': "greensquareball", 
-                'no_spawn_radius': 0.7,
-                'wall_size': 5.0
-            },
-            'max_ep_len': 200,
-            'image_size': 100,
-            'steps_per_second': 2,
-            'max_velocity': 20.0,
-            'max_acceleration': 4.0
         },
     },
     'dm_control': {
