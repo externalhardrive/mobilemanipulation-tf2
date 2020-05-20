@@ -153,8 +153,8 @@ class FeedforwardDiscreteGaussianPolicy(DiscreteGaussianPolicy):
         ff_net = preprocessed_inputs
         for size in self._hidden_layer_sizes:
             ff_net = tf.keras.layers.Dense(size, activation=self._activation)(ff_net)
-
-        onehot = tf.keras.layers.Dense(num_discrete, activation="softplus")(ff_net)
+        
+        onehot = tf.keras.layers.Dense(num_discrete, activation="softmax")(ff_net)
         
         shift = tf.keras.layers.Dense(num_gaussian, activation=self._output_activation)(ff_net)
 
