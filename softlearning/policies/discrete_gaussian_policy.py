@@ -18,7 +18,7 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
         self._num_discrete = num_discrete
         self._num_gaussian = num_gaussian
 
-        self.onehot_shift_scale_model = self._onehot_shift_scale_diag_net(
+        self.logit_shift_scale_model = self._logit_shift_scale_diag_net(
             inputs=self.inputs,
             num_discrete=num_discrete,
             num_gaussian=num_gaussian)
@@ -28,9 +28,9 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
         """Compute actions for given observations."""
         observations = self._filter_observations(observations)
 
-        onehot_probs, shifts, scales = self.onehot_shift_scale_model(observations)
+        logits, shifts, scales = self.logit_shift_scale_model(observations)
 
-        onehot_distribution = tfp.distributions.OneHotCategorical(probs=onehot_probs, dtype=tf.float32)
+        onehot_distribution = tfp.distributions.OneHotCategorical(logits=logits, dtype=tf.float32)
         onehots = onehot_distribution.sample()
 
         gaussian_distribution = tfp.distributions.MultivariateNormalDiag(loc=shifts, scale_diag=scales)
@@ -46,9 +46,9 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
         """Compute log probabilities of `actions` given observations."""
         observations = self._filter_observations(observations)
 
-        onehot_probs, shifts, scales = self.onehot_shift_scale_model(observations)
+        logits, shifts, scales = self.logit_shift_scale_model(observations)
 
-        onehot_distribution = tfp.distributions.OneHotCategorical(probs=onehot_probs, dtype=tf.float32)
+        onehot_distribution = tfp.distributions.OneHotCategorical(logits=logits, dtype=tf.float32)
         onehot_log_probs = onehot_distribution.log_prob(actions[:, :self._num_discrete])[..., tf.newaxis] 
 
         gaussian_distribution = tfp.distributions.MultivariateNormalDiag(loc=shifts, scale_diag=scales)
@@ -64,9 +64,9 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
         """Compute actions and log probabilities together. """
         observations = self._filter_observations(observations)
 
-        onehot_probs, shifts, scales = self.onehot_shift_scale_model(observations)
+        logits, shifts, scales = self.logit_shift_scale_model(observations)
 
-        onehot_distribution = tfp.distributions.OneHotCategorical(probs=onehot_probs, dtype=tf.float32)
+        onehot_distribution = tfp.distributions.OneHotCategorical(logits=logits, dtype=tf.float32)
         onehots = onehot_distribution.sample()
         onehot_log_probs = onehot_distribution.log_prob(onehots)[..., tf.newaxis] 
 
@@ -81,41 +81,44 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
         return actions, log_probs
 
     @tf.function(experimental_relax_shapes=True)
-    def discrete_probs_and_gaussian_sample_log_probs(self, observations):
+    def discrete_probs_log_probs_and_gaussian_sample_log_probs(self, observations):
         """Compute actions and log probabilities together. """
         observations = self._filter_observations(observations)
 
-        discrete_probs, shifts, scales = self.onehot_shift_scale_model(observations)
+        logits, shifts, scales = self.logit_shift_scale_model(observations)
+
+        discrete_probs = tf.nn.softmax(logits, axis=-1)
+        discrete_log_probs = tf.nn.log_softmax(logits, axis=-1)
 
         gaussian_distribution = tfp.distributions.MultivariateNormalDiag(loc=shifts, scale_diag=scales)
         gaussian_distribution = self._action_post_processor(gaussian_distribution)
         gaussians = gaussian_distribution.sample()
         gaussian_log_probs = gaussian_distribution.log_prob(gaussians)[..., tf.newaxis]
 
-        return discrete_probs, gaussians, gaussian_log_probs
+        return discrete_probs, discrete_log_probs, gaussians, gaussian_log_probs
 
     def _onehot_shift_scale_diag_net(self, inputs, num_discrete, num_gaussian):
         raise NotImplementedError
 
     def save_weights(self, *args, **kwargs):
-        return self.onehot_shift_scale_model.save_weights(*args, **kwargs)
+        return self.logit_shift_scale_model.save_weights(*args, **kwargs)
 
     def load_weights(self, *args, **kwargs):
-        return self.onehot_shift_scale_model.load_weights(*args, **kwargs)
+        return self.logit_shift_scale_model.load_weights(*args, **kwargs)
 
     def get_weights(self, *args, **kwargs):
-        return self.onehot_shift_scale_model.get_weights(*args, **kwargs)
+        return self.logit_shift_scale_model.get_weights(*args, **kwargs)
 
     def set_weights(self, *args, **kwargs):
-        return self.onehot_shift_scale_model.set_weights(*args, **kwargs)
+        return self.logit_shift_scale_model.set_weights(*args, **kwargs)
 
     @property
     def trainable_weights(self):
-        return self.onehot_shift_scale_model.trainable_weights
+        return self.logit_shift_scale_model.trainable_weights
 
     @property
     def non_trainable_weights(self):
-        return self.onehot_shift_scale_model.non_trainable_weights
+        return self.logit_shift_scale_model.non_trainable_weights
 
     @tf.function(experimental_relax_shapes=True)
     def get_diagnostics(self, inputs):
@@ -124,11 +127,9 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
         Returns the mean, min, max, and standard deviation of means and
         covariances.
         """
-        # onehot, shifts, scales = self.onehot_shift_scale_model(inputs)
-        # actions, log_pis = self.actions_and_log_probs(inputs)
-
-        discrete_probs, gaussians, gaussian_log_probs = self.discrete_probs_and_gaussian_sample_log_probs(inputs)
-        discrete_entropy = -tf.reduce_sum(discrete_probs * tf.math.log(discrete_probs), axis=1)
+        discrete_probs, discrete_log_probs, gaussians, gaussian_log_probs = (
+            self.discrete_probs_log_probs_and_gaussian_sample_log_probs(inputs))
+        discrete_entropy = -tf.reduce_sum(discrete_probs * discrete_log_probs, axis=1)
 
         return OrderedDict((
             ('discrete_entropy-mean', tf.reduce_mean(discrete_entropy)),
@@ -141,6 +142,8 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
             *(
                 (f'discrete_prob_{i}-std', tf.math.reduce_std(discrete_probs[:, i])) for i in range(self._num_discrete)
             ),
+            ('discrete_prob-min', tf.reduce_min(discrete_probs)),
+            ('discrete_prob-max', tf.reduce_max(discrete_probs)),
             ('continuous_actions-mean', tf.reduce_mean(gaussians)),
             ('continuous_actions-std', tf.math.reduce_std(gaussians)),
             ('continuous_actions-min', tf.reduce_min(gaussians)),
@@ -161,21 +164,21 @@ class FeedforwardDiscreteGaussianPolicy(DiscreteGaussianPolicy):
 
         super().__init__(*args, **kwargs)
 
-    def _onehot_shift_scale_diag_net(self, inputs, num_discrete, num_gaussian):
+    def _logit_shift_scale_diag_net(self, inputs, num_discrete, num_gaussian):
         preprocessed_inputs = self._preprocess_inputs(inputs)
 
         ff_net = preprocessed_inputs
         for size in self._hidden_layer_sizes:
             ff_net = tf.keras.layers.Dense(size, activation=self._activation)(ff_net)
         
-        onehot = tf.keras.layers.Dense(num_discrete, activation="softmax")(ff_net)
+        logit = tf.keras.layers.Dense(num_discrete, activation="linear")(ff_net)
         
         shift = tf.keras.layers.Dense(num_gaussian, activation=self._output_activation)(ff_net)
 
         log_scale = tf.keras.layers.Dense(num_gaussian, activation=self._output_activation)(ff_net)
         scale = tf.keras.layers.Lambda(lambda x: tf.exp(x))(log_scale)
 
-        model = tf.keras.Model(inputs, (onehot, shift, scale))
+        model = tf.keras.Model(inputs, (logit, shift, scale))
 
         return model
 

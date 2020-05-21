@@ -145,14 +145,14 @@ class SACMixed(RLAlgorithm):
         rewards = batch['rewards']
         terminals = batch['terminals']
 
-        next_discrete_probs, next_gaussians, next_gaussian_log_probs = (
-            self._policy.discrete_probs_and_gaussian_sample_log_probs(next_observations))
+        next_discrete_probs, next_discrete_log_probs, next_gaussians, next_gaussian_log_probs = (
+            self._policy.discrete_probs_log_probs_and_gaussian_sample_log_probs(next_observations))
 
         next_Qs_values = tuple(Q.values(next_observations, next_gaussians) for Q in self._Q_targets)
         next_Q_values = tf.reduce_min(next_Qs_values, axis=0)
 
         next_values = tf.reduce_sum(
-            next_discrete_probs * (next_Q_values - self._alpha_discrete * tf.math.log(next_discrete_probs)),
+            next_discrete_probs * (next_Q_values - self._alpha_discrete * next_discrete_log_probs),
             axis=1, keepdims=True) - self._alpha_continuous * next_gaussian_log_probs
         
         terminals = tf.cast(terminals, next_values.dtype)
@@ -219,13 +219,14 @@ class SACMixed(RLAlgorithm):
         observations = batch['observations']
 
         with tf.GradientTape() as tape:
-            discrete_probs, gaussians, gaussian_log_probs = self._policy.discrete_probs_and_gaussian_sample_log_probs(observations)
+            discrete_probs, discrete_log_probs, gaussians, gaussian_log_probs = (
+                self._policy.discrete_probs_log_probs_and_gaussian_sample_log_probs(observations))
 
             Qs_targets = tuple(Q.values(observations, gaussians) for Q in self._Qs)
             Q_targets = tf.reduce_min(Qs_targets, axis=0)
 
             policy_losses = tf.reduce_sum(
-                discrete_probs * (self._alpha_discrete * tf.math.log(discrete_probs) - Q_targets),
+                discrete_probs * (self._alpha_discrete * discrete_log_probs - Q_targets),
                 axis=1, keepdims=True) + self._alpha_continuous * gaussian_log_probs
             policy_loss = tf.nn.compute_average_loss(policy_losses)
 
@@ -248,12 +249,13 @@ class SACMixed(RLAlgorithm):
 
         observations = batch['observations']
 
-        discrete_probs, gaussians, gaussian_log_probs = self._policy.discrete_probs_and_gaussian_sample_log_probs(observations)
+        discrete_probs, discrete_log_probs, gaussians, gaussian_log_probs = (
+            self._policy.discrete_probs_log_probs_and_gaussian_sample_log_probs(observations))
 
         with tf.GradientTape() as tape:
             alpha_discrete_losses = -1.0 * self._alpha_discrete * (
-                tf.stop_gradient(tf.reduce_sum(discrete_probs * (tf.math.log(discrete_probs) + self._target_entropy_discrete),
-                    axis=1, keepdims=True)))
+                tf.stop_gradient(tf.reduce_sum(discrete_probs * discrete_log_probs,
+                    axis=1, keepdims=True) + self._target_entropy_discrete))
 
             alpha_continuous_losses = -1.0 * self._alpha_continuous * (
                 tf.stop_gradient(gaussian_log_probs + self._target_entropy_continuous))
