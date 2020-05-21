@@ -19,7 +19,7 @@ def get_uniform_policy(environment):
     if isinstance(environment.action_space, DiscreteBox):
         return DiscreteContinuousUniformPolicy(
             num_discrete=environment.action_space.num_discrete,
-            num_continuous=environment.action_space.total_dimension,
+            num_continuous=environment.action_space.num_continuous,
             action_range=(
                 environment.action_space.low,
                 environment.action_space.high,
