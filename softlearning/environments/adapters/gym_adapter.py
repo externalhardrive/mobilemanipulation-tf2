@@ -219,9 +219,23 @@ class GymAdapter(SoftlearningEnv):
     @property
     def action_shape(self, *args, **kwargs):
         if isinstance(self._action_space, DiscreteBox):
-            return tf.TensorShape(self._action_space.get_onehot_shape())
+            return tf.TensorShape((self._action_space.num_discrete + self._action_space.num_continuous, ))
         else:
             return super().action_shape
+
+    @property
+    def Q_input_shapes(self):
+        if isinstance(self._action_space, DiscreteBox):
+            return (self.observation_shape, tf.TensorShape((self._action_space.num_continuous, )))
+        else:
+            return super().Q_input_shapes
+
+    @property
+    def Q_output_size(self):
+        if isinstance(self._action_space, DiscreteBox):
+            return self._action_space.num_discrete
+        else:
+            return super().Q_output_size
 
     @property
     def unwrapped(self):

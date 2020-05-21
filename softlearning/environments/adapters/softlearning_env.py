@@ -91,6 +91,14 @@ class SoftlearningEnv(metaclass=ABCMeta):
 
         return action_shape
 
+    @property
+    def Q_input_shapes(self):
+        return (self.observation_shape, self.action_shape)
+
+    @property
+    def Q_output_size(self):
+        return 1
+
     @abstractmethod
     def step(self, action):
         """Run one timestep of the environment's dynamics. When end of

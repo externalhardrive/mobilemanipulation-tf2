@@ -52,9 +52,8 @@ class ExperimentRunner(tune.Trainable):
             else training_environment)
 
         variant['Q_params']['config'].update({
-            'input_shapes': (
-                training_environment.observation_shape,
-                training_environment.action_shape),
+            'input_shapes': training_environment.Q_input_shapes,
+            'output_size': training_environment.Q_output_size,
         })
         Qs = self.Qs = value_functions.get(variant['Q_params'])
 

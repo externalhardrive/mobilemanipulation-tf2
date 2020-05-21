@@ -42,7 +42,7 @@ class DiscreteBox(Space):
         self.high = self.dtype(high)
         
         self.num_discrete = len(self.dimensions)
-        self.total_dimension = sum(self.dimensions.values())
+        self.num_continuous = sum(self.dimensions.values())
         self.cumulative_dimension = np.cumsum(list(self.dimensions.values())).tolist()
 
     @property
@@ -84,9 +84,6 @@ class DiscreteBox(Space):
         if sample.shape != (dim,):
             return False
         return np.all(sample >= self.low) and np.all(sample <= self.high)
-
-    def get_onehot_shape(self):
-        return (self.total_dimension + self.num_discrete,)
 
     def from_onehot(self, x):
         """ 

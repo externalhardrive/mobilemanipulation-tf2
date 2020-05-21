@@ -80,6 +80,20 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
 
         return actions, log_probs
 
+    @tf.function(experimental_relax_shapes=True)
+    def discrete_probs_and_gaussian_sample_log_probs(self, observations):
+        """Compute actions and log probabilities together. """
+        observations = self._filter_observations(observations)
+
+        discrete_probs, shifts, scales = self.onehot_shift_scale_model(observations)
+
+        gaussian_distribution = tfp.distributions.MultivariateNormalDiag(loc=shifts, scale_diag=scales)
+        gaussian_distribution = self._action_post_processor(gaussian_distribution)
+        gaussians = gaussian_distribution.sample()
+        gaussian_log_probs = gaussian_distribution.log_prob(gaussians)[..., tf.newaxis]
+
+        return discrete_probs, gaussians, gaussian_log_probs
+
     def _onehot_shift_scale_diag_net(self, inputs, num_discrete, num_gaussian):
         raise NotImplementedError
 
@@ -110,27 +124,27 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
         Returns the mean, min, max, and standard deviation of means and
         covariances.
         """
-        onehot, shifts, scales = self.onehot_shift_scale_model(inputs)
-        actions, log_pis = self.actions_and_log_probs(inputs)
+        # onehot, shifts, scales = self.onehot_shift_scale_model(inputs)
+        # actions, log_pis = self.actions_and_log_probs(inputs)
+
+        discrete_probs, gaussians, gaussian_log_probs = self.discrete_probs_and_gaussian_sample_log_probs(inputs)
+        discrete_entropy = -tf.reduce_sum(discrete_probs * tf.math.log(discrete_probs), axis=1)
 
         return OrderedDict((
-            # ('shifts-mean', tf.reduce_mean(shifts)),
-            # ('shifts-std', tf.math.reduce_std(shifts)),
-
-            # ('scales-mean', tf.reduce_mean(scales)),
-            # ('scales-std', tf.math.reduce_std(scales)),
-
+            ('discrete_entropy-mean', tf.reduce_mean(discrete_entropy)),
+            ('discrete_entropy-std', tf.math.reduce_std(discrete_entropy)),
+            ('continuous_entropy-mean', tf.reduce_mean(-gaussian_log_probs)),
+            ('continuous_entropy-std', tf.math.reduce_std(-gaussian_log_probs)),
             *(
-                (f'onehot_{i}-mean', tf.reduce_mean(onehot[:, i])) for i in range(self._num_discrete) 
+                (f'discrete_prob_{i}-mean', tf.reduce_mean(discrete_probs[:, i])) for i in range(self._num_discrete)
             ),
-
-            ('entropy-mean', tf.reduce_mean(-log_pis)),
-            ('entropy-std', tf.math.reduce_std(-log_pis)),
-
-            # ('actions-mean', tf.reduce_mean(actions)),
-            # ('actions-std', tf.math.reduce_std(actions)),
-            # ('actions-min', tf.reduce_min(actions)),
-            # ('actions-max', tf.reduce_max(actions)),
+            *(
+                (f'discrete_prob_{i}-std', tf.math.reduce_std(discrete_probs[:, i])) for i in range(self._num_discrete)
+            ),
+            ('continuous_actions-mean', tf.reduce_mean(gaussians)),
+            ('continuous_actions-std', tf.math.reduce_std(gaussians)),
+            ('continuous_actions-min', tf.reduce_min(gaussians)),
+            ('continuous_actions-max', tf.reduce_max(gaussians)),
         ))
 
 

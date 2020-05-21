@@ -45,6 +45,20 @@ ALGORITHM_PARAMS_ADDITIONAL = {
             'reward_scale': 1.0,
         },
     },
+    'SACMixed': {
+        'class_name': 'SACMixed',
+        'config': {
+            'policy_lr': 3e-4, # 3e-4
+            'Q_lr': 3e-4,
+            'alpha_lr': 3e-4,
+            'target_update_interval': 1,
+            'tau': 5e-3,
+            'target_entropy': 'auto',
+
+            'discount': 0.995,
+            'reward_scale': 1.0,
+        },
+    },
     'SQL': {
         'class_name': 'SQL',
         'config': {
