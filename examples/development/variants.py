@@ -477,7 +477,7 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': False,
                 },
-                'room_name': 'medium',
+                'room_name': 'simple',
                 'room_params': {
                     'num_objects': 100, 
                     'object_name': "greensquareball", 

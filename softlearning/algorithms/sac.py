@@ -44,7 +44,8 @@ def heuristic_target_entropy(action_space):
         raise NotImplementedError(
             "TODO(hartikainen): implement for discrete spaces.")
     elif isinstance(action_space, DiscreteBox):
-        discrete_target_entropy = -(0.9 * np.log(0.9) + 0.1 * np.log(0.1 / (action_space.num_discrete - 1)))
+        # discrete_target_entropy = -(0.9 * np.log(0.9) + 0.1 * np.log(0.1 / (action_space.num_discrete - 1)))
+        discrete_target_entropy = -np.log(1.0 / action_space.num_discrete) * 0.95
         gaussian_target_entropy = -action_space.total_dimension
         heuristic_target_entropy = discrete_target_entropy + gaussian_target_entropy
     else:
