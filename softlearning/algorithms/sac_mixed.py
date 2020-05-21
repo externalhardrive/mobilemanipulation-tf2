@@ -67,7 +67,7 @@ class SACMixed(RLAlgorithm):
         super().__init__(**kwargs)
 
         print()
-        print("SAC params:")
+        print("SACMixed params:")
         pprint.pprint(dict(
             self=self,
             training_environment=training_environment,
@@ -112,7 +112,7 @@ class SACMixed(RLAlgorithm):
             else target_entropy)
         
         self._target_entropy_continuous = (
-            -np.log(1 / self._training_environment.action_space.num_discrete) * 0.95
+            -np.log(1 / self._training_environment.action_space.num_discrete) * 0.8
             if target_entropy == 'auto'
             else target_entropy)
 
@@ -243,7 +243,7 @@ class SACMixed(RLAlgorithm):
 
     @tf.function(experimental_relax_shapes=True)
     def _update_alpha(self, batch):
-        if not isinstance(self._target_entropy, Number):
+        if not isinstance(self._target_entropy_continuous, Number) or not isinstance(self._target_entropy_discrete, Number):
             return 0.0
 
         observations = batch['observations']
@@ -254,8 +254,10 @@ class SACMixed(RLAlgorithm):
             alpha_discrete_losses = -1.0 * self._alpha_discrete * (
                 tf.stop_gradient(tf.reduce_sum(discrete_probs * (tf.math.log(discrete_probs) + self._target_entropy_discrete),
                     axis=1, keepdims=True)))
+
             alpha_continuous_losses = -1.0 * self._alpha_continuous * (
                 tf.stop_gradient(gaussian_log_probs + self._target_entropy_continuous))
+                
             alpha_losses = alpha_discrete_losses + alpha_continuous_losses
             alpha_loss = tf.nn.compute_average_loss(alpha_losses)
 
@@ -283,7 +285,8 @@ class SACMixed(RLAlgorithm):
             ('Q_value-mean', tf.reduce_mean(Qs_values)),
             ('Q_loss-mean', tf.reduce_mean(Qs_losses)),
             ('policy_loss-mean', tf.reduce_mean(policy_losses)),
-            ('alpha', tf.convert_to_tensor(self._alpha)),
+            ('alpha_discrete', tf.convert_to_tensor(self._alpha_discrete)),
+            ('alpha_continuous', tf.convert_to_tensor(self._alpha_continuous)),
             ('alpha_loss-mean', tf.reduce_mean(alpha_losses)),
         ))
 
@@ -308,8 +311,8 @@ class SACMixed(RLAlgorithm):
         Also calls the `draw` method of the plotter, if plotter defined.
         """
         diagnostics = OrderedDict((
-            ('alpha', self._alpha.numpy()),
-            # ('alpha', tf.convert_to_tensor(self._alpha).numpy()),
+            ('alpha_discrete', self._alpha_discrete.numpy()),
+            ('alpha_continuous', self._alpha_continuous.numpy()),
             ('policy', self._policy.get_diagnostics_np(batch['observations'])),
         ))
 
@@ -326,8 +329,8 @@ class SACMixed(RLAlgorithm):
                 f'Q_optimizer_{i}': optimizer
                 for i, optimizer in enumerate(self._Q_optimizers)
             },
-            # '_alpha': self._alpha,
-            '_log_alpha': self._log_alpha,
+            '_log_alpha_discrete': self._log_alpha_discrete,
+            '_log_alpha_continuous': self._log_alpha_continuous,
         }
 
         if hasattr(self, '_alpha_optimizer'):

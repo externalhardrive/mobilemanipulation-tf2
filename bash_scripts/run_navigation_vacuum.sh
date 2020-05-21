@@ -1,6 +1,6 @@
 #!/bin/bash
 softlearning run_example_local examples.development \
-    --algorithm SAC \
+    --algorithm SACMixed \
     --universe gym \
     --domain Locobot \
     --task NavigationVacuum-v0 \

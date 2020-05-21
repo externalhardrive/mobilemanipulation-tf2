@@ -127,18 +127,19 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
         # onehot, shifts, scales = self.onehot_shift_scale_model(inputs)
         # actions, log_pis = self.actions_and_log_probs(inputs)
 
-        onehots, gaussians, onehot_log_probs, gaussian_log_probs = self.actions_and_log_probs_separate(inputs)
+        discrete_probs, gaussians, gaussian_log_probs = self.discrete_probs_and_gaussian_sample_log_probs(inputs)
+        discrete_entropy = -tf.reduce_sum(discrete_probs * tf.math.log(discrete_probs), axis=1)
 
         return OrderedDict((
-            ('discrete_entropy-mean', tf.reduce_mean(-onehot_log_probs)),
-            ('discrete_entropy-std', tf.math.reduce_std(-onehot_log_probs)),
+            ('discrete_entropy-mean', tf.reduce_mean(discrete_entropy)),
+            ('discrete_entropy-std', tf.math.reduce_std(discrete_entropy)),
             ('continuous_entropy-mean', tf.reduce_mean(-gaussian_log_probs)),
             ('continuous_entropy-std', tf.math.reduce_std(-gaussian_log_probs)),
             *(
-                (f'discrete_action_{i}-mean', tf.reduce_mean(onehots[:, i])) for i in range(self._num_discrete)
+                (f'discrete_prob_{i}-mean', tf.reduce_mean(discrete_probs[:, i])) for i in range(self._num_discrete)
             ),
             *(
-                (f'discrete_action_{i}-std', tf.math.reduce_std(onehots[:, i])) for i in range(self._num_discrete)
+                (f'discrete_prob_{i}-std', tf.math.reduce_std(discrete_probs[:, i])) for i in range(self._num_discrete)
             ),
             ('continuous_actions-mean', tf.reduce_mean(gaussians)),
             ('continuous_actions-std', tf.math.reduce_std(gaussians)),
