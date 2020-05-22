@@ -243,7 +243,7 @@ class ContinuousPolicy(BasePolicy):
                  *args,
                  squash=True,
                  **kwargs):
-        assert (np.all(action_range == np.array([[-1], [1]]))), (
+        assert (np.all(action_range[0] == -1.) and np.all(action_range[1] == 1.)), (
             "The action space should be scaled to (-1, 1)."
             " TODO(hartikainen): We should support non-scaled actions spaces.")
         self._action_range = action_range
@@ -254,7 +254,7 @@ class ContinuousPolicy(BasePolicy):
             False: tfp.bijectors.Identity(),
         }[squash]
 
-        return super(ContinuousPolicy, self).__init__(*args, **kwargs)
+        super(ContinuousPolicy, self).__init__(*args, **kwargs)
 
     def get_config(self):
         base_config = super(ContinuousPolicy, self).get_config()

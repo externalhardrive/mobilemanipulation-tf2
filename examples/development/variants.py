@@ -45,6 +45,20 @@ ALGORITHM_PARAMS_ADDITIONAL = {
             'reward_scale': 1.0,
         },
     },
+    'SACMixed': {
+        'class_name': 'SACMixed',
+        'config': {
+            'policy_lr': 3e-4, # 3e-4
+            'Q_lr': 3e-4,
+            'alpha_lr': 3e-4,
+            'target_update_interval': 1,
+            'tau': 5e-3,
+            'target_entropy': 'auto',
+
+            'discount': 0.995,
+            'reward_scale': 1.0,
+        },
+    },
     'SQL': {
         'class_name': 'SQL',
         'config': {
@@ -128,6 +142,11 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
             'MixedNavigationReach-v0': int(1e6),
             'ImageNavigationResetFree-v0': int(1e6),
             'MixedNavigationResetFree-v0': int(1e5),
+            'NavigationVacuum-v0': int(1e6),
+        },
+        'Tests': {
+            DEFAULT_KEY: int(1e5),
+            'LineReach-v0': int(1e5),
         },
     },
     'dm_control': {
@@ -244,6 +263,11 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'MixedNavigationReach-v0': 100,
             'ImageNavigationResetFree-v0': 200,
             'MixedNavigationResetFree-v0': 200,
+            'NavigationVacuum-v0': 200,
+        },
+        'Tests': {
+            DEFAULT_KEY: 100,
+            'LineReach-v0': 100,
         },
     },
 }
@@ -257,6 +281,11 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'MixedNavigation-v0': 1000,
             'ImageNavigationResetFree-v0': 1000,
             'MixedNavigationResetFree-v0': 1000,
+            'NavigationVacuum-v0': 1000,
+        },
+        'Tests': {
+            DEFAULT_KEY: 1000,
+            'LineReach-v0': 1000,
         },
     },
 }
@@ -470,6 +499,31 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'trajectory_log_dir': '/home/charlesjsun/mobilemanipulation-tf2/nohup_output/mixed_nav_rf_sac_newton5_2_traj/', 
                 'trajectory_log_freq': 1000
             },
+            'NavigationVacuum-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
+                },
+                'room_name': 'simple',
+                'room_params': {
+                    'num_objects': 100, 
+                    'object_name': "greensquareball", 
+                    'no_spawn_radius': 0.7,
+                    'wall_size': 5.0
+                },
+                'max_ep_len': 200,
+                'image_size': 100,
+                'steps_per_second': 2,
+                'max_velocity': 20.0,
+                'max_acceleration': 4.0
+            },
+        },
+        'Tests': {
+            'LineReach-v0': {
+                'max_pos': 5.0, 
+                'max_step': 1.0, 
+                'collect_radius': 0.1,
+                'max_ep_len': 100
+            },
         },
     },
     'dm_control': {
@@ -525,6 +579,29 @@ EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'trajectory_log_dir': None, 
                 'trajectory_log_freq': 0
             }
+        },
+    },
+}
+
+EXTRA_POLICY_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
+    'gym': {
+        'Locobot': {
+            'NavigationVacuum-v0': {
+                'class_name': 'FeedforwardDiscreteGaussianPolicy',
+                'config': {
+                    'num_discrete': 2,
+                    'num_gaussian': 2,
+                },
+            },
+        },
+        'Tests': {
+            'LineReach-v0': {
+                'class_name': 'FeedforwardDiscreteGaussianPolicy',
+                'config': {
+                    'num_discrete': 2,
+                    'num_gaussian': 1,
+                },
+            },
         },
     },
 }
@@ -624,6 +701,23 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         deepcopy(ALGORITHM_PARAMS_ADDITIONAL.get(algorithm, {})),
         deepcopy(get_algorithm_params(universe, domain, task)),
     )
+
+    policy_params = {
+        'class_name': 'FeedforwardGaussianPolicy',
+        'config': {
+            'hidden_layer_sizes': (M, M),
+            'squash': True,
+            'observation_keys': None,
+            'preprocessors': None,
+        },
+    }
+    policy_params = deep_update(
+        policy_params,
+        deepcopy(
+            EXTRA_POLICY_PARAMS_PER_UNIVERSE_DOMAIN_TASK
+            .get(universe, {}).get(domain, {}).get(task, {}))
+    )
+
     variant_spec = {
         'git_sha': get_git_rev(__file__),
 
@@ -642,26 +736,18 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
             },
         },
         # 'policy_params': tune.sample_from(get_policy_params),
-        'policy_params': {
-            'class_name': 'FeedforwardGaussianPolicy',
-            'config': {
-                'hidden_layer_sizes': (M, M),
-                'squash': True,
-                'observation_keys': None,
-                'preprocessors': None,
-            },
-        },
-        'exploration_policy_params': {
-            'class_name': 'ContinuousUniformPolicy',
-            'config': {
-                'observation_keys': tune.sample_from(lambda spec: (
-                    spec.get('config', spec)
-                    ['policy_params']
-                    ['config']
-                    .get('observation_keys')
-                ))
-            },
-        },
+        'policy_params': policy_params,
+        # 'exploration_policy_params': {
+        #     'class_name': 'ContinuousUniformPolicy',
+        #     'config': {
+        #         'observation_keys': tune.sample_from(lambda spec: (
+        #             spec.get('config', spec)
+        #             ['policy_params']
+        #             ['config']
+        #             .get('observation_keys')
+        #         ))
+        #     },
+        # },
         'Q_params': {
             'class_name': 'double_feedforward_Q_function',
             'config': {
@@ -711,17 +797,7 @@ def get_variant_spec_image(universe,
         universe, domain, task, policy, algorithm, *args, **kwargs)
 
     if is_image_env(universe, domain, task, variant_spec):
-        # preprocessor_params = {
-        #     'class_name': 'convnet_preprocessor',
-        #     'config': {
-        #         'conv_filters': (64, ) * 3,
-        #         'conv_kernel_sizes': (3, ) * 3,
-        #         'conv_strides': (2, ) * 3,
-        #         'normalization_type': 'layer',
-        #         'downsampling_type': 'conv',
-        #     },
-        # }
-        
+
         preprocessor_params = {
             'class_name': 'convnet_preprocessor',
             'config': {

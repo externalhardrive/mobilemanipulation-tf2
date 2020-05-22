@@ -24,6 +24,7 @@ def double_feedforward_Q_function(*args, **kwargs):
 
 
 def feedforward_Q_function(input_shapes,
+                           output_size,
                            *args,
                            preprocessors=None,
                            observation_keys=None,
@@ -62,7 +63,7 @@ def feedforward_Q_function(input_shapes,
     out = tf.keras.layers.Lambda(cast_and_concat)(preprocessed_inputs)
     Q_model_body = feedforward_model(
         *args,
-        output_shape=[1],
+        output_shape=[output_size],
         name=name,
         **kwargs
     )

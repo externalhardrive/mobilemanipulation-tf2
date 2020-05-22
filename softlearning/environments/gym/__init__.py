@@ -93,28 +93,39 @@ GENERAL_ENVIRONMENT_SPECS = (
     {
         'id': 'Locobot-ImageNavigation-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.nav_grasp_envs:ImageLocobotNavigationEnv')
+                        '.nav_envs:ImageLocobotNavigationEnv')
     },
     {
         'id': 'Locobot-MixedNavigation-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.nav_grasp_envs:MixedLocobotNavigationEnv')
+                        '.nav_envs:MixedLocobotNavigationEnv')
     },
     {
         'id': 'Locobot-MixedNavigationReach-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.nav_grasp_envs:MixedLocobotNavigationReachEnv')
+                        '.nav_envs:MixedLocobotNavigationReachEnv')
     },
     {
         'id': 'Locobot-ImageNavigationResetFree-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.nav_grasp_envs:ImageLocobotNavigationEnv')
+                        '.nav_envs:ImageLocobotNavigationEnv')
     },
     {
         'id': 'Locobot-MixedNavigationResetFree-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.nav_grasp_envs:MixedLocobotNavigationEnv')
-    }
+                        '.nav_envs:MixedLocobotNavigationEnv')
+    },
+    {
+        'id': 'Locobot-NavigationVacuum-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.nav_grasp_envs:LocobotNavigationVacuumEnv')
+    },
+
+    {
+        'id': 'Tests-LineReach-v0',
+        'entry_point': (f'{CUSTOM_GYM_ENVIRONMENTS_PATH}'
+                        '.tests:LineReach')
+    },
 )
 
 MUJOCO_ENVIRONMENTS = tuple(

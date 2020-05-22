@@ -17,45 +17,8 @@ from .rl_algorithm import RLAlgorithm
 def td_targets(rewards, discounts, next_values):
     return rewards + discounts * next_values
 
-
-@tf.function(experimental_relax_shapes=True)
-def compute_Q_targets(next_Q_values,
-                      next_log_pis,
-                      rewards,
-                      terminals,
-                      discount,
-                      entropy_scale,
-                      reward_scale):
-    next_values = next_Q_values - entropy_scale * next_log_pis
-    terminals = tf.cast(terminals, next_values.dtype)
-
-    Q_targets = td_targets(
-        rewards=reward_scale * rewards,
-        discounts=discount,
-        next_values=(1.0 - terminals) * next_values)
-
-    return Q_targets
-
-
-def heuristic_target_entropy(action_space):
-    if is_continuous_space(action_space):
-        heuristic_target_entropy = -np.prod(action_space.shape)
-    elif is_discrete_space(action_space):
-        raise NotImplementedError(
-            "TODO(hartikainen): implement for discrete spaces.")
-    elif isinstance(action_space, DiscreteBox):
-        # discrete_target_entropy = -(0.9 * np.log(0.9) + 0.1 * np.log(0.1 / (action_space.num_discrete - 1)))
-        discrete_target_entropy = -np.log(1.0 / action_space.num_discrete) * 0.95
-        gaussian_target_entropy = -action_space.total_dimension
-        heuristic_target_entropy = discrete_target_entropy + gaussian_target_entropy
-    else:
-        raise NotImplementedError((type(action_space), action_space))
-
-    return heuristic_target_entropy
-
-
-class SAC(RLAlgorithm):
-    """Soft Actor-Critic (SAC)
+class SACMixed(RLAlgorithm):
+    """Soft Actor-Critic (SAC), with a mixed discrete + continuous action space
 
     References
     ----------
@@ -101,10 +64,10 @@ class SAC(RLAlgorithm):
                 updates occur in iterations.
         """
 
-        super(SAC, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         print()
-        print("SAC params:")
+        print("SACMixed params:")
         pprint.pprint(dict(
             self=self,
             training_environment=training_environment,
@@ -142,10 +105,23 @@ class SAC(RLAlgorithm):
         self._alpha_lr = alpha_lr
 
         self._reward_scale = reward_scale
-        self._target_entropy = (
-            heuristic_target_entropy(self._training_environment.action_space)
+
+        self._target_entropy_discrete = (
+            -np.log(1 / self._training_environment.action_space.num_discrete) * 0.8
             if target_entropy == 'auto'
             else target_entropy)
+        
+        self._target_entropy_continuous = (
+            -self._training_environment.action_space.num_continuous
+            if target_entropy == 'auto'
+            else target_entropy)
+
+        print("SACMixed members:")
+        pprint.pprint(dict(
+            _target_entropy_discrete=self._target_entropy_discrete,
+            _target_entropy_continuous=self._target_entropy_continuous,
+        ))
+        print()
 
         self._discount = discount
         self._tau = tau
@@ -163,11 +139,13 @@ class SAC(RLAlgorithm):
             learning_rate=self._policy_lr,
             name="policy_optimizer")
 
-        self._log_alpha = tf.Variable(0.0, name='log_alpha')
-        self._alpha = tfp.util.DeferredTensor(self._log_alpha, tf.exp)
-
-        self._alpha_optimizer = tf.optimizers.Adam(
-            self._alpha_lr, name='alpha_optimizer')
+        self._log_alpha_discrete = tf.Variable(0.0, name='log_alpha_discrete')
+        self._alpha_discrete = tfp.util.DeferredTensor(self._log_alpha_discrete, tf.exp)
+        self._alpha_discrete_optimizer = tf.optimizers.Adam(self._alpha_lr, name='alpha_discrete_optimizer')
+        
+        self._log_alpha_continuous = tf.Variable(0.0, name='log_alpha_continuous')
+        self._alpha_continuous = tfp.util.DeferredTensor(self._log_alpha_continuous, tf.exp)
+        self._alpha_continuous_optimizer = tf.optimizers.Adam(self._alpha_lr, name='alpha_continuous_optimizer')
 
     @tf.function(experimental_relax_shapes=True)
     def _compute_Q_targets(self, batch):
@@ -175,24 +153,22 @@ class SAC(RLAlgorithm):
         rewards = batch['rewards']
         terminals = batch['terminals']
 
-        entropy_scale = self._alpha
-        reward_scale = self._reward_scale
-        discount = self._discount
+        next_discrete_probs, next_discrete_log_probs, next_gaussians, next_gaussian_log_probs = (
+            self._policy.discrete_probs_log_probs_and_gaussian_sample_log_probs(next_observations))
 
-        next_actions, next_log_pis = self._policy.actions_and_log_probs(
-            next_observations)
-        next_Qs_values = tuple(
-            Q.values(next_observations, next_actions) for Q in self._Q_targets)
+        next_Qs_values = tuple(Q.values(next_observations, next_gaussians) for Q in self._Q_targets)
         next_Q_values = tf.reduce_min(next_Qs_values, axis=0)
 
-        Q_targets = compute_Q_targets(
-            next_Q_values,
-            next_log_pis,
-            rewards,
-            terminals,
-            discount,
-            entropy_scale,
-            reward_scale)
+        next_values = tf.reduce_sum(
+            next_discrete_probs * (next_Q_values - self._alpha_discrete * next_discrete_log_probs),
+            axis=-1, keepdims=True) - self._alpha_continuous * next_gaussian_log_probs
+        
+        terminals = tf.cast(terminals, next_values.dtype)
+
+        Q_targets = td_targets(
+            rewards=self._reward_scale * rewards,
+            discounts=self._discount,
+            next_values=(1.0 - terminals) * next_values)
 
         return tf.stop_gradient(Q_targets)
 
@@ -213,13 +189,21 @@ class SAC(RLAlgorithm):
         actions = batch['actions']
         rewards = batch['rewards']
 
+        onehots = actions[:, :self._training_environment.action_space.num_discrete]
+        gaussians = actions[:, self._training_environment.action_space.num_discrete:]
+
+        # index_per_row = tf.argmax(onehots, axis=1, output_type=tf.int32)
+        # index_row_col = tf.stack([tf.range(tf.shape(index_per_row)[0]), index_per_row], axis=1)
+
         tf.debugging.assert_shapes(((Q_targets, ('B', 1)), (rewards, ('B', 1))))
 
         Qs_values = []
         Qs_losses = []
         for Q, optimizer in zip(self._Qs, self._Q_optimizers):
             with tf.GradientTape() as tape:
-                Q_values = Q.values(observations, actions)
+                all_Q_values = Q.values(observations, gaussians)
+                # Q_values = tf.gather_nd(all_Q_values, index_row_col)[..., tf.newaxis]
+                Q_values = tf.reduce_sum(all_Q_values * onehots, axis=-1, keepdims=True)
                 Q_losses = 0.5 * tf.losses.MSE(y_true=Q_targets, y_pred=Q_values)
                 Q_loss = tf.nn.compute_average_loss(Q_losses)
 
@@ -244,18 +228,20 @@ class SAC(RLAlgorithm):
         observations = batch['observations']
 
         with tf.GradientTape() as tape:
-            actions, log_pis = self._policy.actions_and_log_probs(observations)
+            discrete_probs, discrete_log_probs, gaussians, gaussian_log_probs = (
+                self._policy.discrete_probs_log_probs_and_gaussian_sample_log_probs(observations))
 
-            Qs_log_targets = tuple(
-                Q.values(observations, actions) for Q in self._Qs)
-            Q_log_targets = tf.reduce_min(Qs_log_targets, axis=0)
+            Qs_targets = tuple(Q.values(observations, gaussians) for Q in self._Qs)
+            Q_targets = tf.reduce_min(Qs_targets, axis=0)
 
-            policy_losses = self._alpha * log_pis - Q_log_targets
+            policy_losses = tf.reduce_sum(
+                discrete_probs * (self._alpha_discrete * discrete_log_probs - Q_targets),
+                axis=-1, keepdims=True) + self._alpha_continuous * gaussian_log_probs
             policy_loss = tf.nn.compute_average_loss(policy_losses)
 
         tf.debugging.assert_shapes((
-            (actions, ('B', 'nA')),
-            (log_pis, ('B', 1)),
+            # (actions, ('B', 'nA')),
+            # (log_pis, ('B', 1)),
             (policy_losses, ('B', 1)),
         ))
 
@@ -267,25 +253,35 @@ class SAC(RLAlgorithm):
 
     @tf.function(experimental_relax_shapes=True)
     def _update_alpha(self, batch):
-        if not isinstance(self._target_entropy, Number):
+        if not isinstance(self._target_entropy_continuous, Number) or not isinstance(self._target_entropy_discrete, Number):
             return 0.0
 
         observations = batch['observations']
 
-        actions, log_pis = self._policy.actions_and_log_probs(observations)
+        discrete_probs, discrete_log_probs, gaussians, gaussian_log_probs = (
+            self._policy.discrete_probs_log_probs_and_gaussian_sample_log_probs(observations))
 
+        # alpha discrete
         with tf.GradientTape() as tape:
-            alpha_losses = -1.0 * (self._alpha * tf.stop_gradient(log_pis + self._target_entropy))
-            # alpha_losses = -1.0 * tf.exp(self._log_alpha) * tf.stop_gradient(log_pis + self._target_entropy)
-            # NOTE(hartikainen): It's important that we take the average here,
-            # otherwise we end up effectively having `batch_size` times too
-            # large learning rate.
-            alpha_loss = tf.nn.compute_average_loss(alpha_losses)
+            alpha_discrete_losses = self._alpha_discrete * tf.stop_gradient(
+                -tf.reduce_sum(discrete_probs * discrete_log_probs, axis=-1, keepdims=True) - self._target_entropy_discrete)
 
-        alpha_gradients = tape.gradient(alpha_loss, [self._log_alpha])
-        self._alpha_optimizer.apply_gradients(zip(alpha_gradients, [self._log_alpha]))
+            alpha_discrete_loss = tf.nn.compute_average_loss(alpha_discrete_losses)
 
-        return alpha_losses
+        alpha_discrete_gradients = tape.gradient(alpha_discrete_loss, [self._log_alpha_discrete])
+        self._alpha_discrete_optimizer.apply_gradients(zip(alpha_discrete_gradients, [self._log_alpha_discrete]))
+
+        # alpha continuous
+        with tf.GradientTape() as tape:
+            alpha_continuous_losses = self._alpha_continuous * tf.stop_gradient(
+                -gaussian_log_probs - self._target_entropy_continuous)
+                
+            alpha_continuous_loss = tf.nn.compute_average_loss(alpha_continuous_losses)
+
+        alpha_continuous_gradients = tape.gradient(alpha_continuous_loss, [self._log_alpha_continuous])
+        self._alpha_continuous_optimizer.apply_gradients(zip(alpha_continuous_gradients, [self._log_alpha_continuous]))
+
+        return alpha_discrete_losses, alpha_continuous_losses
 
     @tf.function(experimental_relax_shapes=True)
     def _update_target(self, tau):
@@ -300,14 +296,16 @@ class SAC(RLAlgorithm):
         """Runs the update operations for policy, Q, and alpha."""
         Qs_values, Qs_losses = self._update_critic(batch)
         policy_losses = self._update_actor(batch)
-        alpha_losses = self._update_alpha(batch)
+        alpha_discrete_losses, alpha_continuous_losses = self._update_alpha(batch)
 
         diagnostics = OrderedDict((
             ('Q_value-mean', tf.reduce_mean(Qs_values)),
             ('Q_loss-mean', tf.reduce_mean(Qs_losses)),
             ('policy_loss-mean', tf.reduce_mean(policy_losses)),
-            ('alpha', tf.convert_to_tensor(self._alpha)),
-            ('alpha_loss-mean', tf.reduce_mean(alpha_losses)),
+            ('alpha_discrete', tf.convert_to_tensor(self._alpha_discrete)),
+            ('alpha_continuous', tf.convert_to_tensor(self._alpha_continuous)),
+            ('alpha_discrete_loss-mean', tf.reduce_mean(alpha_discrete_losses)),
+            ('alpha_continuous_loss-mean', tf.reduce_mean(alpha_continuous_losses)),
         ))
 
         return diagnostics
@@ -331,8 +329,8 @@ class SAC(RLAlgorithm):
         Also calls the `draw` method of the plotter, if plotter defined.
         """
         diagnostics = OrderedDict((
-            ('alpha', self._alpha.numpy()),
-            # ('alpha', tf.convert_to_tensor(self._alpha).numpy()),
+            ('alpha_discrete', self._alpha_discrete.numpy()),
+            ('alpha_continuous', self._alpha_continuous.numpy()),
             ('policy', self._policy.get_diagnostics_np(batch['observations'])),
         ))
 
@@ -349,11 +347,13 @@ class SAC(RLAlgorithm):
                 f'Q_optimizer_{i}': optimizer
                 for i, optimizer in enumerate(self._Q_optimizers)
             },
-            # '_alpha': self._alpha,
-            '_log_alpha': self._log_alpha,
+            '_log_alpha_discrete': self._log_alpha_discrete,
+            '_log_alpha_continuous': self._log_alpha_continuous,
         }
 
-        if hasattr(self, '_alpha_optimizer'):
-            saveables['_alpha_optimizer'] = self._alpha_optimizer
+        if hasattr(self, '_alpha_discrete_optimizer'):
+            saveables['_alpha_discrete_optimizer'] = self._alpha_discrete_optimizer
+        if hasattr(self, '_alpha_continuous_optimizer'):
+            saveables['_alpha_continuous_optimizer'] = self._alpha_continuous_optimizer
 
         return saveables
