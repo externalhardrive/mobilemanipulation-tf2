@@ -101,7 +101,7 @@ class PybulletInterface:
         # Create viewers
         self.camera = Viewer(self.p, self.camera_pos, self.params["camera_look_pos"], 
                                 fov=self.params["camera_fov"], 
-                                near_pos=0.02, far_pos=7.0)
+                                near_pos=0.05, far_pos=7.0)
         
         # create the second auxilary camera if specified
         if self.params.get("use_aux_camera", False):
@@ -113,7 +113,7 @@ class PybulletInterface:
                 self.params["aux_image_size"] = self.params["image_size"]
             self.aux_camera = Viewer(self.p, self.camera_pos, self.params["aux_camera_look_pos"], 
                                     fov=self.params["aux_camera_fov"],
-                                    near_pos=0.02, far_pos=7.0)
+                                    near_pos=0.05, far_pos=7.0)
 
         # Move arm to initial position
         self.move_joints_to_start()
