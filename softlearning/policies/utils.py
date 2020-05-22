@@ -30,3 +30,12 @@ def get_uniform_policy(environment):
 
     raise NotImplementedError((
         type(environment.action_space), environment.action_space))
+
+def get_additional_policy_params(policy_name, environment):
+    if policy_name in ('DiscreteGaussianPolicy', 'FeedforwardDiscreteGaussianPolicy'):
+        return {
+            'num_discrete': environment.action_space.num_discrete,
+            'num_gaussian': environment.action_space.num_continuous,
+        }
+    else:
+        return {}

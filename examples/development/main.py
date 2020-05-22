@@ -17,6 +17,8 @@ from softlearning import value_functions
 from softlearning import replay_pools
 from softlearning import samplers
 
+from softlearning.policies.utils import get_additional_policy_params
+
 from softlearning.utils.misc import set_seed
 from softlearning.utils.tensorflow import set_gpu_memory_growth
 from examples.instrument import run_example_local
@@ -62,6 +64,7 @@ class ExperimentRunner(tune.Trainable):
                              training_environment.action_space.high),
             'input_shapes': training_environment.observation_shape,
             'output_shape': training_environment.action_shape,
+            **get_additional_policy_params(variant['policy_params']['class_name'], training_environment)
         })
         policy = self.policy = policies.get(variant['policy_params'])
 

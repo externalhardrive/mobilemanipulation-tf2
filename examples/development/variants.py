@@ -88,13 +88,24 @@ ALGORITHM_PARAMS_ADDITIONAL = {
 }
 
 
-GAUSSIAN_POLICY_PARAMS_BASE = {
-    'class_name': 'FeedforwardGaussianPolicy',
-    'config': {
-        'hidden_layer_sizes': (M, M),
-        'squash': True,
-        'observation_keys': None,
-        'preprocessors': None,
+POLICY_PARAMS_BASE = {
+    'gaussian': {
+        'class_name': 'FeedforwardGaussianPolicy',
+        'config': {
+            'hidden_layer_sizes': (M, M),
+            'squash': True,
+            'observation_keys': None,
+            'preprocessors': None,
+        },
+    },
+    'discrete_gaussian': {
+        'class_name': 'FeedforwardDiscreteGaussianPolicy',
+        'config': {
+            'hidden_layer_sizes': (M, M),
+            'squash': True,
+            'observation_keys': None,
+            'preprocessors': None,
+        },
     }
 }
 
@@ -583,30 +594,6 @@ EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
     },
 }
 
-EXTRA_POLICY_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
-    'gym': {
-        'Locobot': {
-            'NavigationVacuum-v0': {
-                'class_name': 'FeedforwardDiscreteGaussianPolicy',
-                'config': {
-                    'num_discrete': 2,
-                    'num_gaussian': 2,
-                },
-            },
-        },
-        'Tests': {
-            'LineReach-v0': {
-                'class_name': 'FeedforwardDiscreteGaussianPolicy',
-                'config': {
-                    'num_discrete': 2,
-                    'num_gaussian': 1,
-                },
-            },
-        },
-    },
-}
-
-
 def get_epoch_length(universe, domain, task):
     level_result = EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK.copy()
     for level_key in (universe, domain, task):
@@ -640,12 +627,6 @@ def get_checkpoint_frequency(spec):
     ) // num_checkpoints
 
     return checkpoint_frequency
-
-
-def get_policy_params(spec):
-    # config = spec.get('config', spec)
-    policy_params = GAUSSIAN_POLICY_PARAMS_BASE.copy()
-    return policy_params
 
 
 def get_total_timesteps(universe, domain, task):
@@ -702,21 +683,14 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         deepcopy(get_algorithm_params(universe, domain, task)),
     )
 
-    policy_params = {
-        'class_name': 'FeedforwardGaussianPolicy',
-        'config': {
-            'hidden_layer_sizes': (M, M),
-            'squash': True,
-            'observation_keys': None,
-            'preprocessors': None,
-        },
-    }
-    policy_params = deep_update(
-        policy_params,
-        deepcopy(
-            EXTRA_POLICY_PARAMS_PER_UNIVERSE_DOMAIN_TASK
-            .get(universe, {}).get(domain, {}).get(task, {}))
-    )
+    policy_params = deepcopy(POLICY_PARAMS_BASE[policy])
+    
+    # policy_params = deep_update(
+    #     policy_params,
+    #     deepcopy(
+    #         EXTRA_POLICY_PARAMS_PER_UNIVERSE_DOMAIN_TASK
+    #         .get(universe, {}).get(domain, {}).get(task, {}))
+    # )
 
     variant_spec = {
         'git_sha': get_git_rev(__file__),

@@ -6,6 +6,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 import tree
+import pprint
 
 from softlearning.models.feedforward import feedforward_model
 
@@ -14,6 +15,14 @@ from .base_policy import LatentSpacePolicy
 class DiscreteGaussianPolicy(LatentSpacePolicy):
     def __init__(self, num_discrete, num_gaussian, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        print()
+        print("DiscreteGaussianPolicy params:")
+        pprint.pprint(dict(
+            num_discrete=num_discrete, 
+            num_gaussian=num_gaussian, 
+            args=args, 
+        kwargs=kwargs))
 
         self._num_discrete = num_discrete
         self._num_gaussian = num_gaussian
@@ -97,7 +106,7 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
 
         return discrete_probs, discrete_log_probs, gaussians, gaussian_log_probs
 
-    def _onehot_shift_scale_diag_net(self, inputs, num_discrete, num_gaussian):
+    def _logit_shift_scale_diag_net(self, inputs, num_discrete, num_gaussian):
         raise NotImplementedError
 
     def save_weights(self, *args, **kwargs):
@@ -163,6 +172,13 @@ class FeedforwardDiscreteGaussianPolicy(DiscreteGaussianPolicy):
         self._output_activation = output_activation
 
         super().__init__(*args, **kwargs)
+
+        print("FeedforwardDiscreteGaussianPolicy (extra) params:")
+        pprint.pprint(dict(
+            hidden_layer_sizes=hidden_layer_sizes, 
+            activation=activation, 
+            output_activation=output_activation))
+        print()
 
     def _logit_shift_scale_diag_net(self, inputs, num_discrete, num_gaussian):
         preprocessed_inputs = self._preprocess_inputs(inputs)

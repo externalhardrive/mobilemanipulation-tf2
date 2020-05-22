@@ -1,6 +1,7 @@
 #!/bin/bash
 softlearning run_example_local examples.development \
     --algorithm SACMixed \
+    --policy discrete_gaussian \
     --universe gym \
     --domain Tests \
     --task LineReach-v0 \
