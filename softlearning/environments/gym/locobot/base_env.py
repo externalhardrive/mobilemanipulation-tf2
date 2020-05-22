@@ -2,7 +2,7 @@ import numpy as np
 import gym
 from gym import spaces
 
-from . import locobot_interface
+from .locobot_interface import PybulletInterface
 
 import pprint
 
@@ -13,7 +13,7 @@ class LocobotBaseEnv(gym.Env):
     }
 
     def __init__(self, **params):
-        self.interface = locobot_interface.PybulletInterface(**params)
+        self.interface = PybulletInterface(**params)
         self.params = self.interface.params
 
         print()

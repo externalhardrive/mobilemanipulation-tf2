@@ -30,7 +30,7 @@ def main(args):
     # )
     room_name = "medium"
     room_params = dict(
-        num_objects=100, 
+        num_objects=1, 
         object_name="greensquareball", 
         wall_size=5,
         no_spawn_radius=0.7,
@@ -130,7 +130,7 @@ def main(args):
                 break
             if cmd == "r":
                 obs = env.reset()
-                obs2 = env2.reset()
+                # obs2 = env2.reset()
                 i = 0
                 continue
             else:
