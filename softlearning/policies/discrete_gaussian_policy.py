@@ -129,7 +129,7 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
         """
         discrete_probs, discrete_log_probs, gaussians, gaussian_log_probs = (
             self.discrete_probs_log_probs_and_gaussian_sample_log_probs(inputs))
-        discrete_entropy = -tf.reduce_sum(discrete_probs * discrete_log_probs, axis=1)
+        discrete_entropy = -tf.reduce_sum(discrete_probs * discrete_log_probs, axis=-1)
 
         return OrderedDict((
             ('discrete_entropy-mean', tf.reduce_mean(discrete_entropy)),

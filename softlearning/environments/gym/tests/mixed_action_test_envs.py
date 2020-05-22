@@ -26,6 +26,7 @@ class LineReach(gym.Env):
 
     def reset(self):
         self.pos = np.random.uniform(-self.max_pos, self.max_pos)
+        self.num_steps = 0
         return self.pos
 
     def step(self, action):
