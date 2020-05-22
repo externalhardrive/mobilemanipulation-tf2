@@ -144,6 +144,10 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
             'MixedNavigationResetFree-v0': int(1e5),
             'NavigationVacuum-v0': int(1e6),
         },
+        'Tests': {
+            DEFAULT_KEY: int(1e5),
+            'LineReach-v0': int(1e5),
+        },
     },
     'dm_control': {
         # BENCHMARKING
@@ -261,6 +265,10 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'MixedNavigationResetFree-v0': 200,
             'NavigationVacuum-v0': 200,
         },
+        'Tests': {
+            DEFAULT_KEY: 100,
+            'LineReach-v0': 100,
+        },
     },
 }
 
@@ -274,6 +282,10 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageNavigationResetFree-v0': 1000,
             'MixedNavigationResetFree-v0': 1000,
             'NavigationVacuum-v0': 1000,
+        },
+        'Tests': {
+            DEFAULT_KEY: 1000,
+            'LineReach-v0': 1000,
         },
     },
 }
@@ -505,6 +517,14 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'max_acceleration': 4.0
             },
         },
+        'Tests': {
+            'LineReach-v0': {
+                'max_pos': 5.0, 
+                'max_step': 1.0, 
+                'collect_radius': 0.1,
+                'max_ep_len': 100
+            },
+        },
     },
     'dm_control': {
         'ball_in_cup': {
@@ -571,6 +591,15 @@ EXTRA_POLICY_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'config': {
                     'num_discrete': 2,
                     'num_gaussian': 2,
+                },
+            },
+        },
+        'Tests': {
+            'LineReach-v0': {
+                'class_name': 'FeedforwardDiscreteGaussianPolicy',
+                'config': {
+                    'num_discrete': 2,
+                    'num_gaussian': 1,
                 },
             },
         },

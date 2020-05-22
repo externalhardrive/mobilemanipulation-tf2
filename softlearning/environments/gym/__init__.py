@@ -120,6 +120,12 @@ GENERAL_ENVIRONMENT_SPECS = (
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
                         '.nav_grasp_envs:LocobotNavigationVacuumEnv')
     },
+
+    {
+        'id': 'Tests-LineReach-v0',
+        'entry_point': (f'{CUSTOM_GYM_ENVIRONMENTS_PATH}'
+                        '.tests:LineReach')
+    },
 )
 
 MUJOCO_ENVIRONMENTS = tuple(
