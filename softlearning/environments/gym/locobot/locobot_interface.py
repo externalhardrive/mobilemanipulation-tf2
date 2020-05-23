@@ -45,13 +45,27 @@ class PybulletInterface:
         # CAMERA_LOOK_POS = np.array([0.5, 0., .2])
         # # BLOCK_POS = np.array([0.5, 0, 0.2])
 
+    # From the view of the robot pointing forward: 
+    ARM_JOINTS = [13, # arm base rotates left (+) and right (-), in radians 
+                  14, # 1st joint (controls 1st arm segment). 0 points up, + bends down
+                  15, # 2nd joint (controls 2nd arm segment). 0 perpendicular to 1st segment, + bends down (towards 1st segment)
+                  16] # 3rd joint (controls wrist/hand arm segment). 0 inline with 2nd segment, + bends down (towards 2nd segment)
+    WRIST_JOINT = 17  # + rotates left, - rotates right
+    LEFT_GRIPPER = 19  # 0 is middle, +0.02 is extended
+    RIGHT_GRIPPER = 18 # 0 is middle, -0.02 is extended
+    LEFT_WHEEL = 1
+    RIGHT_WHEEL = 2
+    CAMERA_LINK = 23
+
+    GRIPPER_LENGTH_FROM_WRIST = 0.115
+
     def __init__(self, **params):
         defaults = {
             "renders": False, # whether we use GUI mode or not
             "grayscale": False, # whether we render in grayscale
             "step_duration": 1/60, # when in render mode, how long in seconds does each step take
-            "start_joints": np.array([0., -0.6, 1.3, 0.5, 1.6]), # joint values for the neutral start position
-            "pregrasp_pos": np.array([0.42, 0, 0.3]), # local coord for the end-effector pos to go to before grasping
+            "start_arm_joints": np.array([0., -1.25, 1.57, 0.5]), # joint values for the neutral start position
+            "pregrasp_pos": np.array([0.42, 0, 0.185]), # local coord for the end-effector pos to go to before grasping
             "down_quat": np.array([0.0, 0.7071067811865475, 0.0, 0.7071067811865476]), # quaternion for gripper to point downwards
             "camera_look_pos": np.array([0.5, 0., .2]), # local pos that the camera looks at
             "image_size": 100, # size of the image that the camera renders
@@ -101,7 +115,7 @@ class PybulletInterface:
         # Create viewers
         self.camera = Viewer(self.p, self.camera_pos, self.params["camera_look_pos"], 
                                 fov=self.params["camera_fov"], 
-                                near_pos=0.02, far_pos=7.0)
+                                near_pos=0.05, far_pos=7.0)
         
         # create the second auxilary camera if specified
         if self.params.get("use_aux_camera", False):
@@ -113,10 +127,10 @@ class PybulletInterface:
                 self.params["aux_image_size"] = self.params["image_size"]
             self.aux_camera = Viewer(self.p, self.camera_pos, self.params["aux_camera_look_pos"], 
                                     fov=self.params["aux_camera_fov"],
-                                    near_pos=0.02, far_pos=7.0)
+                                    near_pos=0.05, far_pos=7.0)
 
         # Move arm to initial position
-        self.move_joints_to_start()
+        self.move_arm_to_start()
         self.open_gripper()
 
         # Save state
@@ -124,15 +138,15 @@ class PybulletInterface:
 
     def save_state(self):
         self.saved_state = self.p.saveState()
-        jointStates = self.p.getJointStates(self.robot, range(12,19))
+        jointStates = self.p.getJointStates(self.robot, self.ARM_JOINTS + [self.WRIST_JOINT, self.LEFT_GRIPPER, self.RIGHT_GRIPPER])
         self.saved_joints = [state[0] for state in jointStates]
 
     def reset(self):
         if self.p: 
             self.p.restoreState(stateId=self.saved_state)
-            for joint in range(7):
-                self.p.setJointMotorControl2(self.robot,joint+12,self.p.POSITION_CONTROL,self.saved_joints[joint])
-                self.p.setJointMotorControl2(self.robot,joint+12,self.p.VELOCITY_CONTROL,0)
+            for i, joint in enumerate(self.ARM_JOINTS + [self.WRIST_JOINT, self.LEFT_GRIPPER, self.RIGHT_GRIPPER]):
+                self.p.setJointMotorControl2(self.robot,joint,self.p.POSITION_CONTROL, self.saved_joints[i])
+                self.p.setJointMotorControl2(self.robot,joint,self.p.VELOCITY_CONTROL,0)
 
     # ----- TEXTURES METHOD -----
 
@@ -229,9 +243,9 @@ class PybulletInterface:
         """
         self.set_base_pos_and_yaw(pos=pos, yaw=yaw)
         self.set_wheels_velocity(left, right)
-        self.p.resetJointState(self.robot, 1, targetValue=0, targetVelocity=left)
-        self.p.resetJointState(self.robot, 2, targetValue=0, targetVelocity=right)
-        self.move_joints_to_start()
+        self.p.resetJointState(self.robot, self.LEFT_WHEEL, targetValue=0, targetVelocity=left)
+        self.p.resetJointState(self.robot, self.RIGHT_WHEEL, targetValue=0, targetVelocity=right)
+        self.move_arm_to_start()
 
     def get_base_pos_and_yaw(self):
         """ Get the base position and yaw. (x, y, yaw). """
@@ -251,8 +265,8 @@ class PybulletInterface:
         self.p.resetBasePositionAndOrientation(self.robot, new_pos, new_rot)
 
     def set_wheels_velocity(self, left, right):
-        self.p.setJointMotorControl2(self.robot, 1, self.p.VELOCITY_CONTROL, targetVelocity=left)
-        self.p.setJointMotorControl2(self.robot, 2, self.p.VELOCITY_CONTROL, targetVelocity=right)
+        self.p.setJointMotorControl2(self.robot, self.LEFT_WHEEL, self.p.VELOCITY_CONTROL, targetVelocity=left)
+        self.p.setJointMotorControl2(self.robot, self.RIGHT_WHEEL, self.p.VELOCITY_CONTROL, targetVelocity=right)
 
     def get_wheels_velocity(self):
         _, left, _, _ = self.p.getJointState(self.robot, 1)
@@ -261,13 +275,13 @@ class PybulletInterface:
     
     def move_base(self, left, right):
         """ Move the base by some amount. """
-        self.p.setJointMotorControl2(self.robot, 1, self.p.VELOCITY_CONTROL, targetVelocity=left, force=1e8)
-        self.p.setJointMotorControl2(self.robot, 2, self.p.VELOCITY_CONTROL, targetVelocity=right, force=1e8)
+        self.p.setJointMotorControl2(self.robot, self.LEFT_WHEEL, self.p.VELOCITY_CONTROL, targetVelocity=left, force=1e8)
+        self.p.setJointMotorControl2(self.robot, self.RIGHT_WHEEL, self.p.VELOCITY_CONTROL, targetVelocity=right, force=1e8)
 
         self.do_steps(45)
 
-        self.p.setJointMotorControl2(self.robot, 1, self.p.VELOCITY_CONTROL, targetVelocity=0, force=1e8)
-        self.p.setJointMotorControl2(self.robot, 2, self.p.VELOCITY_CONTROL, targetVelocity=0, force=1e8)
+        self.p.setJointMotorControl2(self.robot, self.LEFT_WHEEL, self.p.VELOCITY_CONTROL, targetVelocity=0, force=1e8)
+        self.p.setJointMotorControl2(self.robot, self.RIGHT_WHEEL, self.p.VELOCITY_CONTROL, targetVelocity=0, force=1e8)
 
         self.do_steps(55)
 
@@ -277,7 +291,7 @@ class PybulletInterface:
 
     # ----- ARM METHODS -----
 
-    def execute_grasp(self, pos, wrist_rotate=0.0):
+    def execute_grasp(self, pos, wrist_rot=0.0):
         """ Do a predetermined single grasp action by doing the following:
             1. Move end-effector to the pregrasp_pos.
             2. Offset the effector x,y postion by the given pos.
@@ -285,24 +299,24 @@ class PybulletInterface:
             4. Move end-effector upwards
         Args:
             pos: (x,y) location of the grasp with origin at the pregrasp_pos, local to the robot
-            wrist_rotate: wrist rotation in radians
+            wrist_rot: wrist rotation in radians
         """
         new_pos = self.params["pregrasp_pos"].copy()
         self.open_gripper(steps=0)
-        self.move_ee(new_pos, wrist_rotate, steps=20)
+        self.move_ee(new_pos, wrist_rot, steps=20)
 
-        new_pos[:2] += pos
-        self.move_ee(new_pos, wrist_rotate, steps=20)
+        new_pos[:2] += np.array(pos)
+        self.move_ee(new_pos, wrist_rot, steps=20)
 
-        new_pos[2] = 0.1 #.02
-        self.move_ee(new_pos, wrist_rotate, steps=30, max_velocity=5.0)
+        new_pos[2] = 0
+        self.move_ee(new_pos, wrist_rot, steps=30, max_velocity=5.0)
         self.close_gripper()
 
-        new_pos[2] = 0.3
-        self.move_ee(new_pos, wrist_rotate, steps=60, max_velocity=1.0)
+        new_pos[2] = 0.185
+        self.move_ee(new_pos, wrist_rot, steps=60, max_velocity=1.0)
 
-    def move_ee(self, pos, wrist_rotate=0, steps=30, max_velocity=float("inf"), ik_steps=70):
-        """ Move the end-effector to the given pos, pointing down.
+    def move_ee(self, pos, wrist_rot=0, steps=30, max_velocity=float("inf"), ik_steps=128):
+        """ Move the end-effector (tip of gripper) to the given pos, pointing down.
         Args:
             pos: (3,) vector local coordinate for the desired end effector position.
             wrist_rotate: rotation of the wrist in radians. 0 is the gripper closing from the sides.
@@ -310,49 +324,62 @@ class PybulletInterface:
             max_velocity: the maximum velocity of the joints..
             ik_steps: how many IK steps to calculate the final joint values.
         """
+        pos = (pos[0], pos[1], pos[2] + self.GRIPPER_LENGTH_FROM_WRIST)
         base_pos, base_ori = self.p.getBasePositionAndOrientation(self.robot)
         pos, ori = self.p.multiplyTransforms(base_pos, base_ori, pos, self.params["down_quat"])
-        jointStates = self.p.calculateInverseKinematics(self.robot, 16, pos, ori, maxNumIterations=ik_steps)[2:6]
+        jointStates = self.p.calculateInverseKinematics(self.robot, self.WRIST_JOINT, pos, ori, maxNumIterations=ik_steps)[2:6]
         
-        for i in range(4):
-            self.p.setJointMotorControl2(self.robot, i+12, self.p.POSITION_CONTROL, jointStates[i], maxVelocity=max_velocity)
-        self.p.setJointMotorControl2(self.robot, 16, self.p.POSITION_CONTROL, wrist_rotate, maxVelocity=max_velocity)
+        self.move_arm(jointStates, wrist_rot=wrist_rot, steps=steps, max_velocity=max_velocity)
 
-        self.do_steps(steps)
-
-    def move_joints(self, joints, steps=69, max_velocity=float("inf")):
+    def move_arm(self, arm_joint_values, wrist_rot=None, steps=69, max_velocity=float("inf")):
         """ Move the arms joints to the given joints values.
         Args:
-            pos: (5,) vector of the 5 joint pos
+            pos: (4,) vector of the 4 arm joint pos
+            wrist_rot: If not None, rotate wrist to wrist rot.
             steps: how many simulation steps to do
             max_velocity: the maximum velocity of the joints
         """
-        for i, j in enumerate(joints):
-            self.p.setJointMotorControl2(self.robot, i+12, self.p.POSITION_CONTROL, j, maxVelocity=max_velocity)
-
+        for joint, value in zip(self.ARM_JOINTS, arm_joint_values):
+            self.p.setJointMotorControl2(self.robot, joint, self.p.POSITION_CONTROL, value, maxVelocity=max_velocity)
+        
+        if wrist_rot is not None:
+            self.p.setJointMotorControl2(self.robot, self.WRIST_JOINT, self.p.POSITION_CONTROL, wrist_rot, maxVelocity=max_velocity)
+        
         self.do_steps(steps)
 
-    def move_joints_to_start(self, steps=60, max_velocity=float("inf")):
+    def move_arm_to_start(self, wrist_rot=None, steps=60, max_velocity=float("inf")):
         """ Move the arms joints to the start_joints position
         Args:
-            pos: (5,) vector of the 5 joint pos
             steps: how many simulation steps to do
         """
-        self.move_joints(self.params["start_joints"], steps=steps, max_velocity=max_velocity)
+        self.move_arm(self.params["start_arm_joints"], wrist_rot=wrist_rot, steps=steps, max_velocity=max_velocity)
+
+    def rotate_wrist(self, wrist_rot, steps=30, max_velocity=float("inf")):
+        self.p.setJointMotorControl2(self.robot, self.WRIST_JOINT, self.p.POSITION_CONTROL, wrist_rot, maxVelocity=max_velocity)
+        self.do_steps(steps)
 
     def open_gripper(self, steps=30):
         """ Open the gripper in steps simulation steps. """
-        self.p.setJointMotorControl2(self.robot, 17, self.p.POSITION_CONTROL, -.02)
-        self.p.setJointMotorControl2(self.robot, 18, self.p.POSITION_CONTROL, .02)
+        self.p.setJointMotorControl2(self.robot, self.LEFT_GRIPPER, self.p.POSITION_CONTROL, .02)
+        self.p.setJointMotorControl2(self.robot, self.RIGHT_GRIPPER, self.p.POSITION_CONTROL, -.02)
 
         self.do_steps(steps)
 
     def close_gripper(self, steps=30):
         """ Close the gripper in steps simulation steps. """
-        self.p.setJointMotorControl2(self.robot, 17, self.p.POSITION_CONTROL, -0.001)
-        self.p.setJointMotorControl2(self.robot, 18, self.p.POSITION_CONTROL, 0.001)
+        self.p.setJointMotorControl2(self.robot, self.LEFT_GRIPPER, self.p.POSITION_CONTROL, -0.001)
+        self.p.setJointMotorControl2(self.robot, self.RIGHT_GRIPPER, self.p.POSITION_CONTROL, 0.001)
 
         self.do_steps(steps)
+    
+    def move_joint_to_pos(self, joint, pos, steps=30, max_velocity=float("inf")):
+        """ Move an arbitrary joint to the desired pos. """
+        self.p.setJointMotorControl2(self.robot, joint, self.p.POSITION_CONTROL, pos)
+        self.do_steps(steps)
+
+    def set_joint_velocity(self, joint, velocity):
+        """ Move an arbitrary joint to the desired value. """
+        self.p.setJointMotorControl2(self.robot, joint, self.p.VELOCITY_CONTROL, targetVelocity=velocity)
 
     # ----- END ARM METHODS -----
 
