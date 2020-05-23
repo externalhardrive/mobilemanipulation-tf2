@@ -559,7 +559,7 @@
         </collision>
     </link>
     <joint name="cam_mount_joint" type="fixed">
-        <origin rpy="0 0 0" xyz="-0.03751 0 0.13775"/>
+        <origin rpy="0 0 0" xyz="-0.03751 0.0 0.13775"/>
         <parent link="base_link"/>
         <child link="cam_mount"/>
         <axis xyz="0 0 0"/>
@@ -587,7 +587,8 @@
         </collision>
     </link>
     <joint name="head_pan_joint" type="revolute">
-        <origin rpy="0 0 0" xyz="0.01755 -0.00008 0.3975"/>
+        <!-- TODO(externalhardrive): camera mount location change -->
+        <origin rpy="0 0 0" xyz="0.01755 -0.10000 0.3975"/>
         <parent link="cam_mount"/>
         <child link="head_pan_link"/>
         <axis xyz="0 0 1"/>
