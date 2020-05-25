@@ -15,7 +15,8 @@ def autoregressive_discrete_model(input_shape,
                                   output_sizes,
                                   activation='relu',
                                   output_activation='linear',
-                                  distribution_logits_activation='same'):
+                                  distribution_logits_activation='same',
+                                  name='autoregressive_discrete_model'):
     """ 
     Returns two autoregressive models (sharing weights):
     1. A model that takes in the input features, but also the onehot samples for each dimension.
@@ -66,7 +67,7 @@ def autoregressive_discrete_model(input_shape,
         sampled_outputs.append(discrete_sample)
 
     model_given = tfk.Model([inputs] + inputs_given, logits_outputs)
-    model_sampled = tfk.Model(inputs, sampled_outputs)
+    model_sampled = tfk.Model(inputs, sampled_outputs, name=name)
 
     return model_given, model_sampled
 

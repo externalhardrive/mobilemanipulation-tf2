@@ -588,7 +588,7 @@
     </link>
     <joint name="head_pan_joint" type="revolute">
         <!-- TODO(externalhardrive): camera mount location change -->
-        <origin rpy="0 0 0" xyz="0.01755 -0.10000 0.3975"/>
+        <origin rpy="0 0 0" xyz="0.01755 -0.00000 0.3975"/>
         <parent link="cam_mount"/>
         <child link="head_pan_link"/>
         <axis xyz="0 0 1"/>
@@ -651,6 +651,32 @@
         <child link="camera_link"/>
         <axis xyz="0 0 0"/>
     </joint>
+
+    <!-- SIM camera stuff -->
+    <link name="camera_lens_link">
+        <inertial>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <mass value="0.000001"/>
+            <inertia ixx="2.4688255642946E-05" ixy="1.60697655569215E-07" ixz="1.2993241737711E-08" iyy="3.66669176935806E-06" iyz="1.30215657011203E-08" izz="2.48602467766615E-05"/>
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <box size="0.02 0.02 0.02"/>
+            </geometry>
+            <material name="">
+                <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
+            </material>
+        </visual>
+    </link>
+    <joint name="camera_lens_link" type="fixed">
+        <origin rpy="0 0 0" xyz="0.02 0 0"/>
+        <parent link="camera_link"/>
+        <child link="camera_lens_link"/>
+        <axis xyz="0 0 0"/>
+    </joint>
+
+
     <!-- Gazebo Plugins -->
     <gazebo>
         <plugin filename="libgazebo_ros_control.so" name="gazebo_ros_control">

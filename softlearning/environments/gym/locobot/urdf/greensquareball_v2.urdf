@@ -6,7 +6,7 @@
 
   <link name="origin">
     <contact>
-      <lateral_friction value="0.25"/>
+      <lateral_friction value="1.0"/>
       <spinning_friction value=".0001"/>
     </contact>
     <inertial>

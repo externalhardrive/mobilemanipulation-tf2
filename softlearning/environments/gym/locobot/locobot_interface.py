@@ -55,7 +55,7 @@ class PybulletInterface:
     RIGHT_GRIPPER = 18 # 0 is middle, -0.02 is extended
     LEFT_WHEEL = 1
     RIGHT_WHEEL = 2
-    CAMERA_LINK = 23
+    CAMERA_LINK = 24
 
     GRIPPER_LENGTH_FROM_WRIST = 0.115
 
@@ -64,7 +64,7 @@ class PybulletInterface:
             "renders": False, # whether we use GUI mode or not
             "grayscale": False, # whether we render in grayscale
             "step_duration": 1/60, # when in render mode, how long in seconds does each step take
-            "start_arm_joints": np.array([0., -1.25, 1.57, 0.5]), # joint values for the neutral start position
+            "start_arm_joints": np.array([0., -1.3, 1.58, 0.8]), # joint values for the neutral start position
             "pregrasp_pos": np.array([0.42, 0, 0.185]), # local coord for the end-effector pos to go to before grasping
             "down_quat": np.array([0.0, 0.7071067811865475, 0.0, 0.7071067811865476]), # quaternion for gripper to point downwards
             "camera_look_pos": np.array([0.5, 0., .2]), # local pos that the camera looks at
@@ -130,7 +130,7 @@ class PybulletInterface:
                                     near_pos=0.05, far_pos=7.0)
 
         # Move arm to initial position
-        self.move_arm_to_start()
+        self.move_arm_to_start(steps=180, max_velocity=8.0)
         self.open_gripper()
 
         # Save state
@@ -291,6 +291,16 @@ class PybulletInterface:
 
     # ----- ARM METHODS -----
 
+    def execute_grasp_direct(self, pos, wrist_rot=0.0):
+        new_pos = np.array([pos[0], pos[1], 0.1])
+        self.open_gripper(steps=0)
+        self.move_ee(new_pos, wrist_rot, steps=60, max_velocity=12.0)
+        new_pos[2] = 0
+        self.move_ee(new_pos, wrist_rot, steps=30, max_velocity=12.0)
+        self.close_gripper(steps=30)
+        new_pos[2] = 0.1
+        self.move_ee(new_pos, wrist_rot, steps=60, max_velocity=1.0)
+
     def execute_grasp(self, pos, wrist_rot=0.0):
         """ Do a predetermined single grasp action by doing the following:
             1. Move end-effector to the pregrasp_pos.
@@ -315,7 +325,7 @@ class PybulletInterface:
         new_pos[2] = 0.185
         self.move_ee(new_pos, wrist_rot, steps=60, max_velocity=1.0)
 
-    def move_ee(self, pos, wrist_rot=0, steps=30, max_velocity=float("inf"), ik_steps=128):
+    def move_ee(self, pos, wrist_rot=0, steps=30, max_velocity=float("inf"), ik_steps=256):
         """ Move the end-effector (tip of gripper) to the given pos, pointing down.
         Args:
             pos: (3,) vector local coordinate for the desired end effector position.
