@@ -55,7 +55,7 @@ def convnet_model(
             block_parts += [getattr(layers, 'AvgPool2D')(
                 pool_size=conv_stride, strides=conv_stride)]
 
-        block = tfk.Sequential(block_parts, name='conv_block')
+        block = tfk.Sequential(block_parts) #, name='conv_block')
         return block
 
     def preprocess(x):

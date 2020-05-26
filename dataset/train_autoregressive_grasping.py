@@ -23,7 +23,7 @@ tfb = tfp.bijectors
 
 def build_policy(image_size=100,
                  discrete_hidden_layers=(512, 512),
-                 discrete_dimensions=(15, 15)):
+                 discrete_dimensions=(15, 31)):
 
     obs_in = tfk.Input((image_size, image_size, 3))
     conv_out = convnet_model(
@@ -33,7 +33,7 @@ def build_policy(image_size=100,
         activation="relu"
     )(obs_in)
     
-    discrete_logits_model, discrete_samples_model = autoregressive_discrete_model(
+    discrete_logits_model, discrete_samples_model, discrete_deterministic_model = autoregressive_discrete_model(
         conv_out.shape[1],
         discrete_hidden_layers,
         discrete_dimensions,
@@ -43,13 +43,15 @@ def build_policy(image_size=100,
     )
     actions_in = [tfk.Input(size) for size in discrete_dimensions]
     
-    logits_out = discrete_logits_model([conv_out] + actions_in)
-    samples_out = discrete_samples_model(conv_out)
+    logits_out        = discrete_logits_model([conv_out] + actions_in)
+    samples_out       = discrete_samples_model(conv_out)
+    deterministic_out = discrete_deterministic_model(conv_out)
 
-    logits_model = tfk.Model([obs_in] + actions_in, logits_out)
-    samples_model = tfk.Model(obs_in, samples_out)
+    logits_model        = tfk.Model([obs_in] + actions_in, logits_out)
+    samples_model       = tfk.Model(obs_in, samples_out)
+    deterministic_model = tfk.Model(obs_in, deterministic_out)
 
-    return logits_model, samples_model
+    return logits_model, samples_model, deterministic_model
 
 def create_env():
     room_name = "grasping"
@@ -135,6 +137,15 @@ class ReplayBuffer:
         }
         return data
 
+    def sample_batch(self, batch_size):
+        inds = np.random.randint(0, self._num, size=(batch_size,))
+        data = {
+            'observations': self._observations[inds],
+            'actions': self._actions[inds],
+            'rewards': self._rewards[inds],
+        }
+        return data
+
     def save(self, folder_path, file_name='replaybuffer'):
         os.makedirs(folder_path, exist_ok=True)
         np.save(os.path.join(folder_path, file_name), self.get_all_samples())
@@ -147,11 +158,12 @@ class ReplayBuffer:
         self._actions[:self._num] = data['actions']
         self._rewards[:self._num] = data['rewards']
 
-def train(logits_model, data, optimizer):
+@tf.function(experimental_relax_shapes=True)
+def train(logits_model, data, optimizer, discrete_dimensions):
     observations = data['observations']
-    rewards = data['rewards'].astype(np.float32)
+    rewards = tf.cast(data['rewards'], tf.float32)
     actions_discrete = data['actions']
-    actions_onehot = tf.unstack(tf.one_hot(actions_discrete, depth=15, axis=-1), axis=1)
+    actions_onehot = [tf.one_hot(actions_discrete[:, i], depth=d) for i, d in enumerate(discrete_dimensions)]
 
     with tf.GradientTape() as tape:
         total_loss = tf.constant(0.)
@@ -171,23 +183,29 @@ def train(logits_model, data, optimizer):
     return total_loss
 
 def main(args):
+    image_size = 100
+    discrete_dimensions = [15, 31]
+
     # set up training loop
     num_samples_per_env = 10
     num_samples_per_epoch = 100
-    num_samples_total = 50000
-    min_samples_before_train = 100
-    train_frequency = 10
+    num_samples_total = 100000
+    min_samples_before_train = 500
+    train_frequency = 1
     assert num_samples_per_epoch % num_samples_per_env == 0 and num_samples_total % num_samples_per_epoch == 0
     
     # create the policy
-    logits_model, samples_model = build_policy()
+    logits_model, samples_model, deterministic_model = (
+        build_policy(image_size=image_size, 
+                     discrete_dimensions=discrete_dimensions,
+                     discrete_hidden_layers=[512, 512]))
     optimizer = tf.optimizers.Adam(learning_rate=3e-4)
     
     # create the Discretizer
-    discretizer = Discretizer([15, 15], [0.3, -0.16], [0.4666666, 0.16])
+    discretizer = Discretizer(discrete_dimensions, [0.3, -0.16], [0.4666666, 0.16])
 
     # create the dataset
-    buffer = ReplayBuffer(size=num_samples_total, image_size=100, action_dim=2)
+    buffer = ReplayBuffer(size=num_samples_total, image_size=image_size, action_dim=len(discrete_dimensions))
 
     # create the env
     env = create_env()
@@ -195,8 +213,9 @@ def main(args):
     # training loop
     num_samples = 0
     num_epoch = 0
-    total_epochs = num_samples // num_samples_per_epoch
+    total_epochs = num_samples_total // num_samples_per_epoch
     training_start_time = time.time()
+    discrete_dimensions_plus_one = [d + 1 for d in discrete_dimensions]
 
     while num_samples < num_samples_total:
         # diagnostics stuff
@@ -206,6 +225,8 @@ def main(args):
             ('time_this_epoch', 0),
             ('rewards_this_epoch', 0),
             ('average_loss_this_epoch', 0),
+            ('num_random_this_epoch', 0),
+            ('num_deterministic_this_epoch', 0),
         ))
         epoch_start_time = time.time()
         num_epoch += 1
@@ -222,11 +243,17 @@ def main(args):
             # do sampling
             obs = env.interface.render_camera(use_aux=True)
             
-            if np.random.uniform() < 0.05: # epsilon greedy
-                action_discrete = np.random.randint(0, 16, size=(2,))
-            else:
+            rand = np.random.uniform()
+            if rand < 0.1: # epsilon greedy
+                action_discrete = np.random.randint([0, 0], discrete_dimensions_plus_one)
+                diagnostics['num_random_this_epoch'] += 1
+            elif rand < -1: # epsilon half greedy?
                 action_onehot = samples_model(np.array([obs]))
-                action_discrete = tf.argmax(action_onehot, axis=-1).numpy().squeeze()
+                action_discrete = np.array([tf.argmax(a, axis=-1).numpy().squeeze() for a in action_onehot])
+            else:
+                action_onehot = deterministic_model(np.array([obs]))
+                action_discrete = np.array([tf.argmax(a, axis=-1).numpy().squeeze() for a in action_onehot])
+                diagnostics['num_deterministic_this_epoch'] += 1
             action_undiscretized = discretizer.undiscretize(action_discrete)
 
             reward = do_grasp(env, action_undiscretized)
@@ -237,7 +264,7 @@ def main(args):
 
             # do training
             if num_samples >= min_samples_before_train and num_samples % train_frequency == 0:
-                loss = train(logits_model, buffer.get_all_samples(), optimizer)
+                loss = train(logits_model, buffer.sample_batch(256), optimizer, discrete_dimensions)
                 total_loss += loss.numpy()
                 num_train_steps += 1
 
@@ -245,13 +272,13 @@ def main(args):
         diagnostics['num_samples'] = num_samples
         diagnostics['total_time'] = time.time() - training_start_time
         diagnostics['time_this_epoch'] = time.time() - epoch_start_time
-        diagnostics['average_loss_this_epoch'] = 0 if num_train_steps == 0 else total_loss / num_train_steps
+        diagnostics['average_loss_this_epoch'] = 'none' if num_train_steps == 0 else total_loss / num_train_steps
 
         print(f'Epoch {num_epoch}/{total_epochs}:')
         pprint(diagnostics)
 
-    buffer.save("./data", "autoregressive_1_replay_buffer")
-    logits_model.save_weights("./models/autoregressive_1_model")
+    buffer.save("./dataset/data", "autoregressive_2_replay_buffer")
+    logits_model.save_weights("./dataset/models/autoregressive_2_model")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
