@@ -9,6 +9,7 @@ import numpy as np
 from collections import OrderedDict
 from pprint import pprint
 
+from softlearning.environments.gym.locobot.utils import is_in_rect
 from softlearning.environments.gym.locobot import *
 from softlearning.environments.gym.locobot.nav_envs import RoomEnv
 
@@ -98,6 +99,20 @@ def do_grasp(env, action):
     env.interface.move_arm_to_start(steps=90, max_velocity=8.0)
     return reward
 
+def are_blocks_graspable(env):
+    for i in range(env.room.num_objects):
+        object_pos, _ = env.interface.get_object(env.room.objects_id[i], relative=True)
+        if is_in_rect(object_pos[0], object_pos[1], 0.3, -0.16, 0.466666666, 0.16):
+            return True 
+    return False
+
+def reset_env(env):
+    env.interface.reset_robot([0, 0], 0, 0, 0)
+    while True:
+        env.room.reset()
+        if are_blocks_graspable(env):
+            return
+
 class Discretizer:
     def __init__(self, sizes, mins, maxs):
         self._sizes = np.array(sizes)
@@ -123,6 +138,10 @@ class ReplayBuffer:
         self._rewards = np.zeros((size, 1), dtype=np.uint8)
         self._num = 0
 
+    @property
+    def num_samples(self):
+        return self._num
+
     def store_sample(self, observation, action, reward):
         self._observations[self._num] = observation
         self._actions[self._num] = action
@@ -136,6 +155,19 @@ class ReplayBuffer:
             'rewards': self._rewards[:self._num],
         }
         return data
+
+    def get_all_samples_in_batch(self, batch_size):
+        datas = []
+        for i in range(0, (self._num // batch_size) * batch_size, batch_size):
+            data = {
+                'observations': self._observations[i:i+batch_size],
+                'actions': self._actions[i:i+batch_size],
+                'rewards': self._rewards[i:i+batch_size],
+            }
+            datas.append(data)
+        if self._num % batch_size != 0:
+            datas.append(self.sample_batch(batch_size))
+        return datas
 
     def sample_batch(self, batch_size):
         inds = np.random.randint(0, self._num, size=(batch_size,))
@@ -159,6 +191,18 @@ class ReplayBuffer:
         self._rewards[:self._num] = data['rewards']
 
 @tf.function(experimental_relax_shapes=True)
+def autoregressive_binary_cross_entropy_loss(logits, actions_onehot, labels):
+    total_loss = tf.constant(0.)
+    for logits_per_dim, actions_onehot_per_dim in zip(logits, actions_onehot):
+        # get only the logits for the actions taken
+        taken_action_logits = tf.reduce_sum(logits_per_dim * actions_onehot_per_dim, axis=-1, keepdims=True)
+        # calculate the sigmoid loss (because we know reward is 0 or 1)
+        losses = tf.nn.sigmoid_cross_entropy_with_logits(labels=labels, logits=taken_action_logits)
+        loss = tf.nn.compute_average_loss(losses)
+        total_loss += loss
+    return total_loss
+
+@tf.function(experimental_relax_shapes=True)
 def train(logits_model, data, optimizer, discrete_dimensions):
     observations = data['observations']
     rewards = tf.cast(data['rewards'], tf.float32)
@@ -166,25 +210,32 @@ def train(logits_model, data, optimizer, discrete_dimensions):
     actions_onehot = [tf.one_hot(actions_discrete[:, i], depth=d) for i, d in enumerate(discrete_dimensions)]
 
     with tf.GradientTape() as tape:
-        total_loss = tf.constant(0.)
         # get the logits for all the dimensions
         logits = logits_model([observations] + actions_onehot)
-        for logits_per_dim, actions_onehot_per_dim in zip(logits, actions_onehot):
-            # get only the logits for the actions taken
-            taken_action_logits = tf.reduce_sum(logits_per_dim * actions_onehot_per_dim, axis=-1, keepdims=True)
-            # calculate the sigmoid loss (because we know reward is 0 or 1)
-            losses = tf.nn.sigmoid_cross_entropy_with_logits(labels=rewards, logits=taken_action_logits)
-            loss = tf.nn.compute_average_loss(losses)
-            total_loss += loss
+        loss = autoregressive_binary_cross_entropy_loss(logits, actions_onehot, rewards)
 
-    grads = tape.gradient(total_loss, logits_model.trainable_variables)
+    grads = tape.gradient(loss, logits_model.trainable_variables)
     optimizer.apply_gradients(zip(grads, logits_model.trainable_variables))
 
-    return total_loss
+    return loss
+
+@tf.function(experimental_relax_shapes=True)
+def validation_loss(logits_model, data, discrete_dimensions):
+    observations = data['observations']
+    rewards = tf.cast(data['rewards'], tf.float32)
+    actions_discrete = data['actions']
+    actions_onehot = [tf.one_hot(actions_discrete[:, i], depth=d) for i, d in enumerate(discrete_dimensions)]
+    logits = logits_model([observations] + actions_onehot)
+    loss = autoregressive_binary_cross_entropy_loss(logits, actions_onehot, rewards)
+    return loss
 
 def main(args):
     image_size = 100
     discrete_dimensions = [15, 31]
+    epsilon = 0.1
+    validation_prob = 0.1
+    train_batch_size = 256
+    validation_batch_size = 100
 
     # set up training loop
     num_samples_per_env = 10
@@ -199,13 +250,19 @@ def main(args):
         build_policy(image_size=image_size, 
                      discrete_dimensions=discrete_dimensions,
                      discrete_hidden_layers=[512, 512]))
-    optimizer = tf.optimizers.Adam(learning_rate=3e-4)
+    optimizer = tf.optimizers.Adam(learning_rate=1e-5)
+
+    # testing time
+    # logits_model.load_weights('./dataset/models/autoregressive_2_model')
+    # epsilon = -1
+    # min_samples_before_train = float('inf')
     
     # create the Discretizer
     discretizer = Discretizer(discrete_dimensions, [0.3, -0.16], [0.4666666, 0.16])
 
     # create the dataset
     buffer = ReplayBuffer(size=num_samples_total, image_size=image_size, action_dim=len(discrete_dimensions))
+    validation_buffer = ReplayBuffer(size=num_samples_total, image_size=image_size, action_dim=len(discrete_dimensions))
 
     # create the env
     env = create_env()
@@ -217,68 +274,107 @@ def main(args):
     training_start_time = time.time()
     discrete_dimensions_plus_one = [d + 1 for d in discrete_dimensions]
 
+    all_diagnostics = []
+
     while num_samples < num_samples_total:
         # diagnostics stuff
         diagnostics = OrderedDict((
-            ('num_samples', 0),
+            ('num_samples_total', 0),
+            ('num_training_samples', 0),
+            ('num_validation_samples', 0),
             ('total_time', 0),
-            ('time_this_epoch', 0),
-            ('rewards_this_epoch', 0),
-            ('average_loss_this_epoch', 0),
-            ('num_random_this_epoch', 0),
-            ('num_deterministic_this_epoch', 0),
+            ('time', 0),
+            ('average_training_loss', 0),
+            ('validation_loss', 'none'),
+            ('num_random', 0),
+            ('num_deterministic', 0),
+            ('num_envs', 0),
+            ('num_success', 0),
+            ('average_success_ratio_per_env', 0),
+            ('average_tries_per_env', 0),
         ))
         epoch_start_time = time.time()
         num_epoch += 1
-        total_loss = 0.0
+        total_training_loss = 0.0
         num_train_steps = 0
 
         # run one epoch
+        num_samples_this_env = 0
+        successes_this_env = 0
+        total_success_ratio = 0
         for i in range(num_samples_per_epoch):
             # reset the env (at the beginning as well)
-            if i % num_samples_per_env == 0:
-                env.interface.reset_robot([0, 0], 0, 0, 0)
-                env.room.reset()
+            if i == 0 or num_samples_this_env >= num_samples_per_env or not are_blocks_graspable(env):
+                if i > 0:
+                    success_ratio = successes_this_env / num_samples_this_env
+                    total_success_ratio += success_ratio
+                reset_env(env)
+                num_samples_this_env = 0
+                successes_this_env = 0
+                diagnostics['num_envs'] += 1
 
             # do sampling
             obs = env.interface.render_camera(use_aux=True)
             
             rand = np.random.uniform()
-            if rand < 0.1: # epsilon greedy
+            if rand < epsilon: # epsilon greedy
                 action_discrete = np.random.randint([0, 0], discrete_dimensions_plus_one)
-                diagnostics['num_random_this_epoch'] += 1
+                diagnostics['num_random'] += 1
             elif rand < -1: # epsilon half greedy?
                 action_onehot = samples_model(np.array([obs]))
                 action_discrete = np.array([tf.argmax(a, axis=-1).numpy().squeeze() for a in action_onehot])
             else:
                 action_onehot = deterministic_model(np.array([obs]))
                 action_discrete = np.array([tf.argmax(a, axis=-1).numpy().squeeze() for a in action_onehot])
-                diagnostics['num_deterministic_this_epoch'] += 1
+                diagnostics['num_deterministic'] += 1
             action_undiscretized = discretizer.undiscretize(action_discrete)
 
             reward = do_grasp(env, action_undiscretized)
-            diagnostics['rewards_this_epoch'] += reward
+            diagnostics['num_success'] += reward
+            successes_this_env += reward
 
-            buffer.store_sample(obs, action_discrete, reward)
+            if np.random.uniform() < validation_prob:
+                validation_buffer.store_sample(obs, action_discrete, reward)
+            else:
+                buffer.store_sample(obs, action_discrete, reward)
+            
             num_samples += 1
+            num_samples_this_env += 1
 
             # do training
             if num_samples >= min_samples_before_train and num_samples % train_frequency == 0:
-                loss = train(logits_model, buffer.sample_batch(256), optimizer, discrete_dimensions)
-                total_loss += loss.numpy()
+                loss = train(logits_model, buffer.sample_batch(train_batch_size), optimizer, discrete_dimensions)
+                total_training_loss += loss.numpy()
                 num_train_steps += 1
 
         # diagnostics stuff
-        diagnostics['num_samples'] = num_samples
+        diagnostics['num_samples_total'] = num_samples
+        diagnostics['num_training_samples'] = buffer.num_samples
+        diagnostics['num_validation_samples'] = validation_buffer.num_samples
         diagnostics['total_time'] = time.time() - training_start_time
-        diagnostics['time_this_epoch'] = time.time() - epoch_start_time
-        diagnostics['average_loss_this_epoch'] = 'none' if num_train_steps == 0 else total_loss / num_train_steps
+        diagnostics['time'] = time.time() - epoch_start_time
+        
+        diagnostics['average_training_loss'] = 'none' if num_train_steps == 0 else total_training_loss / num_train_steps
+
+        if validation_buffer.num_samples >= validation_batch_size:
+            datas = validation_buffer.get_all_samples_in_batch(validation_batch_size)
+            total_validation_loss = 0.0
+            for data in datas:
+                total_validation_loss += validation_loss(logits_model, data, discrete_dimensions).numpy()
+            diagnostics['validation_loss'] = total_validation_loss / len(datas)
+
+        success_ratio = successes_this_env / num_samples_this_env
+        total_success_ratio += success_ratio
+        diagnostics['average_success_ratio_per_env'] = total_success_ratio / diagnostics['num_envs']
+        diagnostics['average_tries_per_env'] = num_samples_per_epoch / diagnostics['num_envs']
 
         print(f'Epoch {num_epoch}/{total_epochs}:')
         pprint(diagnostics)
+        all_diagnostics.append(diagnostics)
 
-    buffer.save("./dataset/data", "autoregressive_2_replay_buffer")
-    logits_model.save_weights("./dataset/models/autoregressive_2_model")
+    buffer.save("./dataset/data", "autoregressive_4_replay_buffer")
+    logits_model.save_weights("./dataset/models/autoregressive_4_model")
+    np.save("./dataset/data/autoregressive_4_diagnostics", all_diagnostics)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
