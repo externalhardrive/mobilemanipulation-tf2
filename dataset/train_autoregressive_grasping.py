@@ -40,7 +40,7 @@ def build_policy(image_size=100,
         discrete_dimensions,
         activation='relu',
         output_activation='linear',
-        distribution_logits_activation='sigmoid'
+        distribution_logits_activation='linear'
     )
     actions_in = [tfk.Input(size) for size in discrete_dimensions]
     
@@ -232,7 +232,8 @@ def validation_loss(logits_model, data, discrete_dimensions):
 def main(args):
     image_size = 100
     discrete_dimensions = [15, 31]
-    epsilon = 0.1
+    epsilon = -1
+    half_epsilon = 2.0
     validation_prob = 0.1
     train_batch_size = 256
     validation_batch_size = 100
@@ -241,8 +242,8 @@ def main(args):
     num_samples_per_env = 10
     num_samples_per_epoch = 100
     num_samples_total = 100000
-    min_samples_before_train = 500
-    train_frequency = 1
+    min_samples_before_train = 1000
+    train_frequency = 5
     assert num_samples_per_epoch % num_samples_per_env == 0 and num_samples_total % num_samples_per_epoch == 0
     
     # create the policy
@@ -287,6 +288,7 @@ def main(args):
             ('average_training_loss', 0),
             ('validation_loss', 'none'),
             ('num_random', 0),
+            ('num_softmax', 0),
             ('num_deterministic', 0),
             ('num_envs', 0),
             ('num_success', 0),
@@ -320,9 +322,10 @@ def main(args):
             if rand < epsilon: # epsilon greedy
                 action_discrete = np.random.randint([0, 0], discrete_dimensions_plus_one)
                 diagnostics['num_random'] += 1
-            elif rand < -1: # epsilon half greedy?
+            elif rand < half_epsilon: # epsilon half greedy?
                 action_onehot = samples_model(np.array([obs]))
                 action_discrete = np.array([tf.argmax(a, axis=-1).numpy().squeeze() for a in action_onehot])
+                diagnostics['num_softmax'] += 1
             else:
                 action_onehot = deterministic_model(np.array([obs]))
                 action_discrete = np.array([tf.argmax(a, axis=-1).numpy().squeeze() for a in action_onehot])
@@ -372,9 +375,9 @@ def main(args):
         pprint(diagnostics)
         all_diagnostics.append(diagnostics)
 
-    buffer.save("./dataset/data", "autoregressive_4_replay_buffer")
-    logits_model.save_weights("./dataset/models/autoregressive_4_model")
-    np.save("./dataset/data/autoregressive_4_diagnostics", all_diagnostics)
+    buffer.save("./dataset/data", "autoregressive_6_replay_buffer")
+    logits_model.save_weights("./dataset/models/autoregressive_6_model")
+    np.save("./dataset/data/autoregressive_6_diagnostics", all_diagnostics)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
