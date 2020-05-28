@@ -9,6 +9,7 @@ import tree
 import pprint
 
 from softlearning.models.feedforward import feedforward_model
+from softlearning.distributions.bijectors import ConditionalScale, ConditionalShift
 
 from .base_policy import LatentSpacePolicy
 
@@ -31,6 +32,19 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
             inputs=self.inputs,
             num_discrete=num_discrete,
             num_gaussian=num_gaussian)
+
+        base_gaussian_distribution = tfp.distributions.MultivariateNormalDiag(
+            loc=tf.zeros(self._num_gaussian),
+            scale_diag=tf.ones(self._num_gaussian))
+
+        raw_gaussian_action_distribution = tfp.bijectors.Chain((
+            ConditionalShift(name='shift'),
+            ConditionalScale(name='scale'),
+        ))(base_gaussian_distribution)
+
+        self.base_gaussian_distribution = base_gaussian_distribution
+        self.raw_gaussian_action_distribution = raw_gaussian_action_distribution
+        self.gaussian_action_distribution = self._action_post_processor(raw_gaussian_action_distribution)
     
     @tf.function(experimental_relax_shapes=True)
     def actions(self, observations):
@@ -42,9 +56,18 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
         onehot_distribution = tfp.distributions.OneHotCategorical(logits=logits, dtype=tf.float32)
         onehots = onehot_distribution.sample()
 
-        gaussian_distribution = tfp.distributions.MultivariateNormalDiag(loc=shifts, scale_diag=scales)
-        gaussian_distribution = self._action_post_processor(gaussian_distribution)
-        gaussians = gaussian_distribution.sample()
+        # gaussian_distribution = tfp.distributions.MultivariateNormalDiag(loc=shifts, scale_diag=scales)
+        # gaussian_distribution = self._action_post_processor(gaussian_distribution)
+        # gaussians = gaussian_distribution.sample()
+
+        first_observation = tree.flatten(observations)[0]
+        first_input_rank = tf.size(tree.flatten(self._input_shapes)[0])
+        batch_shape = tf.shape(first_observation)[:-first_input_rank]
+
+        gaussians = self.gaussian_action_distribution.sample(
+            batch_shape,
+            bijector_kwargs={'scale': {'scale': scales},
+                             'shift': {'shift': shifts}})
 
         actions = tf.concat([onehots, gaussians], axis=1)
 
@@ -60,9 +83,15 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
         onehot_distribution = tfp.distributions.OneHotCategorical(logits=logits, dtype=tf.float32)
         onehot_log_probs = onehot_distribution.log_prob(actions[:, :self._num_discrete])[..., tf.newaxis] 
 
-        gaussian_distribution = tfp.distributions.MultivariateNormalDiag(loc=shifts, scale_diag=scales)
-        gaussian_distribution = self._action_post_processor(gaussian_distribution)
-        gaussian_log_probs = gaussian_distribution.log_prob(actions[:, self._num_discrete:])[..., tf.newaxis]
+        # gaussian_distribution = tfp.distributions.MultivariateNormalDiag(loc=shifts, scale_diag=scales)
+        # gaussian_distribution = self._action_post_processor(gaussian_distribution)
+        # gaussian_log_probs = gaussian_distribution.log_prob(actions[:, self._num_discrete:])[..., tf.newaxis]
+
+        log_probs = self.gaussian_action_distribution.log_prob(
+            actions[:, self._num_discrete:],
+            bijector_kwargs={'scale': {'scale': scales},
+                             'shift': {'shift': shifts}}
+        )[..., tf.newaxis]
 
         log_probs = onehot_log_probs + gaussian_log_probs
 
@@ -79,10 +108,24 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
         onehots = onehot_distribution.sample()
         onehot_log_probs = onehot_distribution.log_prob(onehots)[..., tf.newaxis] 
 
-        gaussian_distribution = tfp.distributions.MultivariateNormalDiag(loc=shifts, scale_diag=scales)
-        gaussian_distribution = self._action_post_processor(gaussian_distribution)
-        gaussians = gaussian_distribution.sample()
-        gaussian_log_probs = gaussian_distribution.log_prob(gaussians)[..., tf.newaxis]
+        # gaussian_distribution = tfp.distributions.MultivariateNormalDiag(loc=shifts, scale_diag=scales)
+        # gaussian_distribution = self._action_post_processor(gaussian_distribution)
+        # gaussians = gaussian_distribution.sample()
+        # gaussian_log_probs = gaussian_distribution.log_prob(gaussians)[..., tf.newaxis]
+
+        first_observation = tree.flatten(observations)[0]
+        first_input_rank = tf.size(tree.flatten(self._input_shapes)[0])
+        batch_shape = tf.shape(first_observation)[:-first_input_rank]
+
+        gaussians = self.gaussian_action_distribution.sample(
+            batch_shape,
+            bijector_kwargs={'scale': {'scale': scales},
+                             'shift': {'shift': shifts}})
+        gaussian_log_probs = self.gaussian_action_distribution.log_prob(
+            gaussians,
+            bijector_kwargs={'scale': {'scale': scales},
+                             'shift': {'shift': shifts}}
+        )[..., tf.newaxis]
 
         actions = tf.concat([onehots, gaussians], axis=1)
         log_probs = onehot_log_probs + gaussian_log_probs
@@ -99,10 +142,24 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
         discrete_probs = tf.nn.softmax(logits, axis=-1)
         discrete_log_probs = tf.nn.log_softmax(logits, axis=-1)
 
-        gaussian_distribution = tfp.distributions.MultivariateNormalDiag(loc=shifts, scale_diag=scales)
-        gaussian_distribution = self._action_post_processor(gaussian_distribution)
-        gaussians = gaussian_distribution.sample()
-        gaussian_log_probs = gaussian_distribution.log_prob(gaussians)[..., tf.newaxis]
+        # gaussian_distribution = tfp.distributions.MultivariateNormalDiag(loc=shifts, scale_diag=scales)
+        # gaussian_distribution = self._action_post_processor(gaussian_distribution)
+        # gaussians = gaussian_distribution.sample()
+        # gaussian_log_probs = gaussian_distribution.log_prob(gaussians)[..., tf.newaxis]
+
+        first_observation = tree.flatten(observations)[0]
+        first_input_rank = tf.size(tree.flatten(self._input_shapes)[0])
+        batch_shape = tf.shape(first_observation)[:-first_input_rank]
+
+        gaussians = self.gaussian_action_distribution.sample(
+            batch_shape,
+            bijector_kwargs={'scale': {'scale': scales},
+                             'shift': {'shift': shifts}})
+        gaussian_log_probs = self.gaussian_action_distribution.log_prob(
+            gaussians,
+            bijector_kwargs={'scale': {'scale': scales},
+                             'shift': {'shift': shifts}}
+        )[..., tf.newaxis]
 
         return discrete_probs, discrete_log_probs, gaussians, gaussian_log_probs
 
@@ -158,6 +215,15 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
             ('continuous_actions-min', tf.reduce_min(gaussians)),
             ('continuous_actions-max', tf.reduce_max(gaussians)),
         ))
+    
+    def get_config(self):
+        base_config = super().get_config()
+        config = {
+            **base_config,
+            'num_discrete': self._num_discrete,
+            'num_gaussian': self._num_gaussian,
+        }
+        return config
 
 
 class FeedforwardDiscreteGaussianPolicy(DiscreteGaussianPolicy):

@@ -88,7 +88,7 @@ class BaseNavigationEnv(RoomEnv):
         success = 0
         for i in range(self.room.num_objects):
             object_pos, _ = self.interface.get_object(self.room.objects_id[i], relative=True)
-            if is_in_rect(object_pos[0], object_pos[1], 0.42 - 0.04, -0.12, 0.42 + 0.04, 0.12):
+            if is_in_rect(object_pos[0], object_pos[1], 0.3, -0.16, 0.466666666, 0.16):
                 success += 1
                 self.total_grasped += 1
                 self.interface.move_object(self.room.objects_id[i], [self.room.extent * 3.0, 0, 1])

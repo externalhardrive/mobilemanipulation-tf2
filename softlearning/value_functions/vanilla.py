@@ -57,6 +57,8 @@ def feedforward_Q_function(input_shapes,
 
     preprocessed_inputs = apply_preprocessors(preprocessors, inputs)
 
+    print(preprocessed_inputs)
+
     # NOTE(hartikainen): `feedforward_model` would do the `cast_and_concat`
     # step for us, but tf2.2 broke the sequential multi-input handling: See:
     # https://github.com/tensorflow/tensorflow/issues/37061.

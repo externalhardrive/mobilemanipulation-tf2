@@ -45,6 +45,10 @@ class SACMixed(RLAlgorithm):
             tau=5e-3,
             target_update_interval=1,
 
+            discrete_entropy_ratio_start=0.95,
+            discrete_entropy_ratio_end=0.5,
+            discrete_entropy_timesteps=60000,
+
             save_full_state=False,
             **kwargs,
     ):
@@ -85,6 +89,10 @@ class SACMixed(RLAlgorithm):
             tau=tau,
             target_update_interval=target_update_interval,
 
+            discrete_entropy_ratio_start=discrete_entropy_ratio_start,
+            discrete_entropy_ratio_end=discrete_entropy_ratio_end,
+            discrete_entropy_timesteps=discrete_entropy_timesteps,
+
             save_full_state=save_full_state,
             kwargs=kwargs,
         ))
@@ -106,11 +114,17 @@ class SACMixed(RLAlgorithm):
 
         self._reward_scale = reward_scale
 
-        self._target_entropy_discrete = (
-            -np.log(1 / self._training_environment.action_space.num_discrete) * 0.8
+        self._discrete_entropy_ratio_start = discrete_entropy_ratio_start
+        self._discrete_entropy_ratio_end = discrete_entropy_ratio_end
+        self._discrete_entropy_timesteps = discrete_entropy_timesteps
+
+        self._discrete_entropy_ratio_current = self._discrete_entropy_ratio_start
+
+        self._target_entropy_discrete_max = (
+            -np.log(1 / self._training_environment.action_space.num_discrete)
             if target_entropy == 'auto'
             else target_entropy)
-        
+
         self._target_entropy_continuous = (
             -self._training_environment.action_space.num_continuous
             if target_entropy == 'auto'
@@ -118,8 +132,9 @@ class SACMixed(RLAlgorithm):
 
         print("SACMixed members:")
         pprint.pprint(dict(
-            _target_entropy_discrete=self._target_entropy_discrete,
+            _target_entropy_discrete_max=self._target_entropy_discrete_max,
             _target_entropy_continuous=self._target_entropy_continuous,
+            _Q_targets=self._Q_targets,
         ))
         print()
 
@@ -141,11 +156,14 @@ class SACMixed(RLAlgorithm):
 
         self._log_alpha_discrete = tf.Variable(0.0, name='log_alpha_discrete')
         self._alpha_discrete = tfp.util.DeferredTensor(self._log_alpha_discrete, tf.exp)
-        self._alpha_discrete_optimizer = tf.optimizers.Adam(self._alpha_lr, name='alpha_discrete_optimizer')
-        
         self._log_alpha_continuous = tf.Variable(0.0, name='log_alpha_continuous')
         self._alpha_continuous = tfp.util.DeferredTensor(self._log_alpha_continuous, tf.exp)
-        self._alpha_continuous_optimizer = tf.optimizers.Adam(self._alpha_lr, name='alpha_continuous_optimizer')
+        
+        self._alpha_optimizer = tf.optimizers.Adam(self._alpha_lr, name='alpha_optimizer')
+
+    @property
+    def _target_entropy_discrete(self):
+        return self._target_entropy_discrete_max * self._discrete_entropy_ratio_current
 
     @tf.function(experimental_relax_shapes=True)
     def _compute_Q_targets(self, batch):
@@ -192,6 +210,8 @@ class SACMixed(RLAlgorithm):
         onehots = actions[:, :self._training_environment.action_space.num_discrete]
         gaussians = actions[:, self._training_environment.action_space.num_discrete:]
 
+        print(onehots)
+
         # index_per_row = tf.argmax(onehots, axis=1, output_type=tf.int32)
         # index_row_col = tf.stack([tf.range(tf.shape(index_per_row)[0]), index_per_row], axis=1)
 
@@ -202,8 +222,10 @@ class SACMixed(RLAlgorithm):
         for Q, optimizer in zip(self._Qs, self._Q_optimizers):
             with tf.GradientTape() as tape:
                 all_Q_values = Q.values(observations, gaussians)
+                print(all_Q_values)
                 # Q_values = tf.gather_nd(all_Q_values, index_row_col)[..., tf.newaxis]
                 Q_values = tf.reduce_sum(all_Q_values * onehots, axis=-1, keepdims=True)
+                print(Q_values)
                 Q_losses = 0.5 * tf.losses.MSE(y_true=Q_targets, y_pred=Q_values)
                 Q_loss = tf.nn.compute_average_loss(Q_losses)
 
@@ -252,34 +274,27 @@ class SACMixed(RLAlgorithm):
         return policy_losses
 
     @tf.function(experimental_relax_shapes=True)
-    def _update_alpha(self, batch):
-        if not isinstance(self._target_entropy_continuous, Number) or not isinstance(self._target_entropy_discrete, Number):
-            return 0.0
+    def _update_alpha(self, batch, target_entropy_discrete):
+        # if not isinstance(self._target_entropy_continuous, Number) or not isinstance(target_entropy_discrete, Number):
+            # return 0.0
 
         observations = batch['observations']
 
         discrete_probs, discrete_log_probs, gaussians, gaussian_log_probs = (
             self._policy.discrete_probs_log_probs_and_gaussian_sample_log_probs(observations))
 
-        # alpha discrete
         with tf.GradientTape() as tape:
             alpha_discrete_losses = self._alpha_discrete * tf.stop_gradient(
-                -tf.reduce_sum(discrete_probs * discrete_log_probs, axis=-1, keepdims=True) - self._target_entropy_discrete)
+                -tf.reduce_sum(discrete_probs * discrete_log_probs, axis=-1, keepdims=True) - target_entropy_discrete)
 
-            alpha_discrete_loss = tf.nn.compute_average_loss(alpha_discrete_losses)
-
-        alpha_discrete_gradients = tape.gradient(alpha_discrete_loss, [self._log_alpha_discrete])
-        self._alpha_discrete_optimizer.apply_gradients(zip(alpha_discrete_gradients, [self._log_alpha_discrete]))
-
-        # alpha continuous
-        with tf.GradientTape() as tape:
             alpha_continuous_losses = self._alpha_continuous * tf.stop_gradient(
                 -gaussian_log_probs - self._target_entropy_continuous)
-                
-            alpha_continuous_loss = tf.nn.compute_average_loss(alpha_continuous_losses)
 
-        alpha_continuous_gradients = tape.gradient(alpha_continuous_loss, [self._log_alpha_continuous])
-        self._alpha_continuous_optimizer.apply_gradients(zip(alpha_continuous_gradients, [self._log_alpha_continuous]))
+            alpha_losses = alpha_discrete_losses + alpha_continuous_losses
+            alpha_loss = tf.nn.compute_average_loss(alpha_losses)
+
+        alpha_gradients = tape.gradient(alpha_loss, [self._log_alpha_discrete, self._log_alpha_continuous])
+        self._alpha_optimizer.apply_gradients(zip(alpha_gradients, [self._log_alpha_discrete, self._log_alpha_continuous]))
 
         return alpha_discrete_losses, alpha_continuous_losses
 
@@ -292,11 +307,11 @@ class SACMixed(RLAlgorithm):
                     tau * source_weight + (1.0 - tau) * target_weight)
 
     @tf.function(experimental_relax_shapes=True)
-    def _do_updates(self, batch):
+    def _do_updates(self, batch, target_entropy_discrete):
         """Runs the update operations for policy, Q, and alpha."""
         Qs_values, Qs_losses = self._update_critic(batch)
         policy_losses = self._update_actor(batch)
-        alpha_discrete_losses, alpha_continuous_losses = self._update_alpha(batch)
+        alpha_discrete_losses, alpha_continuous_losses = self._update_alpha(batch, target_entropy_discrete)
 
         diagnostics = OrderedDict((
             ('Q_value-mean', tf.reduce_mean(Qs_values)),
@@ -306,12 +321,18 @@ class SACMixed(RLAlgorithm):
             ('alpha_continuous', tf.convert_to_tensor(self._alpha_continuous)),
             ('alpha_discrete_loss-mean', tf.reduce_mean(alpha_discrete_losses)),
             ('alpha_continuous_loss-mean', tf.reduce_mean(alpha_continuous_losses)),
+            ('target_entropy_discrete', target_entropy_discrete),
         ))
 
         return diagnostics
 
     def _do_training(self, iteration, batch):
-        training_diagnostics = self._do_updates(batch)
+        # updates entropy ratio
+        iterations_ratio = min(iteration / self._discrete_entropy_timesteps, 1.0)
+        ratio_difference = self._discrete_entropy_ratio_start - self._discrete_entropy_ratio_end
+        self._discrete_entropy_ratio_current = self._discrete_entropy_ratio_start - iterations_ratio * ratio_difference
+
+        training_diagnostics = self._do_updates(batch, tf.constant(self._target_entropy_discrete, dtype=tf.float32))
 
         if iteration % self._target_update_interval == 0:
             # Run target ops here.
@@ -351,9 +372,7 @@ class SACMixed(RLAlgorithm):
             '_log_alpha_continuous': self._log_alpha_continuous,
         }
 
-        if hasattr(self, '_alpha_discrete_optimizer'):
-            saveables['_alpha_discrete_optimizer'] = self._alpha_discrete_optimizer
-        if hasattr(self, '_alpha_continuous_optimizer'):
-            saveables['_alpha_continuous_optimizer'] = self._alpha_continuous_optimizer
+        if hasattr(self, '_alpha_optimizer'):
+            saveables['_alpha_optimizer'] = self._alpha_optimizer
 
         return saveables

@@ -11,8 +11,6 @@ from softlearning.utils.dict import deep_update
 DEFAULT_KEY = "__DEFAULT_KEY__"
 
 M = 512
-NUM_COUPLING_LAYERS = 2
-
 
 ALGORITHM_PARAMS_BASE = {
     'config': {
@@ -34,7 +32,7 @@ ALGORITHM_PARAMS_ADDITIONAL = {
     'SAC': {
         'class_name': 'SAC',
         'config': {
-            'policy_lr': 3e-4, # 3e-4
+            'policy_lr': 3e-4,
             'Q_lr': 3e-4,
             'alpha_lr': 3e-4,
             'target_update_interval': 1,
@@ -48,15 +46,19 @@ ALGORITHM_PARAMS_ADDITIONAL = {
     'SACMixed': {
         'class_name': 'SACMixed',
         'config': {
-            'policy_lr': 3e-4, # 3e-4
+            'policy_lr': 3e-4,
             'Q_lr': 3e-4,
             'alpha_lr': 3e-4,
             'target_update_interval': 1,
             'tau': 5e-3,
             'target_entropy': 'auto',
 
-            'discount': 0.995,
+            'discount': 0.95,
             'reward_scale': 1.0,
+
+            'discrete_entropy_ratio_start': 0.9,
+            'discrete_entropy_ratio_end': 0.55,
+            'discrete_entropy_timesteps': 60000,
         },
     },
     'SQL': {
@@ -518,7 +520,7 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'room_params': {
                     'num_objects': 100, 
                     'object_name': "greensquareball", 
-                    'no_spawn_radius': 0.7,
+                    'no_spawn_radius': 0.8,
                     'wall_size': 5.0
                 },
                 'max_ep_len': 200,
@@ -530,7 +532,7 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
         },
         'Tests': {
             'LineReach-v0': {
-                'max_pos': 5.0, 
+                'max_pos': 10.0, 
                 'max_step': 1.0, 
                 'collect_radius': 0.1,
                 'max_ep_len': 100
@@ -734,7 +736,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         'replay_pool_params': {
             'class_name': 'SimpleReplayPool',
             'config': {
-                'max_size': int(1e5),
+                'max_size': int(5e5),
             },
         },
         'sampler_params': {
@@ -748,7 +750,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
             'seed': tune.sample_from(lambda spec: np.random.randint(0, 10000)),
             'checkpoint_at_end': True,
             'checkpoint_frequency': tune.sample_from(get_checkpoint_frequency),
-            'checkpoint_replay_pool': True,
+            'checkpoint_replay_pool': False,
         },
     }
 
