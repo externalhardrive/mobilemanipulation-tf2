@@ -3,6 +3,8 @@ import numpy as np
 from .utils import *
 from .objects import *
 
+from softlearning.environments.helpers import random_point_in_circle
+
 def initialize_room(locobot_interface, name, room_params={}):
     if name == "simple":
         return SimpleRoom(locobot_interface, room_params)
@@ -10,6 +12,8 @@ def initialize_room(locobot_interface, name, room_params={}):
         return SimpleRoomWithObstacles(locobot_interface, room_params)
     elif name == "medium":
         return MediumRoom(locobot_interface, room_params)
+    elif name == "grasping":
+        return GraspingRoom(locobot_interface, room_params)
     else:
         return NotImplementedError(f"no room has name {name}")
 
@@ -71,6 +75,53 @@ class SimpleRoom(Room):
     @property
     def extent(self):
         return self._wall_size * 2.0
+
+class GraspingRoom(Room):
+    """ Room with objects spawn around specific location. """
+    def __init__(self, interface, params):
+        defaults = dict(
+            min_objects=1,
+            max_objects=10,
+            object_name="greensquareball", 
+            spawn_loc = [0, 0.42],
+            spawn_radius = 0.10
+        )
+        defaults.update(params)
+        super().__init__(interface, defaults)
+
+        self._spawn_loc = self.params["spawn_loc"]
+        self._spawn_radius = self.params["spawn_radius"]
+
+        self._min_objects = self.params["min_objects"]
+        self._max_objects = self.params["max_objects"]
+        for i in range(self._max_objects):
+            self.objects_id.append(self.interface.spawn_object(URDF[self.params["object_name"]], np.array([0.0, 0.0, 10 + i])))
+
+    def is_valid_spawn_loc(self, x, y):
+        return not is_in_circle(x, y, 0, 0, 0.2)
+
+    def reset(self, num_objects=None):
+        if not num_objects:
+            num_objects = np.random.randint(self._min_objects, self._max_objects + 1)
+
+        for i in range(num_objects):
+            while True:
+                dx, dy = random_point_in_circle(radius=(0, self._spawn_radius))
+                x, y = self._spawn_loc[0] + dx, self._spawn_loc[1] + dy
+                if self.is_valid_spawn_loc(x, y):
+                    break
+            self.interface.move_object(self.objects_id[i], [x, y, 0.015])
+        
+        for i in range(num_objects, self._max_objects):
+            self.interface.move_object(self.objects_id[i], [self.extent, 0, 1])
+    
+    @property
+    def num_objects(self):
+        return self._max_objects
+
+    @property
+    def extent(self):
+        return 10
 
 class SimpleRoomWithObstacles(SimpleRoom):
     """ Simple room that has a wall and objects inside, with simple immovable obstacles (not randomly generated). """

@@ -6,9 +6,7 @@
        Base link is set at the bottom of the base mould.
        This is done to be compatible with the way base link
        was configured for turtlebot 1. Refer to
-
        https://github.com/turtlebot/turtlebot/issues/40
-
        To put the base link at the more oft used wheel
        axis, set the z-distance from the base_footprint
        to 0.352.
@@ -28,8 +26,7 @@
         </visual>
         <collision name="base">
             <geometry>
-                <!-- <cylinder length="0.10938" radius="0.178"/> -->
-                <cylinder length="0.120" radius="0.178"/>
+                <cylinder length="0.10938" radius="0.178"/>
             </geometry>
             <origin rpy="0 0 0" xyz="0.0 0 0.05949"/>
         </collision>
@@ -187,23 +184,24 @@
     <!-- plates  -->
     <link name="plate_1">
         <inertial>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
-            <mass value="0.0640128902693298"/>
-            <inertia ixx="0.0212697824374231" ixy="-1.84819421839641E-07" ixz="0.00177278831625861" iyy="0.0200161122874848" iyz="1.82514218153984E-07" izz="0.00538401325307411"/>
+            <origin rpy="3.14159265359 0 1.57079632679" xyz="-0.0503576000 -0.0000435988 0.002375"/>
+            <!-- <mass value="1"/> -->
+            <mass value="0.27854"/>
+            <inertia ixx="0.0008919000" ixy="0.0000000000" ixz="0.0000000000" iyy="0.0015520000" iyz="-0.0000000018" izz="0.0024420000"/>
         </inertial>
         <visual>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <origin rpy="3.14159265359 0 1.57079632679" xyz="-0.0973 0 0.002375"/>
             <geometry>
-                <mesh filename="meshes/plate.STL"/>
+                <mesh filename="meshes/plate_bottom.stl" scale="0.001 0.001 0.001"/>
             </geometry>
             <material name="">
                 <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
             </material>
         </visual>
         <collision>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <origin rpy="3.14159265359 0 1.57079632679" xyz="-0.0973 0 0.002375"/>
             <geometry>
-                <mesh filename="meshes/plate.STL"/>
+                <mesh filename="meshes/plate_bottom.stl" scale="0.001 0.001 0.001"/>
             </geometry>
         </collision>
     </link>
@@ -215,57 +213,92 @@
     </joint>
     <link name="plate_2">
         <inertial>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
-            <mass value="0.0640128902693298"/>
-            <inertia ixx="0.0212697824374231" ixy="-1.84819421839641E-07" ixz="0.00177278831625861" iyy="0.0200161122874848" iyz="1.82514218153984E-07" izz="0.00538401325307411"/>
+            <origin rpy="3.14159265359 0 1.57079632679" xyz="-0.0503576000 -0.0000435988 0.002375"/>
+            <!-- <mass value="1"/> -->
+            <mass value="0.27854"/>
+            <inertia ixx="0.0008919000" ixy="0.0000000000" ixz="0.0000000000" iyy="0.0015520000" iyz="-0.0000000018" izz="0.0024420000"/>
         </inertial>
         <visual>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <origin rpy="3.14159265359 0 1.57079632679" xyz="-0.0973 0 0.002375"/>
             <geometry>
-                <mesh filename="meshes/plate.STL"/>
+                <mesh filename="meshes/plate_top.stl" scale="0.001 0.001 0.001"/>
             </geometry>
             <material name="">
                 <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
             </material>
         </visual>
         <collision>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <origin rpy="3.14159265359 0 1.57079632679" xyz="-0.0973 0 0.002375"/>
             <geometry>
-                <mesh filename="meshes/plate.STL"/>
+                <mesh filename="meshes/plate_top.stl" scale="0.001 0.001 0.001"/>
             </geometry>
         </collision>
     </link>
     <joint name="plate_2_joint" type="fixed">
-        <origin rpy="0 0 0" xyz="0 0 0.0047625"/>
+        <origin rpy="0 0 0" xyz="0 0 0.00475"/>
         <parent link="plate_1"/>
         <child link="plate_2"/>
         <axis xyz="0 0 0"/>
     </joint>
-    <!-- add arm -->
-    <link name="arm_base_link">
+
+    <!-- ********************************** Battery **********************************  -->
+    <link name="battery_link">
+        <visual>
+            <origin rpy="0 0 1.57079632679" xyz="0 -0.02176730 0"/>
+            <geometry>
+                <mesh filename="meshes/battery.stl" scale="0.001 0.001 0.001"/>
+            </geometry>
+            <material name="">
+                <color rgba="0.5 0.5 0.5 1"/>
+            </material>
+        </visual>
+        <collision>
+            <origin rpy="0 0 1.57079632679" xyz="0 -0.02176730 0"/>
+            <geometry>
+                <mesh filename="meshes/battery.stl" scale="0.001 0.001 0.001"/>
+            </geometry>
+        </collision>
         <inertial>
-            <origin rpy="0 0 0" xyz="-1.86027246940057E-08 -1.84987775462994E-08 0.0400356424684456"/>
-            <mass value="0.0531491686912019"/>
-            <inertia ixx="0.000533657400855491" ixy="-4.44205269454465E-09" ixz="2.11078566024265E-10" iyy="0.000533665698902565" iyz="5.02029005902419E-11" izz="0.00071572082392375"/>
+            <origin rpy="0 0 1.57079632679" xyz="-0.0071373100 -0.0000436401 0.0111375000"/>
+            <!-- <mass value="1"/> -->
+            <mass value="1.194"/>
+            <inertia ixx="0.0019080000" ixy="0.0000000000" ixz="0.0000000000" iyy="0.0043120000" iyz="0.0000000000" izz="0.0060170000"/>
+        </inertial>
+    </link>
+    <joint name="battery_link_joint" type="fixed">
+        <origin rpy="0 0 0" xyz="-0.09703321 0 0.005375"/>
+        <parent link="plate_2"/>
+        <child link="battery_link"/>
+        <axis xyz="0 0 0"/>
+    </joint>
+    <!-- ********************************** End Battery **********************************  -->
+
+    <!-- add arm -->
+     <link name="arm_base_link">
+        <inertial>
+            <origin rpy="1.57079632679 0 1.57079632679" xyz="-0.0001350000 -0.0000266286 0.0338755000"/>
+            <!-- <mass value="1"/> -->
+            <mass value="0.379673" />
+            <inertia ixx="0.0004351000" iyy="0.0004452000" izz="0.0005731000" ixy="0.0000000707" ixz="0.0000000266" iyz="-0.0000022881" />
         </inertial>
         <visual>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <origin rpy="1.57079632679 0 1.57079632679" xyz="-0.095773 0 -0.10565023"/>
             <geometry>
-                <mesh filename="meshes/arm_base_link.STL"/>
+                <mesh filename="meshes/mobile_base.stl" scale="0.001 0.001 0.001"/>
             </geometry>
             <material name="">
                 <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
             </material>
         </visual>
         <collision>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <origin rpy="1.57079632679 0 1.57079632679" xyz="-0.095773 0 -0.10565023"/>
             <geometry>
-                <mesh filename="meshes/arm_base_link.STL"/>
+                <mesh filename="meshes/mobile_base.stl" scale="0.001 0.001 0.001"/>
             </geometry>
         </collision>
     </link>
     <joint name="arm_base_link_joint" type="fixed">
-        <origin rpy="0 0 0" xyz="0 0 0.001"/>
+        <origin rpy="0 0 0" xyz="0 0 0.002375"/>
         <parent link="plate_2"/>
         <child link="arm_base_link"/>
         <axis xyz="0 0 0"/>
@@ -273,7 +306,7 @@
     <link name="shoulder_link">
         <inertial>
             <origin rpy="0 0 0" xyz="-5.67968980068612E-05 1.09785478984274E-10 0.0228467386735302"/>
-            <mass value="0.0119861197293521"/>
+            <mass value="0.119861197293521"/>
             <inertia ixx="0.000161288180462291" ixy="7.59806211309873E-14" ixz="-1.45323090659527E-07" iyy="5.49696562437107E-05" iyz="1.81052501311883E-13" izz="0.000150800672543169"/>
         </inertial>
         <visual>
@@ -293,7 +326,7 @@
         </collision>
     </link>
     <joint name="joint_1" type="revolute">
-        <origin rpy="0 0 0" xyz="0 0 0.072"/>
+        <origin rpy="0 0 0" xyz="0 0 0.0655"/>
         <parent link="arm_base_link"/>
         <child link="shoulder_link"/>
         <axis xyz="0 0 1"/>
@@ -302,7 +335,7 @@
     <link name="elbow_link">
         <inertial>
             <origin rpy="0 0 0" xyz="0.00959755948481227 -2.30930057287648E-10 0.134296795349987"/>
-            <mass value="0.0212482745791037"/>
+            <mass value="0.212482745791037"/>
             <inertia ixx="0.0011748973771367" ixy="-4.7094567420817E-13" ixz="-0.000132188939134774" iyy="0.00122350302249847" iyz="-5.48932537472287E-12" izz="9.02202689343621E-05"/>
         </inertial>
         <visual>
@@ -331,7 +364,7 @@
     <link name="forearm_link">
         <inertial>
             <origin rpy="0 0 0" xyz="0.117829826272582 3.09310973110905E-15 -1.26218883678142E-08"/>
-            <mass value="0.018746427435805"/>
+            <mass value="0.18746427435805"/>
             <inertia ixx="3.94142667601686E-05" ixy="-3.65830967659785E-19" ixz="9.25852572167442E-11" iyy="0.000725209569605637" iyz="-1.05290858715495E-18" izz="0.000737165881391993"/>
         </inertial>
         <visual>
@@ -360,7 +393,7 @@
     <link name="wrist_link">
         <inertial>
             <origin rpy="0 0 0" xyz="0.0429410028407894 4.98644733821042E-05 0.0114266948023652"/>
-            <mass value="0.00605921736680362"/>
+            <mass value="0.0605921736680362"/>
             <inertia ixx="1.84998512056284E-05" ixy="-1.03256667343112E-08" ixz="-1.71865409274096E-06" iyy="2.08955068262134E-05" iyz="5.05203399787143E-09" izz="1.97857037442992E-05"/>
         </inertial>
         <visual>
@@ -389,7 +422,7 @@
     <link name="gripper_link">
         <inertial>
             <origin rpy="0 0 0" xyz="0.0311572802112565 -1.25977280754998E-05 0.0092307003092138"/>
-            <mass value="0.00795745052466434"/>
+            <mass value="0.0795745052466434"/>
             <inertia ixx="3.27413333929741E-05" ixy="3.7314060486416E-08" ixz="3.97669066588691E-06" iyy="4.47182985231326E-05" iyz="-9.49992756213297E-09" izz="5.02142570756738E-05"/>
         </inertial>
         <visual>
@@ -418,7 +451,7 @@
     <link name="finger_r">
         <inertial>
             <origin rpy="0 0 0" xyz="0.0100191457715113 -0.00843835347348892 -0.00483280251641866"/>
-            <mass value="0.00121931459003602"/>
+            <mass value="0.0121931459003602"/>
             <inertia ixx="6.74016278931418E-07" ixy="-2.36459038775023E-07" ixz="3.1480125304693E-09" iyy="3.10966297287339E-06" iyz="1.19271018871704E-10" izz="2.77935600332309E-06"/>
         </inertial>
         <visual>
@@ -447,7 +480,7 @@
     <link name="finger_l">
         <inertial>
             <origin rpy="0 0 0" xyz="0.0100191599590265 0.00643833435729511 -0.00483280251641866"/>
-            <mass value="0.00121931459003603"/>
+            <mass value="0.0121931459003603"/>
             <inertia ixx="6.74017180959932E-07" ixy="2.3646368440071E-07" ixz="3.14801230297432E-09" iyy="3.10966207084492E-06" iyz="-1.19277023229564E-10" izz="2.77935600332313E-06"/>
         </inertial>
         <visual>
@@ -476,7 +509,7 @@
     <link name="ar_tag">
         <inertial>
             <origin rpy="0 0 0" xyz="-1.59182528269852E-09 1.70641183422241E-09 -0.00509579048106218"/>
-            <mass value="0.00202622634619862"/>
+            <mass value="0.0202622634619862"/>
             <inertia ixx="4.71058333074219E-06" ixy="3.03778067070489E-12" ixz="6.65421687578365E-13" iyy="4.05773489073818E-06" iyz="1.37033485576347E-13" izz="7.92378853658606E-06"/>
         </inertial>
         <visual>
@@ -504,28 +537,29 @@
     <!-- need to add camera assembly -->
     <link name="cam_mount">
         <inertial>
-            <origin rpy="0 0 0" xyz="0.00357169217419921 -0.000144750803528887 0.178406861295468"/>
-            <mass value="0.0508068698311304"/>
-            <inertia ixx="0.0159487749924762" ixy="9.45818767875249E-08" ixz="-0.000266253609478166" iyy="0.0137751425461872" iyz="2.26699147122113E-06" izz="0.00331206257835318"/>
+            <origin rpy="0 0 1.57079632679" xyz="-0.0053535000 -0.0030566200 0.1091990000"/>
+            <!-- <mass value="1"/> -->
+            <mass value="2.091937"/>
+            <inertia ixx="0.0376600000" ixy="-0.0001113000" ixz="-0.0004178000" iyy="0.0440300000" iyz="0.0001531000" izz="0.0116800000"/>
         </inertial>
         <visual>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <origin rpy="1.57079632679 0 1.57079632679" xyz="0.03751 0 -0.146150"/>
             <geometry>
-                <mesh filename="meshes/cam_mount.STL"/>
+                <mesh filename="meshes/cam_mount.stl" scale="0.001 0.001 0.001"/>
             </geometry>
             <material name="">
                 <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
             </material>
         </visual>
         <collision>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <origin rpy="1.57079632679 0 1.57079632679" xyz="0.03751 0 -0.146150"/>
             <geometry>
-                <mesh filename="meshes/cam_mount.STL"/>
+                <mesh filename="meshes/cam_mount.stl" scale="0.001 0.001 0.001"/>
             </geometry>
         </collision>
     </link>
     <joint name="cam_mount_joint" type="fixed">
-        <origin rpy="0 0 0" xyz="-0.03751 0 0.1331"/>
+        <origin rpy="0 0 0" xyz="-0.03751 0.0 0.13775"/>
         <parent link="base_link"/>
         <child link="cam_mount"/>
         <axis xyz="0 0 0"/>
@@ -533,7 +567,7 @@
     <link name="head_pan_link">
         <inertial>
             <origin rpy="0 0 0" xyz="-1.35308431126191E-16 -2.97071395261028E-17 0.0220876265081744"/>
-            <mass value="0.00182769203076134"/>
+            <mass value="0.0182769203076134"/>
             <inertia ixx="1.32243845065555E-05" ixy="5.07660179129181E-13" ixz="1.067515220067E-20" iyy="7.13386116649085E-06" iyz="-1.32882457845217E-20" izz="7.83291781352837E-06"/>
         </inertial>
         <visual>
@@ -553,7 +587,8 @@
         </collision>
     </link>
     <joint name="head_pan_joint" type="revolute">
-        <origin rpy="0 0 0" xyz="0.0240154841629213 -0.000373468229198185 0.4065"/>
+        <!-- TODO(externalhardrive): camera mount location change -->
+        <origin rpy="0 0 0" xyz="0.01755 -0.00000 0.3975"/>
         <parent link="cam_mount"/>
         <child link="head_pan_link"/>
         <axis xyz="0 0 1"/>
@@ -562,7 +597,7 @@
     <link name="head_tilt_link">
         <inertial>
             <origin rpy="0 0 0" xyz="0.0168744200088311 -0.000442984145897884 -0.00405256422002387"/>
-            <mass value="0.00547677687275323"/>
+            <mass value="0.0547677687275323"/>
             <inertia ixx="1.07071738005716E-05" ixy="-1.46854788384565E-07" ixz="5.59529059364376E-08" iyy="1.77011620295824E-05" iyz="1.27587154712834E-09" izz="2.01583693170578E-05"/>
         </inertial>
         <visual>
@@ -591,7 +626,7 @@
     <link name="camera_link">
         <inertial>
             <origin rpy="0 0 0" xyz="-0.0132722976093535 0.00168171470080143 2.49829664994428E-06"/>
-            <mass value="0.00381925651163644"/>
+            <mass value="0.0381925651163644"/>
             <inertia ixx="2.4688255642946E-05" ixy="1.60697655569215E-07" ixz="1.2993241737711E-08" iyy="3.66669176935806E-06" iyz="1.30215657011203E-08" izz="2.48602467766615E-05"/>
         </inertial>
         <visual>
@@ -616,6 +651,32 @@
         <child link="camera_link"/>
         <axis xyz="0 0 0"/>
     </joint>
+
+    <!-- SIM camera stuff -->
+    <link name="camera_lens_link">
+        <inertial>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <mass value="0.000001"/>
+            <inertia ixx="2.4688255642946E-05" ixy="1.60697655569215E-07" ixz="1.2993241737711E-08" iyy="3.66669176935806E-06" iyz="1.30215657011203E-08" izz="2.48602467766615E-05"/>
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <box size="0.02 0.02 0.02"/>
+            </geometry>
+            <material name="">
+                <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
+            </material>
+        </visual>
+    </link>
+    <joint name="camera_lens_link" type="fixed">
+        <origin rpy="0 0 0" xyz="0.02 0 0"/>
+        <parent link="camera_link"/>
+        <child link="camera_lens_link"/>
+        <axis xyz="0 0 0"/>
+    </joint>
+
+
     <!-- Gazebo Plugins -->
     <gazebo>
         <plugin filename="libgazebo_ros_control.so" name="gazebo_ros_control">
@@ -630,7 +691,6 @@
             <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
         </joint>
         <actuator name="head_tilt_motor">
-            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             <mechanicalReduction>1</mechanicalReduction>
         </actuator>
     </transmission>
@@ -640,7 +700,6 @@
             <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
         </joint>
         <actuator name="head_pan_motor">
-            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             <mechanicalReduction>1</mechanicalReduction>
         </actuator>
     </transmission>
@@ -651,7 +710,6 @@
             <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
         </joint>
         <actuator name="motor_1">
-            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             <mechanicalReduction>1</mechanicalReduction>
         </actuator>
     </transmission>
@@ -661,7 +719,6 @@
             <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
         </joint>
         <actuator name="motor_2">
-            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             <mechanicalReduction>1</mechanicalReduction>
         </actuator>
     </transmission>
@@ -671,7 +728,6 @@
             <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
         </joint>
         <actuator name="motor_3">
-            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             <mechanicalReduction>1</mechanicalReduction>
         </actuator>
     </transmission>
@@ -681,7 +737,6 @@
             <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
         </joint>
         <actuator name="motor_4">
-            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             <mechanicalReduction>1</mechanicalReduction>
         </actuator>
     </transmission>
@@ -691,7 +746,6 @@
             <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
         </joint>
         <actuator name="motor_5">
-            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             <mechanicalReduction>1</mechanicalReduction>
         </actuator>
     </transmission>
@@ -701,7 +755,6 @@
             <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
         </joint>
         <actuator name="motor_6">
-            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             <mechanicalReduction>1</mechanicalReduction>
         </actuator>
     </transmission>
@@ -711,7 +764,6 @@
             <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
         </joint>
         <actuator name="motor_7">
-            <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             <mechanicalReduction>1</mechanicalReduction>
         </actuator>
     </transmission>
