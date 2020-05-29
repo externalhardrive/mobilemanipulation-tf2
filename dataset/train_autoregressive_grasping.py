@@ -66,7 +66,7 @@ def create_env():
         spawn_radius=0.3,
     )
     env = RoomEnv(
-        renders=True, grayscale=False, step_duration=1/60 * 0,
+        renders=False, grayscale=False, step_duration=1/60 * 0,
         room_name=room_name,
         room_params=room_params,
         use_aux_camera=True,
@@ -291,13 +291,24 @@ def train_softmax(logits_model, data, optimizer, discrete_dimensions):
     return loss
 
 @tf.function(experimental_relax_shapes=True)
-def validation_loss(logits_model, data, discrete_dimensions):
+def validation_sigmoid_loss(logits_model, data, discrete_dimensions):
     observations = data['observations']
     rewards = tf.cast(data['rewards'], tf.float32)
     actions_discrete = data['actions']
     actions_onehot = [tf.one_hot(actions_discrete[:, i], depth=d) for i, d in enumerate(discrete_dimensions)]
     logits = logits_model([observations] + actions_onehot)
     loss = autoregressive_binary_cross_entropy_loss(logits, actions_onehot, rewards)
+    return loss
+
+@tf.function(experimental_relax_shapes=True)
+def validation_softmax_loss(logits_model, data, discrete_dimensions):
+    observations = data['observations']
+    rewards = tf.cast(data['rewards'], tf.float32)
+    actions_discrete = data['actions']
+    actions_onehot = [tf.one_hot(actions_discrete[:, i], depth=d) for i, d in enumerate(discrete_dimensions)]
+    actions_labeled = [rewards * a + (1. - rewards) * (1. - a) / (d - 1.) for a, d in zip(actions_onehot, discrete_dimensions)]
+    logits = logits_model([observations] + actions_onehot)
+    loss = autoregressive_softmax_cross_entropy_loss(logits, actions_labeled)
     return loss
 
 def training_loop(
@@ -401,7 +412,8 @@ def training_loop(
 
             # do training
             if num_samples >= min_samples_before_train and num_samples % train_frequency == 0:
-                loss = train_sigmoid(logits_model, buffer.sample_batch(train_batch_size), optimizer, discrete_dimensions)
+                # loss = train_sigmoid(logits_model, buffer.sample_batch(train_batch_size), optimizer, discrete_dimensions)
+                loss = train_softmax(logits_model, buffer.sample_batch(train_batch_size), optimizer, discrete_dimensions)
                 total_training_loss += loss.numpy()
                 num_train_steps += 1
 
@@ -418,7 +430,7 @@ def training_loop(
             datas = validation_buffer.get_all_samples_in_batch(validation_batch_size)
             total_validation_loss = 0.0
             for data in datas:
-                total_validation_loss += validation_loss(logits_model, data, discrete_dimensions).numpy()
+                total_validation_loss += validation_softmax_loss(logits_model, data, discrete_dimensions).numpy()
             diagnostics['validation_loss'] = total_validation_loss / len(datas)
 
         success_ratio = successes_this_env / num_samples_this_env
