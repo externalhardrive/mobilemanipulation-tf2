@@ -66,7 +66,7 @@ def create_env():
         spawn_radius=0.3,
     )
     env = RoomEnv(
-        renders=False, grayscale=False, step_duration=1/60 * 0,
+        renders=True, grayscale=False, step_duration=1/60 * 0,
         room_name=room_name,
         room_params=room_params,
         use_aux_camera=True,
@@ -96,7 +96,7 @@ def do_grasp(env, action):
         block_pos, _ = env.interface.get_object(env.room.objects_id[i])
         if block_pos[2] > 0.04:
             reward = 1
-            env.interface.move_object(env.room.objects_id[i], [env.room.extent, 0, 1])
+            env.interface.move_object(env.room.objects_id[i], [env.room.extent + np.random.uniform(-0.5, 0.5), np.random.uniform(-0.5, 0.5), 0.01])
             break
     env.interface.move_arm_to_start(steps=90, max_velocity=8.0)
     return reward
@@ -345,6 +345,7 @@ def training_loop(
             ('num_success', 0),
             ('average_success_ratio_per_env', 0),
             ('average_tries_per_env', 0),
+            ('envs_with_success_ratio', 0)
         ))
         epoch_start_time = time.time()
         num_epoch += 1
@@ -355,12 +356,15 @@ def training_loop(
         num_samples_this_env = 0
         successes_this_env = 0
         total_success_ratio = 0
+        num_envs_with_success = 0
         for i in range(num_samples_per_epoch):
             # reset the env (at the beginning as well)
             if i == 0 or num_samples_this_env >= num_samples_per_env or not are_blocks_graspable(env):
                 if i > 0:
                     success_ratio = successes_this_env / num_samples_this_env
                     total_success_ratio += success_ratio
+                if successes_this_env > 0:
+                    num_envs_with_success += 1
                 reset_env(env)
                 num_samples_this_env = 0
                 successes_this_env = 0
@@ -421,6 +425,9 @@ def training_loop(
         total_success_ratio += success_ratio
         diagnostics['average_success_ratio_per_env'] = total_success_ratio / diagnostics['num_envs']
         diagnostics['average_tries_per_env'] = num_samples_per_epoch / diagnostics['num_envs']
+        if successes_this_env > 0:
+            num_envs_with_success += 1
+        diagnostics['envs_with_success_ratio'] = num_envs_with_success / diagnostics['num_envs']
 
         print(f'Epoch {num_epoch}/{total_epochs}:')
         pprint(diagnostics)
@@ -542,55 +549,55 @@ def main(args):
         build_policy(image_size=image_size, 
                      discrete_dimensions=discrete_dimensions,
                      discrete_hidden_layers=[512, 512]))
-    optimizer = tf.optimizers.Adam(learning_rate=1e-4)
+    optimizer = tf.optimizers.Adam(learning_rate=1e-5)
 
     # testing time
-    # logits_model.load_weights('./dataset/models/autoregressive_2_model')
+    # logits_model.load_weights('./dataset/models/from_dataset_4/autoregressive')
     # epsilon = -1
     # min_samples_before_train = float('inf')
+    # num_samples_total = 1
     
     # create the Discretizer
     discretizer = Discretizer(discrete_dimensions, [0.3, -0.16], [0.4666666, 0.16])
 
     # create the dataset
     buffer = ReplayBuffer(size=num_samples_total, image_size=image_size, action_dim=len(discrete_dimensions))
-    # validation_buffer = ReplayBuffer(size=num_samples_total, image_size=image_size, action_dim=len(discrete_dimensions))
+    validation_buffer = ReplayBuffer(size=num_samples_total, image_size=image_size, action_dim=len(discrete_dimensions))
 
-    buffer.load('./dataset/data/autoregressive_4_replay_buffer.npy')
+    # buffer.load('./dataset/data/autoregressive_4_replay_buffer.npy')
 
     # create the env
     env = create_env()
 
-    # training_loop(
-    #     num_samples_per_env=num_samples_per_env,
-    #     num_samples_per_epoch=num_samples_per_epoch,
-    #     num_samples_total=num_samples_total,
-    #     min_samples_before_train=min_samples_before_train,
-    #     train_frequency=train_frequency,
-    #     epsilon=epsilon,
-    #     train_batch_size=train_batch_size,
-    #     validation_prob=validation_prob,
-    #     validation_batch_size=validation_batch_size,
-    #     env=env,
-    #     buffer=buffer,
-    #     validation_buffer=validation_buffer,
-    #     logits_model=logits_model, samples_model=samples_model, deterministic_model=deterministic_model,
-    #     discretizer=discretizer, 
-    #     discrete_dimensions=discrete_dimensions,
-    #     optimizer=optimizer,
-    #     name='autoregressive_7'
-    # )
-
-    training_loop_from_filled_buffer(
+    training_loop(
+        num_samples_per_env=num_samples_per_env,
+        num_samples_per_epoch=num_samples_per_epoch,
+        num_samples_total=num_samples_total,
+        min_samples_before_train=min_samples_before_train,
+        train_frequency=train_frequency,
+        epsilon=epsilon,
+        train_batch_size=train_batch_size,
+        validation_prob=validation_prob,
+        validation_batch_size=validation_batch_size,
         env=env,
         buffer=buffer,
+        validation_buffer=validation_buffer,
         logits_model=logits_model, samples_model=samples_model, deterministic_model=deterministic_model,
         discretizer=discretizer, 
         discrete_dimensions=discrete_dimensions,
         optimizer=optimizer,
-        name='autoregressive_4_from_buffer'
+        name='autoregressive_7'
     )
-    
+
+    # training_loop_from_filled_buffer(
+    #     env=env,
+    #     buffer=buffer,
+    #     logits_model=logits_model, samples_model=samples_model, deterministic_model=deterministic_model,
+    #     discretizer=discretizer, 
+    #     discrete_dimensions=discrete_dimensions,
+    #     optimizer=optimizer,
+    #     name='autoregressive_4_from_buffer'
+    # )
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
