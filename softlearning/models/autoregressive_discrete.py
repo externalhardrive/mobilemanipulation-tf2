@@ -16,7 +16,8 @@ def autoregressive_discrete_model(input_shape,
                                   activation='relu',
                                   output_activation='linear',
                                   distribution_logits_activation='same',
-                                  name='autoregressive_discrete_model'):
+                                  name='autoregressive_discrete_model',
+                                  **kwargs):
     """ 
     Returns three autoregressive models (sharing weights):
     1. A model that takes in the input features, but also the onehot samples for each dimension.
@@ -52,12 +53,12 @@ def autoregressive_discrete_model(input_shape,
 
         # create MLP with shared layers
         for hidden_size in hidden_layer_sizes:
-            hidden_layer = tfkl.Dense(hidden_size, activation=activation)
+            hidden_layer = tfkl.Dense(hidden_size, activation=activation, **kwargs)
             X_given         = hidden_layer(X_given)
             X_sampled       = hidden_layer(X_sampled)
             X_deterministic = hidden_layer(X_deterministic)
 
-        output_layer = tfkl.Dense(output_size, activation='linear')
+        output_layer = tfkl.Dense(output_size, activation='linear', **kwargs)
         output_given         = output_layer(X_given)
         output_sampled       = output_layer(X_sampled)
         output_deterministic = output_layer(X_deterministic)
