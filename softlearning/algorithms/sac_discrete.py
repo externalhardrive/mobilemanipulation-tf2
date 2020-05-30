@@ -190,7 +190,7 @@ class SACDiscrete(RLAlgorithm):
         See Equations (5, 6) in [1], for further information of the
         Q-function update rule.
         """
-        Q_targets = self._compute_Q_targets(batch)
+        # Q_targets = self._compute_Q_targets(batch)
 
         observations = batch['observations']
         actions = batch['actions']
@@ -203,7 +203,7 @@ class SACDiscrete(RLAlgorithm):
         # index_per_row = tf.argmax(onehots, axis=1, output_type=tf.int32)
         # index_row_col = tf.stack([tf.range(tf.shape(index_per_row)[0]), index_per_row], axis=1)
 
-        tf.debugging.assert_shapes(((Q_targets, ('B', 1)), (rewards, ('B', 1))))
+        # tf.debugging.assert_shapes(((Q_targets, ('B', 1)), (rewards, ('B', 1))))
 
         Qs_values = []
         Qs_losses = []
@@ -214,13 +214,15 @@ class SACDiscrete(RLAlgorithm):
                 # Q_values = tf.gather_nd(all_Q_values, index_row_col)[..., tf.newaxis]
                 Q_values = tf.reduce_sum(all_Q_values * onehots, axis=-1, keepdims=True)
                 print(Q_values)
-                Q_losses = 0.5 * tf.losses.MSE(y_true=Q_targets, y_pred=Q_values)
+                # Q_losses = 0.5 * tf.losses.MSE(y_true=Q_targets, y_pred=Q_values)
+                Q_losses = tf.nn.sigmoid_cross_entropy_with_logits(labels=rewards, logits=Q_values)
                 Q_loss = tf.nn.compute_average_loss(Q_losses)
 
             gradients = tape.gradient(Q_loss, Q.trainable_variables)
             optimizer.apply_gradients(zip(gradients, Q.trainable_variables))
             Qs_losses.append(Q_losses)
-            Qs_values.append(Q_values)
+            # Qs_values.append(Q_values)
+            Qs_values.append(tf.math.sigmoid(Q_values))
 
         return Qs_values, Qs_losses
 
@@ -242,6 +244,8 @@ class SACDiscrete(RLAlgorithm):
 
             Qs_targets = tuple(Q.values(observations) for Q in self._Qs)
             Q_targets = tf.reduce_min(Qs_targets, axis=0)
+
+            Q_targets = tf.nn.sigmoid(Q_targets)
 
             policy_losses = tf.reduce_sum(probs * (self._alpha * log_probs - Q_targets), axis=-1, keepdims=True)
             policy_loss = tf.nn.compute_average_loss(policy_losses)
