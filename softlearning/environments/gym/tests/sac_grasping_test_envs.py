@@ -9,7 +9,7 @@ from softlearning.environments.gym.spaces import *
 
 class LineGrasping(gym.Env):
     """ 1D grasping from 1D 'images' """
-    def __init__(self, line_width=32, min_objects=1, max_objects=5, num_repeat=10, collect_radius=0.015):
+    def __init__(self, line_width=32, min_objects=1, max_objects=5, num_repeat=10, collect_radius=0.03):
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(line_width,))
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,))
 
@@ -24,7 +24,7 @@ class LineGrasping(gym.Env):
         self.num_steps_this_env = 0
 
     def render_line(self):
-        line = -np.ones((line_width,))
+        line = -np.ones((self.line_width,))
         for i in range(self.max_objects):
             x = self.objects_pos[i]
             if x is not None:
@@ -36,7 +36,7 @@ class LineGrasping(gym.Env):
         if self.num_steps_this_env >= self.num_repeat or all([x is None for x in self.objects_pos]):
             num_objects = np.random.randint(self.min_objects, self.max_objects+1)
             for i in range(num_objects):
-                self.objects_pos[i] = np.uniform(-1, 1)
+                self.objects_pos[i] = np.random.uniform(-1, 1)
             for i in range(num_objects, self.max_objects):
                 self.objects_pos[i] = None
             self.num_steps_this_env = 0
@@ -44,6 +44,14 @@ class LineGrasping(gym.Env):
 
     def step(self, action):
         a = action[0]
+        infos = {}
+
+        closest_dist = float('inf')
+        for x in self.objects_pos:
+            if x is not None:
+                closest_dist = min(closest_dist, abs(x - a))
+        infos['closest_grasp_dist'] = closest_dist
+
         reward = 0.0
         for i in range(self.max_objects):
             x = self.objects_pos[i]
@@ -52,7 +60,10 @@ class LineGrasping(gym.Env):
                     reward = 1.0
                     self.objects_pos[i] = None
                     break
+        
+        infos['success'] = reward
+
         self.num_steps_this_env += 1
         obs = self.reset()
 
-        return obs, reward, True, {}
+        return obs, reward, True, infos

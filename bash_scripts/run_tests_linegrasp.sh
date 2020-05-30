@@ -4,7 +4,7 @@ softlearning run_example_local examples.development \
     --policy gaussian \
     --universe gym \
     --domain Tests \
-    --task LineGrasp-v0 \
+    --task LineGrasping-v0 \
     --exp-name tests-line-grasp-test \
     --checkpoint-frequency 10 \
     --trial-cpus 3 \

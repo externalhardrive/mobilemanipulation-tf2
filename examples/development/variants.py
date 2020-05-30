@@ -37,7 +37,7 @@ ALGORITHM_PARAMS_ADDITIONAL = {
             'alpha_lr': 3e-4,
             'target_update_interval': 1,
             'tau': 5e-3,
-            'target_entropy': 'auto',
+            'target_entropy': -2, #'auto',
 
             'discount': 0.99,
             'reward_scale': 1.0,
@@ -160,7 +160,7 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
         'Tests': {
             DEFAULT_KEY: int(1e5),
             'LineReach-v0': int(1e5),
-            'LineGrasp-v0': int(1e5),
+            'LineGrasping-v0': int(1e5),
         },
     },
     'dm_control': {
@@ -282,7 +282,7 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
         'Tests': {
             DEFAULT_KEY: 100,
             'LineReach-v0': 100,
-            'LineGrasp-v0': 1,
+            'LineGrasping-v0': 1,
         },
     },
 }
@@ -301,7 +301,7 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
         'Tests': {
             DEFAULT_KEY: 1000,
             'LineReach-v0': 1000,
-            'LineGrasp-v0': 100
+            'LineGrasping-v0': 1000
         },
     },
 }
@@ -540,12 +540,12 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'collect_radius': 0.1,
                 'max_ep_len': 100
             },
-            'LineGrasp-v0': {
+            'LineGrasping-v0': {
                 'line_width': 32,
                 'min_objects': 1,
                 'max_objects': 5,
                 'num_repeat': 10,
-                'collect_radius': 0.015,
+                'collect_radius': 0.03,
             }
         },
     },
