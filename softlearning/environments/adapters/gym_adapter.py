@@ -227,7 +227,7 @@ class GymAdapter(SoftlearningEnv):
     def Q_input_shapes(self):
         if isinstance(self._action_space, DiscreteBox):
             return (self.observation_shape, tf.TensorShape((self._action_space.num_continuous, )))
-        elif isinstance(self._action_space, spaces.Discete):
+        elif isinstance(self._action_space, spaces.Discrete):
             return self.observation_shape
         else:
             return super().Q_input_shapes
@@ -236,7 +236,7 @@ class GymAdapter(SoftlearningEnv):
     def Q_output_size(self):
         if isinstance(self._action_space, DiscreteBox):
             return self._action_space.num_discrete
-        elif isinstance(self._action_space, spaces.Discete):
+        elif isinstance(self._action_space, spaces.Discrete):
             return self._action_space.n
         else:
             return super().Q_output_size

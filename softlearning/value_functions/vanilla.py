@@ -7,7 +7,7 @@ from softlearning.utils.tensorflow import apply_preprocessors
 from softlearning import preprocessors as preprocessors_lib
 from softlearning.utils.tensorflow import cast_and_concat
 
-from .base_value_function import StateActionValueFunction
+from .base_value_function import StateActionValueFunction, StateValueFunction
 
 
 def create_double_value_function(value_fn, *args, **kwargs):

@@ -88,7 +88,7 @@ class LineGraspingDiscrete(gym.Env):
             self.line = -np.ones((self.line_width,))
             num_objects = np.random.randint(self.min_objects, self.max_objects+1)
             for i in range(num_objects):
-                i = np.random.randint(0, num_objects)
+                i = np.random.randint(0, self.line_width)
                 self.line[i] = 1.0
             self.num_steps_this_env = 0
         return self.line

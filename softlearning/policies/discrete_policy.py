@@ -33,7 +33,7 @@ class DiscretePolicy(BasePolicy):
         logits = self.logit_model(observations)
 
         action_distribution = tfp.distributions.Categorical(logits=logits)
-        actions = onehot_distribution.sample()[..., tf.newaxis]
+        actions = action_distribution.sample()[..., tf.newaxis]
 
         return actions
 
@@ -45,7 +45,7 @@ class DiscretePolicy(BasePolicy):
         logits = self.logit_model(observations)
 
         action_distribution = tfp.distributions.Categorical(logits=logits)
-        log_probs = onehot_distribution.log_prob(actions[:, 0])[..., tf.newaxis]
+        log_probs = action_distribution.log_prob(actions[:, 0])[..., tf.newaxis]
 
         return log_probs
 
@@ -57,8 +57,8 @@ class DiscretePolicy(BasePolicy):
         logits = self.logit_model(observations)
 
         action_distribution = tfp.distributions.Categorical(logits=logits)
-        actions = onehot_distribution.sample()
-        log_probs = onehot_distribution.log_prob(actions)
+        actions = action_distribution.sample()
+        log_probs = action_distribution.log_prob(actions)
 
         return actions[..., tf.newaxis], log_probs[..., tf.newaxis]
 
@@ -104,7 +104,7 @@ class DiscretePolicy(BasePolicy):
         Returns the mean, min, max, and standard deviation of means and
         covariances.
         """
-        probs, log_probs = self.probs_and_log_probs(inputs))
+        probs, log_probs = self.probs_and_log_probs(inputs)
         entropy = -tf.reduce_sum(probs * log_probs, axis=-1)
 
         return OrderedDict((

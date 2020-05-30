@@ -75,7 +75,7 @@ ALGORITHM_PARAMS_ADDITIONAL = {
 
             'target_entropy_start': 'auto',
             'entropy_ratio_start': 0.9,
-            'entropy_ratio_end': 0.55,
+            'entropy_ratio_end': 0.5,
             'entropy_timesteps': 60000,
         },
     },
@@ -125,7 +125,7 @@ POLICY_PARAMS_BASE = {
             'observation_keys': None,
             'preprocessors': None,
         },
-    }
+    },
     'discrete': {
         'class_name': 'FeedforwardDiscretePolicy',
         'config': {
@@ -133,7 +133,7 @@ POLICY_PARAMS_BASE = {
             'observation_keys': None,
             'preprocessors': None,
         },
-    }
+    },
 }
 
 TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
@@ -186,6 +186,7 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
             DEFAULT_KEY: int(1e5),
             'LineReach-v0': int(1e5),
             'LineGrasping-v0': int(1e5),
+            'LineGraspingDiscrete-v0': int(1e5),
         },
     },
     'dm_control': {
@@ -308,6 +309,7 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             DEFAULT_KEY: 100,
             'LineReach-v0': 100,
             'LineGrasping-v0': 1,
+            'LineGraspingDiscrete-v0': 1,
         },
     },
 }
@@ -326,7 +328,8 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
         'Tests': {
             DEFAULT_KEY: 1000,
             'LineReach-v0': 1000,
-            'LineGrasping-v0': 1000
+            'LineGrasping-v0': 1000,
+            'LineGraspingDiscrete-v0': 1000,
         },
     },
 }

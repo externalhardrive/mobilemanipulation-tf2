@@ -122,8 +122,8 @@ class SACDiscrete(RLAlgorithm):
 
         self._target_entropy_start = (
             -np.log(1 / self._num_discrete)
-            if _target_entropy_start == 'auto'
-            else _target_entropy_start)
+            if target_entropy_start == 'auto'
+            else target_entropy_start)
 
         print("SACMixed members:")
         pprint.pprint(dict(
