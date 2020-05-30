@@ -126,6 +126,11 @@ GENERAL_ENVIRONMENT_SPECS = (
         'entry_point': (f'{CUSTOM_GYM_ENVIRONMENTS_PATH}'
                         '.tests:LineReach')
     },
+    {
+        'id': 'Tests-LineGrasping-v0',
+        'entry_point': (f'{CUSTOM_GYM_ENVIRONMENTS_PATH}'
+                        '.tests:LineGrasping')
+    },
 )
 
 MUJOCO_ENVIRONMENTS = tuple(
