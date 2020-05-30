@@ -60,8 +60,6 @@ class ExperimentRunner(tune.Trainable):
         Qs = self.Qs = value_functions.get(variant['Q_params'])
 
         variant['policy_params']['config'].update({
-            'action_range': (training_environment.action_space.low,
-                             training_environment.action_space.high),
             'input_shapes': training_environment.observation_shape,
             'output_shape': training_environment.action_shape,
             **get_additional_policy_params(variant['policy_params']['class_name'], training_environment)

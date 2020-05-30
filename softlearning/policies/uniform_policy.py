@@ -5,7 +5,7 @@ import numpy as np
 
 from numbers import Number
 
-from .base_policy import ContinuousPolicy
+from .base_policy import ContinuousPolicy, BasePolicy
 
 
 class UniformPolicyMixin:
@@ -75,4 +75,26 @@ class DiscreteContinuousUniformPolicy(ContinuousPolicy):
 
         log_probs = onehot_log_probs + continuous_log_probs
 
+        return log_probs
+
+class DiscreteUniformPolicy(BasePolicy):
+    def __init__(self, num_discrete, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._num_discrete = num_discrete
+
+        self.action_distribution = tfp.distributions.Categorical(logits=np.zeros(self._num_discrete))
+
+    @tf.function(experimental_relax_shapes=True)
+    def actions(self, observations):
+        first_observation = tree.flatten(observations)[0]
+        first_input_rank = tf.size(tree.flatten(self._input_shapes)[0])
+        batch_shape = tf.shape(first_observation)[:-first_input_rank]
+
+        actions = self.action_distribution.sample(batch_shape)
+
+        return actions
+
+    @tf.function(experimental_relax_shapes=True)
+    def log_probs(self, observations, actions):
+        log_probs = self.onehot_distribution.log_prob(actions[:, 0])[..., tf.newaxis]
         return log_probs

@@ -1,4 +1,5 @@
 from gym import spaces
+import numpy as np
 import tree
 
 from .flexible_replay_pool import FlexibleReplayPool, Field
@@ -16,6 +17,8 @@ def field_from_gym_space(name, space):
             field_from_gym_space, space.spaces)
     elif isinstance(space, DiscreteBox):
         return Field(name=name, dtype=space.dtype, shape=(space.num_discrete + space.num_continuous,))
+    elif isinstance(space, spaces.Discrete):
+        return Field(name=name, dtype=np.int32, shape=(1,))
     else:
         raise NotImplementedError(space)
 

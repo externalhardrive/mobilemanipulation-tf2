@@ -37,7 +37,7 @@ ALGORITHM_PARAMS_ADDITIONAL = {
             'alpha_lr': 3e-4,
             'target_update_interval': 1,
             'tau': 5e-3,
-            'target_entropy': -2, #'auto',
+            'target_entropy': 'auto',
 
             'discount': 0.99,
             'reward_scale': 1.0,
@@ -59,6 +59,24 @@ ALGORITHM_PARAMS_ADDITIONAL = {
             'discrete_entropy_ratio_start': 0.9,
             'discrete_entropy_ratio_end': 0.55,
             'discrete_entropy_timesteps': 60000,
+        },
+    },
+    'SACDiscrete': {
+        'class_name': 'SACDiscrete',
+        'config': {
+            'policy_lr': 3e-4,
+            'Q_lr': 3e-4,
+            'alpha_lr': 3e-4,
+            'target_update_interval': 1,
+            'tau': 5e-3,
+
+            'discount': 0.95,
+            'reward_scale': 1.0,
+
+            'target_entropy_start': 'auto',
+            'entropy_ratio_start': 0.9,
+            'entropy_ratio_end': 0.55,
+            'entropy_timesteps': 60000,
         },
     },
     'SQL': {
@@ -104,7 +122,14 @@ POLICY_PARAMS_BASE = {
         'class_name': 'FeedforwardDiscreteGaussianPolicy',
         'config': {
             'hidden_layer_sizes': (M, M),
-            'squash': True,
+            'observation_keys': None,
+            'preprocessors': None,
+        },
+    }
+    'discrete': {
+        'class_name': 'FeedforwardDiscretePolicy',
+        'config': {
+            'hidden_layer_sizes': (M, M),
             'observation_keys': None,
             'preprocessors': None,
         },
@@ -546,7 +571,13 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'max_objects': 5,
                 'num_repeat': 10,
                 'collect_radius': 0.03,
-            }
+            },
+            'LineGraspingDiscrete-v0': {
+                'line_width': 32,
+                'min_objects': 1,
+                'max_objects': 5,
+                'num_repeat': 10,
+            },
         },
     },
     'dm_control': {

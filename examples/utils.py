@@ -186,7 +186,7 @@ def get_parser(allow_policy_list=False):
             '--policy',
             type=str,
             nargs='+',
-            choices=('gaussian', 'discrete_gaussian'),
+            choices=('gaussian', 'discrete_gaussian', 'discrete'),
             default='gaussian')
     else:
         parser.add_argument(

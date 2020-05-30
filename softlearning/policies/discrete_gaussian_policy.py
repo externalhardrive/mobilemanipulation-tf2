@@ -11,9 +11,9 @@ import pprint
 from softlearning.models.feedforward import feedforward_model
 from softlearning.distributions.bijectors import ConditionalScale, ConditionalShift
 
-from .base_policy import LatentSpacePolicy
+from .base_policy import BasePolicy
 
-class DiscreteGaussianPolicy(LatentSpacePolicy):
+class DiscreteGaussianPolicy(BasePolicy):
     def __init__(self, num_discrete, num_gaussian, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -28,6 +28,8 @@ class DiscreteGaussianPolicy(LatentSpacePolicy):
         self._num_discrete = num_discrete
         self._num_gaussian = num_gaussian
 
+        self._action_post_processor = tfp.bijectors.Tanh()
+        
         self.logit_shift_scale_model = self._logit_shift_scale_diag_net(
             inputs=self.inputs,
             num_discrete=num_discrete,

@@ -5,6 +5,7 @@ from .base_policy import BasePolicy, LatentSpacePolicy, ContinuousPolicy  # noqa
 from .gaussian_policy import GaussianPolicy, FeedforwardGaussianPolicy  # noqa: unused-import
 from .uniform_policy import UniformPolicyMixin, ContinuousUniformPolicy, DiscreteContinuousUniformPolicy  # noqa: unused-import
 from .discrete_gaussian_policy import DiscreteGaussianPolicy, FeedforwardDiscreteGaussianPolicy  # noqa: unused-import
+from .discrete_policy import DiscretePolicy, FeedforwardDiscretePolicy  # noqa: unused-import
 
 
 def serialize(policy):

@@ -33,31 +33,46 @@ def feedforward_Q_function(input_shapes,
     inputs = create_inputs(input_shapes)
 
     # TODO(externalhardrive): Need to find a better way of handling unspecified preprocessors
-    empty_preprocessors = tree.map_structure(lambda x: None, inputs)
-    if preprocessors is not None:
-        if isinstance(preprocessors, (tuple, list)) and len(preprocessors) == 2:
-            observation_preprocessor = empty_preprocessors[0]
-            if preprocessors[0] is not None:
-                if isinstance(preprocessors[0], dict):
-                    observation_preprocessor.update(preprocessors[0])
-                else:
-                    observation_preprocessor = preprocessors[0]
-                    # raise NotImplementedError("observation preprocessors can only be of type dict")
-            action_preprocessors = empty_preprocessors[1]
-            if preprocessors[1] is not None:
-                action_preprocessors = preprocessors[1]
-            preprocessors = (observation_preprocessor, action_preprocessors)
+
+    if isinstance(input_shapes, (tuple, list)):
+        # create for state action value function
+        empty_preprocessors = tree.map_structure(lambda x: None, inputs)
+        if preprocessors is not None:
+            if isinstance(preprocessors, (tuple, list)) and len(preprocessors) == 2:
+                observation_preprocessor = empty_preprocessors[0]
+                if preprocessors[0] is not None:
+                    if isinstance(preprocessors[0], dict):
+                        observation_preprocessor.update(preprocessors[0])
+                    else:
+                        observation_preprocessor = preprocessors[0]
+                        # raise NotImplementedError("observation preprocessors can only be of type dict")
+                action_preprocessors = empty_preprocessors[1]
+                if preprocessors[1] is not None:
+                    action_preprocessors = preprocessors[1]
+                preprocessors = (observation_preprocessor, action_preprocessors)
+            else:
+                raise NotImplementedError("preprocessors can only be of shape (observation_preprocessors, action_preprocessors)")
         else:
-            raise NotImplementedError("preprocessors can only be of shape (observation preprocessors, action preprocessors)")
+            preprocessors = empty_preprocessors
     else:
+        # create for state value function
+        empty_preprocessors = tree.map_structure(lambda x: None, input_shapes)
+        if preprocessors is not None:
+            # deal with artifacts left over from variants, where preprocessors will be (obs prep, None)
+            if isinstance(preprocessors, (tuple, list)):
+                preprocessors = preprocessors[0]
+
+            if isinstance(preprocessors, dict):
+                empty_preprocessors.update(preprocessors)
+            else:
+                # don't really know how to handle non dict cases
+                empty_preprocessors = preprocessors
         preprocessors = empty_preprocessors
 
     preprocessors = tree.map_structure_up_to(
         inputs, preprocessors_lib.deserialize, preprocessors)
 
     preprocessed_inputs = apply_preprocessors(preprocessors, inputs)
-
-    print(preprocessed_inputs)
 
     # NOTE(hartikainen): `feedforward_model` would do the `cast_and_concat`
     # step for us, but tf2.2 broke the sequential multi-input handling: See:
@@ -72,7 +87,9 @@ def feedforward_Q_function(input_shapes,
 
     Q_model = tf.keras.Model(inputs, Q_model_body(out), name=name)
 
-    Q_function = StateActionValueFunction(
-        model=Q_model, observation_keys=observation_keys, name=name)
+    if isinstance(input_shapes, (tuple, list)):
+        Q_function = StateActionValueFunction(model=Q_model, observation_keys=observation_keys, name=name)
+    else:
+        Q_function = StateValueFunction(model=Q_model, observation_keys=observation_keys, name=name)
 
     return Q_function
