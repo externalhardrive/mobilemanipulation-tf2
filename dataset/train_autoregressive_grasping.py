@@ -32,7 +32,7 @@ def build_policy(image_size=100,
         conv_kernel_sizes=(3, 3, 3),
         conv_strides=(2, 2, 2),
         activation="relu",
-        kernel_regularizer=tfk.regularizers.l2(l=0.1),
+        # kernel_regularizer=tfk.regularizers.l2(l=0.1),
     )(obs_in)
     
     discrete_logits_model, discrete_samples_model, discrete_deterministic_model = autoregressive_discrete_model(
@@ -42,7 +42,8 @@ def build_policy(image_size=100,
         activation='relu',
         output_activation='linear',
         distribution_logits_activation='linear',
-        kernel_regularizer=tfk.regularizers.l2(l=1.0),
+        deterministic_logits_activation='sigmoid',
+        # kernel_regularizer=tfk.regularizers.l2(l=0.1),
     )
     actions_in = [tfk.Input(size) for size in discrete_dimensions]
     
@@ -412,8 +413,8 @@ def training_loop(
 
             # do training
             if num_samples >= min_samples_before_train and num_samples % train_frequency == 0:
-                # loss = train_sigmoid(logits_model, buffer.sample_batch(train_batch_size), optimizer, discrete_dimensions)
-                loss = train_softmax(logits_model, buffer.sample_batch(train_batch_size), optimizer, discrete_dimensions)
+                loss = train_sigmoid(logits_model, buffer.sample_batch(train_batch_size), optimizer, discrete_dimensions)
+                # loss = train_softmax(logits_model, buffer.sample_batch(train_batch_size), optimizer, discrete_dimensions)
                 total_training_loss += loss.numpy()
                 num_train_steps += 1
 
@@ -430,7 +431,8 @@ def training_loop(
             datas = validation_buffer.get_all_samples_in_batch(validation_batch_size)
             total_validation_loss = 0.0
             for data in datas:
-                total_validation_loss += validation_softmax_loss(logits_model, data, discrete_dimensions).numpy()
+                total_validation_loss += validation_sigmoid_loss(logits_model, data, discrete_dimensions).numpy()
+                # total_validation_loss += validation_softmax_loss(logits_model, data, discrete_dimensions).numpy()
             diagnostics['validation_loss'] = total_validation_loss / len(datas)
 
         success_ratio = successes_this_env / num_samples_this_env
@@ -545,7 +547,7 @@ def main(args):
     discrete_dimensions = [15, 31]
     
     epsilon = 0.1
-    train_batch_size = 256
+    train_batch_size = 100
     validation_prob = 0.1
     validation_batch_size = 100
 
@@ -598,7 +600,7 @@ def main(args):
         discretizer=discretizer, 
         discrete_dimensions=discrete_dimensions,
         optimizer=optimizer,
-        name='autoregressive_7'
+        name='autoregressive_9'
     )
 
     # training_loop_from_filled_buffer(

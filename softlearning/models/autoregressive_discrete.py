@@ -16,6 +16,7 @@ def autoregressive_discrete_model(input_shape,
                                   activation='relu',
                                   output_activation='linear',
                                   distribution_logits_activation='same',
+                                  deterministic_logits_activation='same',
                                   name='autoregressive_discrete_model',
                                   **kwargs):
     """ 
@@ -29,6 +30,8 @@ def autoregressive_discrete_model(input_shape,
     """
     if distribution_logits_activation == 'same':
         distribution_logits_activation = output_activation
+    if deterministic_logits_activation == 'same':
+        deterministic_logits_activation = output_activation
 
     inputs = tfk.Input(input_shape)
 
@@ -75,7 +78,7 @@ def autoregressive_discrete_model(input_shape,
         sampled_outputs.append(discrete_sample)
 
         # deterministic sampling for policy
-        deterministic_logits = tfkl.Activation(distribution_logits_activation)(output_deterministic)
+        deterministic_logits = tfkl.Activation(deterministic_logits_activation)(output_deterministic)
         deterministic_onehot = tfkl.Lambda(lambda x: tf.math.floordiv(x, tf.math.reduce_max(x, axis=-1, keepdims=True)))(deterministic_logits)
         deterministic_outputs.append(deterministic_onehot)
 
