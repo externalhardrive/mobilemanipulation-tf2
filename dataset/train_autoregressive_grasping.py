@@ -331,6 +331,27 @@ def training_loop(
     discrete_dimensions=None,
     name=None,
     ):
+
+    print(dict(
+        num_samples_per_env=num_samples_per_env,
+        num_samples_per_epoch=num_samples_per_epoch,
+        num_samples_total=num_samples_total,
+        min_samples_before_train=min_samples_before_train,
+        train_frequency=train_frequency,
+        epsilon=epsilon,
+        train_batch_size=train_batch_size,
+        validation_prob=validation_prob,
+        validation_batch_size=validation_batch_size,
+        env=env,
+        buffer=buffer,
+        validation_buffer=validation_buffer,
+        logits_model=logits_model, samples_model=samples_model, deterministic_model=deterministic_model,
+        discretizer=discretizer, 
+        discrete_dimensions=discrete_dimensions,
+        optimizer=optimizer,
+        name=name
+    ))
+
     # training loop
     num_samples = 0
     num_epoch = 0
@@ -547,7 +568,7 @@ def main(args):
     discrete_dimensions = [15, 31]
     
     epsilon = 0.1
-    train_batch_size = 100
+    train_batch_size = 200
     validation_prob = 0.1
     validation_batch_size = 100
 
@@ -600,7 +621,7 @@ def main(args):
         discretizer=discretizer, 
         discrete_dimensions=discrete_dimensions,
         optimizer=optimizer,
-        name='autoregressive_9'
+        name='autoregressive_10'
     )
 
     # training_loop_from_filled_buffer(
