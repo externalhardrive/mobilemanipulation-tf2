@@ -113,7 +113,7 @@ class GraspingRoom(Room):
             self.interface.move_object(self.objects_id[i], [x, y, 0.015])
         
         for i in range(num_objects, self._max_objects):
-            self.interface.move_object(self.objects_id[i], [self.extent, 0, 1])
+            self.interface.move_object(self.objects_id[i], [self.extent + np.random.uniform(-0.5, 0.5), np.random.uniform(-0.5, 0.5), 0.01])
     
     @property
     def num_objects(self):
