@@ -2,28 +2,26 @@ import os
 import numpy as np
 import time
 
-def dqn_train(
+def training_loop(
     num_samples_per_env=10,
     num_samples_per_epoch=100,
     num_samples_total=100000,
     min_samples_before_train=1000,
     train_frequency=5,
+    env=None,
     epsilon=0.1,
     train_batch_size=256,
     validation_prob=0.1,
     validation_batch_size=100,
-    env=None,
-    buffer=None,
+    train_buffer=None,
     validation_buffer=None,
-    train_model=None,
     random_sampler=None, deterministic_sampler=None,
     train_function=None, validation_function=None,
-    discretizer=None, 
-    optimizer=None,
-    discrete_dimensions=None,
     name=None,
     save_folder='./others/logs/'
     ):
+
+    assert num_samples_per_epoch % num_samples_per_env == 0 and num_samples_total % num_samples_per_epoch == 0
 
     print(dict(
         num_samples_per_env=num_samples_per_env,
@@ -31,19 +29,15 @@ def dqn_train(
         num_samples_total=num_samples_total,
         min_samples_before_train=min_samples_before_train,
         train_frequency=train_frequency,
+        env=env,
         epsilon=epsilon,
         train_batch_size=train_batch_size,
         validation_prob=validation_prob,
         validation_batch_size=validation_batch_size,
-        env=env,
         train_buffer=train_buffer,
         validation_buffer=validation_buffer,
-        train_model=train_model,
         random_sampler=random_sampler, deterministic_sampler=deterministic_sampler,
-        train_function=train_function, validation_function=train_function,
-        discretizer=discretizer, 
-        discrete_dimensions=discrete_dimensions,
-        optimizer=optimizer,
+        train_function=train_function, validation_function=validation_function,
         name=name,
         save_folder=save_folder
     ))
@@ -119,7 +113,7 @@ def dqn_train(
             # do training
             if num_samples >= min_samples_before_train and num_samples % train_frequency == 0:
                 data = train_buffer.sample_batch(train_batch_size)
-                loss = train_function(train_model, data, optimizer)
+                loss = train_function(data)
                 total_training_loss += loss.numpy()
                 num_train_steps += 1
 
@@ -136,7 +130,7 @@ def dqn_train(
             datas = validation_buffer.get_all_samples_in_batch(validation_batch_size)
             total_validation_loss = 0.0
             for data in datas:
-                total_validation_loss += validation_function(logits_model, data).numpy()
+                total_validation_loss += validation_function(data).numpy()
             diagnostics['validation_loss'] = total_validation_loss / len(datas)
 
         success_ratio = successes_this_env / num_samples_this_env
