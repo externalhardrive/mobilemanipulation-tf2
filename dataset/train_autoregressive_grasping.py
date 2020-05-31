@@ -15,6 +15,7 @@ from softlearning.environments.gym.locobot.nav_envs import RoomEnv
 
 from softlearning.models.autoregressive_discrete import autoregressive_discrete_model
 from softlearning.models.convnet import convnet_model
+from softlearning.models.feedforward import feedforward_model
 
 tfk = tf.keras
 tfkl = tf.keras.layers
@@ -56,6 +57,35 @@ def build_policy(image_size=100,
     deterministic_model = tfk.Model(obs_in, deterministic_out)
 
     return logits_model, samples_model, deterministic_model
+
+def build_discrete_policy(image_size=100,
+                 discrete_hidden_layers=(512, 512),
+                 discrete_dimension=15 * 31):
+    obs_in = tfk.Input((image_size, image_size, 3))
+    conv_out = convnet_model(
+        conv_filters=(64, 64, 64),
+        conv_kernel_sizes=(3, 3, 3),
+        conv_strides=(2, 2, 2),
+        activation="relu",
+        # kernel_regularizer=tfk.regularizers.l2(l=0.1),
+    )(obs_in)
+    
+    logits_out = feedforward_model(
+        discrete_hidden_layers,
+        [discrete_dimension],
+        activation='relu',
+        output_activation='linear',
+        # kernel_regularizer=tfk.regularizers.l2(l=0.1),
+    )(conv_out)
+    
+    logits_model = tfk.Model(obs_in, logits_out)
+
+    def deterministic_model(obs):
+        logits = logits_model(obs)
+        inds = tf.argmax(logits, axis=-1)
+        return inds
+
+    return logits_model, None, deterministic_model
 
 def create_env():
     room_name = "grasping"
@@ -126,7 +156,7 @@ class Discretizer:
 
     def discretize(self, action):
         centered = action - self._mins
-        indices = np.floor_divide(centered, self._step_sizes).astype(np.uint8)
+        indices = np.floor_divide(centered, self._step_sizes)
         clipped = np.clip(indices, 0, self._sizes)
         return clipped
 
@@ -137,8 +167,8 @@ class ReplayBuffer:
     def __init__(self, size, image_size, action_dim):
         self._size = size
         self._observations = np.zeros((size, image_size, image_size, 3), dtype=np.uint8)
-        self._actions = np.zeros((size, action_dim), dtype=np.uint8)
-        self._rewards = np.zeros((size, 1), dtype=np.uint8)
+        self._actions = np.zeros((size, action_dim), dtype=np.int32)
+        self._rewards = np.zeros((size, 1), dtype=np.float32)
         self._num = 0
 
     @property
@@ -257,7 +287,26 @@ def train_sigmoid(logits_model, data, optimizer, discrete_dimensions):
     with tf.GradientTape() as tape:
         # get the logits for all the dimensions
         logits = logits_model([observations] + actions_onehot)
+        print(logits)
         loss = autoregressive_binary_cross_entropy_loss(logits, actions_onehot, rewards)
+
+    grads = tape.gradient(loss, logits_model.trainable_variables)
+    optimizer.apply_gradients(zip(grads, logits_model.trainable_variables))
+
+    return loss
+
+@tf.function(experimental_relax_shapes=True)
+def train_discrete_sigmoid(logits_model, data, optimizer, discrete_dimension):
+    observations = data['observations']
+    rewards = tf.cast(data['rewards'], tf.float32)
+    actions_discrete = data['actions']
+    actions_onehot = tf.one_hot(actions_discrete[:, 0], depth=discrete_dimension)
+
+    with tf.GradientTape() as tape:
+        logits = logits_model(observations)
+        taken_logits = tf.reduce_sum(logits * actions_onehot, axis=-1, keepdims=True)
+        losses = tf.nn.sigmoid_cross_entropy_with_logits(labels=rewards, logits=taken_logits)
+        loss = tf.nn.compute_average_loss(losses)
 
     grads = tape.gradient(loss, logits_model.trainable_variables)
     optimizer.apply_gradients(zip(grads, logits_model.trainable_variables))
@@ -292,13 +341,25 @@ def train_softmax(logits_model, data, optimizer, discrete_dimensions):
     return loss
 
 @tf.function(experimental_relax_shapes=True)
-def validation_sigmoid_loss(logits_model, data, discrete_dimensions):
+def validation_sigmoid_loss(logits_model, data, discrete_dimension):
     observations = data['observations']
     rewards = tf.cast(data['rewards'], tf.float32)
     actions_discrete = data['actions']
     actions_onehot = [tf.one_hot(actions_discrete[:, i], depth=d) for i, d in enumerate(discrete_dimensions)]
     logits = logits_model([observations] + actions_onehot)
     loss = autoregressive_binary_cross_entropy_loss(logits, actions_onehot, rewards)
+    return loss
+
+@tf.function(experimental_relax_shapes=True)
+def validation_discrete_sigmoid_loss(logits_model, data, discrete_dimension):
+    observations = data['observations']
+    rewards = tf.cast(data['rewards'], tf.float32)
+    actions_discrete = data['actions']
+    actions_onehot = tf.one_hot(actions_discrete[:, 0], depth=discrete_dimension)
+    logits = logits_model(observations)
+    taken_logits = tf.reduce_sum(logits * actions_onehot, axis=-1, keepdims=True)
+    losses = tf.nn.sigmoid_cross_entropy_with_logits(labels=rewards, logits=taken_logits)
+    loss = tf.nn.compute_average_loss(losses)
     return loss
 
 @tf.function(experimental_relax_shapes=True)
@@ -358,6 +419,7 @@ def training_loop(
     total_epochs = num_samples_total // num_samples_per_epoch
     training_start_time = time.time()
     discrete_dimensions_plus_one = [d + 1 for d in discrete_dimensions]
+    discrete_dimensions_zero = [0 for _ in discrete_dimensions]
 
     all_diagnostics = []
 
@@ -407,18 +469,20 @@ def training_loop(
             obs = env.interface.render_camera(use_aux=True)
             
             rand = np.random.uniform()
-            if rand < epsilon: # epsilon greedy
-                action_discrete = np.random.randint([0, 0], discrete_dimensions_plus_one)
+            if rand < epsilon or num_samples < min_samples_before_train: # epsilon greedy
+                action_discrete = np.random.randint(discrete_dimensions_zero, discrete_dimensions_plus_one)
                 diagnostics['num_random'] += 1
             # elif rand < half_epsilon: # epsilon half greedy?
             #     action_onehot = samples_model(np.array([obs]))
             #     action_discrete = np.array([tf.argmax(a, axis=-1).numpy().squeeze() for a in action_onehot])
             #     diagnostics['num_softmax'] += 1
             else:
-                action_onehot = deterministic_model(np.array([obs]))
-                action_discrete = np.array([tf.argmax(a, axis=-1).numpy().squeeze() for a in action_onehot])
+                # action_onehot = deterministic_model(np.array([obs]))
+                # action_discrete = np.array([tf.argmax(a, axis=-1).numpy().squeeze() for a in action_onehot])
+                action_discrete = deterministic_model(np.array([obs])).numpy()
                 diagnostics['num_deterministic'] += 1
-            action_undiscretized = discretizer.undiscretize(action_discrete)
+            # action_undiscretized = discretizer.undiscretize(action_discrete)
+            action_undiscretized = discretizer.undiscretize(np.array([action_discrete[0] // 31, action_discrete[0] % 31]))
 
             reward = do_grasp(env, action_undiscretized)
             diagnostics['num_success'] += reward
@@ -434,8 +498,9 @@ def training_loop(
 
             # do training
             if num_samples >= min_samples_before_train and num_samples % train_frequency == 0:
-                loss = train_sigmoid(logits_model, buffer.sample_batch(train_batch_size), optimizer, discrete_dimensions)
+                # loss = train_sigmoid(logits_model, buffer.sample_batch(train_batch_size), optimizer, discrete_dimensions)
                 # loss = train_softmax(logits_model, buffer.sample_batch(train_batch_size), optimizer, discrete_dimensions)
+                loss = train_discrete_sigmoid(logits_model, buffer.sample_batch(train_batch_size), optimizer, discrete_dimensions[0])
                 total_training_loss += loss.numpy()
                 num_train_steps += 1
 
@@ -452,8 +517,9 @@ def training_loop(
             datas = validation_buffer.get_all_samples_in_batch(validation_batch_size)
             total_validation_loss = 0.0
             for data in datas:
-                total_validation_loss += validation_sigmoid_loss(logits_model, data, discrete_dimensions).numpy()
+                # total_validation_loss += validation_sigmoid_loss(logits_model, data, discrete_dimensions).numpy()
                 # total_validation_loss += validation_softmax_loss(logits_model, data, discrete_dimensions).numpy()
+                total_validation_loss += validation_discrete_sigmoid_loss(logits_model, data, discrete_dimensions[0]).numpy()
             diagnostics['validation_loss'] = total_validation_loss / len(datas)
 
         success_ratio = successes_this_env / num_samples_this_env
@@ -565,7 +631,8 @@ def training_loop_from_filled_buffer(
 
 def main(args):
     image_size = 100
-    discrete_dimensions = [15, 31]
+    # discrete_dimensions = [15, 31]
+    discrete_dimensions = [15 * 31]
     
     epsilon = 0.1
     train_batch_size = 200
@@ -575,15 +642,19 @@ def main(args):
     num_samples_per_env = 10
     num_samples_per_epoch = 100
     num_samples_total = 100000
-    min_samples_before_train = 1000
+    min_samples_before_train = 10
     train_frequency = 5
     assert num_samples_per_epoch % num_samples_per_env == 0 and num_samples_total % num_samples_per_epoch == 0
     
     # create the policy
+    # logits_model, samples_model, deterministic_model = (
+    #     build_policy(image_size=image_size, 
+    #                  discrete_dimensions=discrete_dimensions,
+    #                  discrete_hidden_layers=[512, 512]))
     logits_model, samples_model, deterministic_model = (
-        build_policy(image_size=image_size, 
-                     discrete_dimensions=discrete_dimensions,
-                     discrete_hidden_layers=[512, 512]))
+        build_discrete_policy(image_size=image_size, 
+                              discrete_dimension=discrete_dimensions[0],
+                              discrete_hidden_layers=[512, 512]))
     optimizer = tf.optimizers.Adam(learning_rate=1e-5)
 
     # testing time
@@ -593,7 +664,8 @@ def main(args):
     # num_samples_total = 1
     
     # create the Discretizer
-    discretizer = Discretizer(discrete_dimensions, [0.3, -0.16], [0.4666666, 0.16])
+    # discretizer = Discretizer(discrete_dimensions, [0.3, -0.16], [0.4666666, 0.16])
+    discretizer = Discretizer([15, 31], [0.3, -0.16], [0.4666666, 0.16])
 
     # create the dataset
     buffer = ReplayBuffer(size=num_samples_total, image_size=image_size, action_dim=len(discrete_dimensions))
