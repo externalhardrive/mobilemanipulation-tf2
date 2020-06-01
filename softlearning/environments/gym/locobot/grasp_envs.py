@@ -29,7 +29,7 @@ class LocobotDiscreteGraspingEnv(RoomEnv):
         defaults['aux_camera_look_pos'] = [0.4, 0, 0.05]
         defaults['aux_camera_fov'] = 35
         defaults['aux_image_size'] = 100
-        defaults['observation_space'] = None
+        defaults['observation_space'] = spaces.Dict()
         defaults['action_space'] = spaces.Discrete(15 * 31)
         defaults['max_ep_len'] = 1
 
@@ -85,7 +85,7 @@ class LocobotDiscreteGraspingEnv(RoomEnv):
         action_discrete = int(action)
         action_undiscretized = self.discretizer.undiscretize(self.discretizer.unflatten(action_discrete))
         
-        reward = env.do_grasp(action_undiscretized)
+        reward = self.do_grasp(action_undiscretized)
         self.num_steps_this_env += 1
 
         obs = self.reset()
