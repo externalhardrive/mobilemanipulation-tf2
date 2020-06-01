@@ -1,14 +1,33 @@
+import os 
+import argparse
+
+import numpy as np
+import tensorflow as tf
+
 from discretizer import *
 from envs import *
 from losses import *
 from policies import *
+from samplers import *
 from replay_buffer import *
-from train_function import *
+from train_functions import *
 from training_loop import *
 
 def autoregressive_discrete_dqn_grasping(args):
+    # some hyper parameters
     image_size = 100
     discrete_dimensions = [15, 31]
+
+    num_samples_per_env = 10
+    num_samples_per_epoch = 100
+    num_samples_total = int(1e5)
+    min_samples_before_train = 1000
+
+    train_frequency = 5
+    train_batch_size = 200
+    validation_prob = 0.1
+    validation_batch_size = 100
+    
     
     # create the policy
     logits_model, samples_model, deterministic_model = build_image_autoregressive_policy(
@@ -26,11 +45,13 @@ def autoregressive_discrete_dqn_grasping(args):
     # create the env
     env = GraspingEnv()
 
-    # create the samplers
-    random_sampler, deterministic_sampler = create_grasping_env_autoregressive_discrete_samplers(
+    # create the sampler
+    sampler = create_grasping_env_autoregressive_discrete_sampler(
         env=env,
         discretizer=discretizer,
         deterministic_model=deterministic_model,
+        min_samples_before_train=min_samples_before_train,
+        epsilon=0.1,
     )
 
     # create the train and validation functions
@@ -47,24 +68,32 @@ def autoregressive_discrete_dqn_grasping(args):
     # min_samples_before_train = float('inf')
     # num_samples_total = 1
 
-    training_loop(
-        num_samples_per_env = 10,
-        num_samples_per_epoch = 100,
-        num_samples_total = int(1e5),
-        min_samples_before_train = 1000,
-        train_frequency = 5,
-        epsilon=0.1,
-        train_batch_size=200,
-        validation_prob=0.1,
-        validation_batch_size=100,
+    all_diagnostics = training_loop(
+        num_samples_per_env=num_samples_per_env,
+        num_samples_per_epoch=num_samples_per_epoch,
+        num_samples_total=num_samples_total,
+        min_samples_before_train=min_samples_before_train,
+        train_frequency=train_frequency,
+        train_batch_size=train_batch_size,
+        validation_prob=validation_prob,
+        validation_batch_size=validation_batch_size,
         env=env,
-        train_buffer=train_buffer,
-        validation_buffer=validation_buffer,
-        random_sampler=random_sampler, deterministic_sampler=deterministic_sampler,
+        sampler=sampler,
+        train_buffer=train_buffer, validation_buffer=validation_buffer,
         train_function=train_function, validation_function=validation_function,
-        name='autoregressive_10',
-        save_folder='./others/logs/'
     )
+
+    save_folder = './others/logs/'
+    name = 'autoregressive_10'
+
+    if name:
+        os.makedirs(save_folder, exist_ok=True)
+        new_folder = os.path.join(save_folder, name)
+        os.makedirs(new_folder, exist_ok=True)
+        train_buffer.save(new_folder, "train_buffer")
+        validation_buffer.save(new_folder, "validation_buffer")
+        logits_model.save_weights(os.path.join(new_folder, "model"))
+        np.save(os.path.join(new_folder, "diagnostics"), all_diagnostics)
 
 def discrete_dqn_grasping(args):
     # some hyperparameters
@@ -72,15 +101,15 @@ def discrete_dqn_grasping(args):
     discrete_dimensions = [15, 31]
     discrete_dimension = 15 * 31
 
-    num_samples_per_env = 10,
-    num_samples_per_epoch = 100,
-    num_samples_total = int(1e5),
-    min_samples_before_train = 1000,
+    num_samples_per_env = 10
+    num_samples_per_epoch = 100
+    num_samples_total = int(1e5)
+    min_samples_before_train = 1000
 
-    train_frequency = 5,
-    train_batch_size=200,
-    validation_prob=0.1,
-    validation_batch_size=100,
+    train_frequency = 5
+    train_batch_size = 200
+    validation_prob = 0.1
+    validation_batch_size = 100
     
     # create the policy
     logits_model, samples_model, deterministic_model = build_image_discrete_policy(
@@ -98,7 +127,7 @@ def discrete_dqn_grasping(args):
     # create the env
     env = GraspingEnv()
 
-    # create the samplers
+    # create the sampler
     sampler = create_grasping_env_discrete_sampler(
         env=env,
         discretizer=discretizer,
@@ -136,8 +165,8 @@ def discrete_dqn_grasping(args):
         train_function=train_function, validation_function=validation_function,
     )
 
-    name = 'autoregressive_10'
     save_folder = './others/logs/'
+    name = 'discrete_1'
 
     if name:
         os.makedirs(save_folder, exist_ok=True)
@@ -145,7 +174,7 @@ def discrete_dqn_grasping(args):
         os.makedirs(new_folder, exist_ok=True)
         train_buffer.save(new_folder, "train_buffer")
         validation_buffer.save(new_folder, "validation_buffer")
-        train_model.save_weights(os.path.join(new_folder, "model"))
+        logits_model.save_weights(os.path.join(new_folder, "model"))
         np.save(os.path.join(new_folder, "diagnostics"), all_diagnostics)
 
 def main(args):
