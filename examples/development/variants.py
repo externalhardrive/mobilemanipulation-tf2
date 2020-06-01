@@ -19,10 +19,11 @@ ALGORITHM_PARAMS_BASE = {
         'eval_render_kwargs': {},
         'eval_n_episodes': 1,
         'num_warmup_samples': tune.sample_from(lambda spec: (
-            5 * (spec.get('config', spec)
-                  ['sampler_params']
-                  ['config']
-                  ['max_path_length'])
+            # 5 * (spec.get('config', spec)
+            #       ['sampler_params']
+            #       ['config']
+            #       ['max_path_length'])
+            1000
         )),
     }
 }
@@ -75,7 +76,7 @@ ALGORITHM_PARAMS_ADDITIONAL = {
 
             'target_entropy_start': 'auto',
             'entropy_ratio_start': 0.9,
-            'entropy_ratio_end': 0.9,
+            'entropy_ratio_end': 0.4,
             'entropy_timesteps': 60000,
         },
     },
@@ -181,6 +182,7 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageNavigationResetFree-v0': int(1e6),
             'MixedNavigationResetFree-v0': int(1e5),
             'NavigationVacuum-v0': int(1e6),
+            'DiscreteGraspingEnv-v0': int(1e5),
         },
         'Tests': {
             DEFAULT_KEY: int(1e5),
@@ -304,6 +306,7 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageNavigationResetFree-v0': 200,
             'MixedNavigationResetFree-v0': 200,
             'NavigationVacuum-v0': 200,
+            'DiscreteGraspingEnv-v0': 1,
         },
         'Tests': {
             DEFAULT_KEY: 100,
@@ -324,6 +327,7 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageNavigationResetFree-v0': 1000,
             'MixedNavigationResetFree-v0': 1000,
             'NavigationVacuum-v0': 1000,
+            'DiscreteGraspingEnv-v0': 1000,
         },
         'Tests': {
             DEFAULT_KEY: 1000,
@@ -560,6 +564,11 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'max_velocity': 20.0,
                 'max_acceleration': 4.0
             },
+            'DiscreteGraspingEnv-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': True,
+                },
+            }.
         },
         'Tests': {
             'LineReach-v0': {
@@ -780,7 +789,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         'replay_pool_params': {
             'class_name': 'SimpleReplayPool',
             'config': {
-                'max_size': int(5e5),
+                'max_size': int(1e5),
             },
         },
         'sampler_params': {

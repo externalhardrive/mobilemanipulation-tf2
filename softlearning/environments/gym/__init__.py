@@ -70,26 +70,26 @@ GENERAL_ENVIRONMENT_SPECS = (
         'entry_point': (f'{CUSTOM_GYM_ENVIRONMENTS_PATH}'
                         '.multi_goal:MultiGoalEnv')
     },
-    {
-        'id': 'Locobot-Grasping-v0',
-        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.grasping_envs:LocobotGraspingEnv')
-    },
-    {
-        'id': 'Locobot-ImageGrasping-v0',
-        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.grasping_envs:ImageLocobotGraspingEnv')
-    },
-    {
-        'id': 'Locobot-ImageMultiGrasping-v0',
-        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.grasping_envs:ImageLocobotMultiGraspingEnv')
-    },
-    {
-        'id': 'Locobot-ImageSingleGrasping-v0',
-        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.grasping_envs:ImageLocobotSingleGraspingEnv')
-    },
+    # {
+    #     'id': 'Locobot-Grasping-v0',
+    #     'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+    #                     '.grasping_envs:LocobotGraspingEnv')
+    # },
+    # {
+    #     'id': 'Locobot-ImageGrasping-v0',
+    #     'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+    #                     '.grasping_envs:ImageLocobotGraspingEnv')
+    # },
+    # {
+    #     'id': 'Locobot-ImageMultiGrasping-v0',
+    #     'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+    #                     '.grasping_envs:ImageLocobotMultiGraspingEnv')
+    # },
+    # {
+    #     'id': 'Locobot-ImageSingleGrasping-v0',
+    #     'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+    #                     '.grasping_envs:ImageLocobotSingleGraspingEnv')
+    # },
     {
         'id': 'Locobot-ImageNavigation-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
@@ -119,6 +119,12 @@ GENERAL_ENVIRONMENT_SPECS = (
         'id': 'Locobot-NavigationVacuum-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
                         '.nav_grasp_envs:LocobotNavigationVacuumEnv')
+    },
+
+    {
+        'id': 'Locobot-DiscreteGraspingEnv-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.locobot:LocobotDiscreteGraspingEnv')
     },
 
     {

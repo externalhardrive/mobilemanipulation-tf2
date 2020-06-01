@@ -59,8 +59,8 @@ def training_loop(
             ('num_validation_samples', 0),
             ('total_time', 0),
             ('time', 0),
-            ('average_training_loss', 0),
-            ('validation_loss', 'none'),
+            ('average_training_loss', None),
+            ('validation_loss', None),
             ('num_envs', 0),
             ('num_success', 0),
             ('average_success_ratio_per_env', 0),
@@ -70,7 +70,7 @@ def training_loop(
         ))
         epoch_start_time = time.time()
         num_epoch += 1
-        total_training_loss = 0.0
+        total_training_losses = []
         num_train_steps = 0
 
         # run one epoch
@@ -111,8 +111,13 @@ def training_loop(
             # do training
             if num_samples >= min_samples_before_train and num_samples % train_frequency == 0:
                 data = train_buffer.sample_batch(train_batch_size)
-                loss = train_function(data)
-                total_training_loss += loss.numpy()
+                losses = train_function(data)
+                if not isinstance(losses, (tuple, list)):
+                    losses = [losses]
+                if len(total_training_losses) != len(losses):
+                    total_training_losses = [0.0 for _ in losses]
+                for i in range(len(total_training_losses)):
+                    total_training_losses[i] += losses[i].numpy()
                 num_train_steps += 1
 
         # diagnostics stuff
@@ -122,7 +127,8 @@ def training_loop(
         diagnostics['total_time'] = time.time() - training_start_time
         diagnostics['time'] = time.time() - epoch_start_time
         
-        diagnostics['average_training_loss'] = 'none' if num_train_steps == 0 else total_training_loss / num_train_steps
+        if num_train_steps > 0:
+            diagnostics['average_training_loss'] = [loss / num_train_steps for loss in total_training_losses]
 
         if validation_buffer and validation_buffer.num_samples >= validation_batch_size:
             datas = validation_buffer.get_all_samples_in_batch(validation_batch_size)

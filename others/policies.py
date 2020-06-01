@@ -49,6 +49,8 @@ def build_image_autoregressive_policy(
 
     return logits_model, samples_model, deterministic_model
 
+
+
 def build_image_discrete_policy(
         image_size=100,
         discrete_hidden_layers=(512, 512),
@@ -80,6 +82,34 @@ def build_image_discrete_policy(
 
     return logits_model, None, deterministic_model
 
+
+
+def build_discrete_policy(
+        input_size=32,
+        discrete_hidden_layers=(512, 512),
+        discrete_dimension=32,
+    ):
+    obs_in = tfk.Input((input_size,))
+    
+    logits_out = feedforward_model(
+        discrete_hidden_layers,
+        [discrete_dimension],
+        activation='relu',
+        output_activation='linear',
+        # kernel_regularizer=tfk.regularizers.l2(l=0.1),
+    )(obs_in)
+    
+    logits_model = tfk.Model(obs_in, logits_out)
+
+    def deterministic_model(obs):
+        logits = logits_model(obs)
+        inds = tf.argmax(logits, axis=-1)
+        return inds
+
+    return logits_model, None, deterministic_model
+
+
+
 def build_image_deterministic_continuous_policy(
         image_size=100,
         action_dim=2,
@@ -92,17 +122,20 @@ def build_image_deterministic_continuous_policy(
         conv_strides=(2, 2, 2),
         activation="relu",
     )(obs_in)
-    
+
     action_out = feedforward_model(
         feedforward_hidden_layers,
         [action_dim],
         activation='relu',
-        output_activation='tanh',
+        output_activation='linear',
     )(conv_out)
 
-    model = tfk.Model(obs_in, action_out)
+    squashed_out = tfkl.Activation('tanh')(action_out)
 
-    return model
+    model = tfk.Model(obs_in, squashed_out)
+    unsquashed = tfk.Model(obs_in, action_out)
+
+    return model, unsquashed
 
 def build_image_continuous_Q_function(
         image_size=100,
@@ -119,7 +152,7 @@ def build_image_continuous_Q_function(
 
     action_in = tfk.Input((action_dim,))
 
-    concat_ff_in = tfkl.Concatenate(axis=-1)((conv_out, action_in))
+    concat_ff_in = tfkl.Concatenate(axis=-1)([conv_out, action_in])
 
     Q_out = feedforward_model(
         feedforward_hidden_layers,

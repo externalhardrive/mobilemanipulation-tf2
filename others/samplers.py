@@ -36,6 +36,36 @@ def create_grasping_env_discrete_sampler(
 
     return sampler
 
+def create_fake_grasping_discrete_sampler(
+        env=None,
+        discrete_dimension=None,
+        deterministic_model=None,
+        min_samples_before_train=None,
+        epsilon=None,
+    ):
+    def sample_random():
+        obs = env.get_observation()
+        action = np.random.randint(0, discrete_dimension)
+        reward = env.do_grasp(action)
+    
+        return obs, action, reward, {'sample_random': 1}
+
+    def sample_deterministic():
+        obs = env.get_observation()   
+        action = deterministic_model(np.array([obs])).numpy()
+        reward = env.do_grasp(action)
+
+        return obs, action, reward, {'sample_deterministic': 1}
+
+    def sampler(num_samples):
+        rand = np.random.uniform()
+        if rand < epsilon or num_samples < min_samples_before_train: # epsilon greedy or initial samples
+            return sample_random()
+        else:
+            return sample_deterministic()
+
+    return sampler
+
 def create_grasping_env_autoregressive_discrete_sampler(
         env=None,
         discretizer=None,
@@ -73,6 +103,7 @@ def create_grasping_env_autoregressive_discrete_sampler(
 def create_grasping_env_ddpg_sampler(
         env=None,
         policy_model=None,
+        unsquashed_model=None,
         action_dim=None,
         min_samples_before_train=1000,
         num_samples_at_end=50000,
@@ -96,8 +127,19 @@ def create_grasping_env_ddpg_sampler(
         action = np.clip(action_deterministic + noise, -1.0, 1.0)
 
         reward = env.do_grasp(env.from_normalized_action(action))
+        
+        infos = {
+            'action': action, 
+            'action_deterministic': action_deterministic, 
+            'noise': noise, 
+            'noise_std': noise_std,
+        }
 
-        return obs, action, reward, {'action': action, 'noise': noise, 'noise_std': noise_std}
+        if unsquashed_model:
+            action_unsquashed = unsquashed_model(np.array([obs])).numpy()[0]
+            infos['unsquashed_action'] = action_unsquashed 
+
+        return obs, action, reward, infos
 
     def sampler(num_samples):
         if num_samples < min_samples_before_train: # epsilon greedy or initial samples

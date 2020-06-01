@@ -91,7 +91,7 @@ class LineGraspingDiscrete(gym.Env):
                 i = np.random.randint(0, self.line_width)
                 self.line[i] = 1.0
             self.num_steps_this_env = 0
-        return self.line
+        return np.copy(self.line)
 
     def step(self, action):
         a = int(action)

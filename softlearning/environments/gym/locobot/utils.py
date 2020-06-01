@@ -1,7 +1,10 @@
 import os
 import tensorflow as tf
+import numpy as np
+
 from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model
+
 
 # from softlearning.utils.keras import PicklableModel
 from softlearning.models.convnet import convnet_model
@@ -72,3 +75,31 @@ def is_in_rect(x, y, min_x, min_y, max_x, max_y):
 
 def is_in_circle(x, y, center_x, center_y, radius):
     return (x - center_x) ** 2 + (y - center_y) ** 2 < radius ** 2
+
+
+class Discretizer:
+    def __init__(self, sizes, mins, maxs):
+        self._sizes = np.array(sizes)
+        self._mins = np.array(mins) 
+        self._maxs = np.array(maxs) 
+
+        self._step_sizes = (self._maxs - self._mins) / self._sizes
+
+    @property
+    def dimensions(self):
+        return self._sizes
+
+    def discretize(self, action):
+        centered = action - self._mins
+        indices = np.floor_divide(centered, self._step_sizes)
+        clipped = np.clip(indices, 0, self._sizes)
+        return clipped
+
+    def undiscretize(self, action):
+        return action * self._step_sizes + self._mins + self._step_sizes * 0.5
+
+    def flatten(self, action):
+        return np.ravel_multi_index(action, self._sizes, order='C')
+
+    def unflatten(self, index):
+        return np.array(np.unravel_index(index, self._sizes, order='C')).squeeze()
