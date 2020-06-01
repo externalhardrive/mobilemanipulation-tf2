@@ -1,6 +1,6 @@
 import tensorflow as tf 
 
-from .loss import *
+from losses import *
 
 @tf.function(experimental_relax_shapes=True)
 def train_autoregressive_discrete_sigmoid(logits_model, data, optimizer, discrete_dimensions):

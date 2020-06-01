@@ -1,6 +1,6 @@
 from discretizer import *
 from envs import *
-from loss import *
+from losses import *
 from policies import *
 from replay_buffer import *
 from train_function import *
@@ -67,9 +67,20 @@ def autoregressive_discrete_dqn_grasping(args):
     )
 
 def discrete_dqn_grasping(args):
+    # some hyperparameters
     image_size = 100
     discrete_dimensions = [15, 31]
     discrete_dimension = 15 * 31
+
+    num_samples_per_env = 10,
+    num_samples_per_epoch = 100,
+    num_samples_total = int(1e5),
+    min_samples_before_train = 1000,
+
+    train_frequency = 5,
+    train_batch_size=200,
+    validation_prob=0.1,
+    validation_batch_size=100,
     
     # create the policy
     logits_model, samples_model, deterministic_model = build_image_discrete_policy(
@@ -88,10 +99,12 @@ def discrete_dqn_grasping(args):
     env = GraspingEnv()
 
     # create the samplers
-    random_sampler, deterministic_sampler = create_grasping_env_discrete_samplers(
+    sampler = create_grasping_env_discrete_sampler(
         env=env,
         discretizer=discretizer,
         deterministic_model=deterministic_model,
+        min_samples_before_train=min_samples_before_train,
+        epsilon=0.1,
     )
 
     # create the train and validation functions
@@ -99,8 +112,8 @@ def discrete_dqn_grasping(args):
     validation_function = lambda data: validation_discrete_sigmoid(logits_model, data, discrete_dimension)
 
     # create the dataset
-    train_buffer = ReplayBuffer(size=int(1e5), image_size=image_size, action_dim=discrete_dimension)
-    validation_buffer = ReplayBuffer(size=int(1e5), image_size=image_size, action_dim=discrete_dimension)
+    train_buffer = ReplayBuffer(size=num_samples_total, image_size=image_size, action_dim=discrete_dimension)
+    validation_buffer = ReplayBuffer(size=num_samples_total, image_size=image_size, action_dim=discrete_dimension)
 
     # testing time
     # logits_model.load_weights('./dataset/models/from_dataset_4/autoregressive')
@@ -108,24 +121,32 @@ def discrete_dqn_grasping(args):
     # min_samples_before_train = float('inf')
     # num_samples_total = 1
 
-    training_loop(
-        num_samples_per_env = 10,
-        num_samples_per_epoch = 100,
-        num_samples_total = int(1e5),
-        min_samples_before_train = 1000,
-        train_frequency = 5,
-        epsilon=0.1,
-        train_batch_size=200,
-        validation_prob=0.1,
-        validation_batch_size=100,
+    all_diagnostics = training_loop(
+        num_samples_per_env=num_samples_per_env,
+        num_samples_per_epoch=num_samples_per_epoch,
+        num_samples_total=num_samples_total,
+        min_samples_before_train=min_samples_before_train,
+        train_frequency=train_frequency,
+        train_batch_size=train_batch_size,
+        validation_prob=validation_prob,
+        validation_batch_size=validation_batch_size,
         env=env,
-        train_buffer=train_buffer,
-        validation_buffer=validation_buffer,
-        random_sampler=random_sampler, deterministic_sampler=deterministic_sampler,
+        sampler=sampler,
+        train_buffer=train_buffer, validation_buffer=validation_buffer,
         train_function=train_function, validation_function=validation_function,
-        name='discrete_1',
-        save_folder='./others/logs/'
     )
+
+    name = 'autoregressive_10'
+    save_folder = './others/logs/'
+
+    if name:
+        os.makedirs(save_folder, exist_ok=True)
+        new_folder = os.path.join(save_folder, name)
+        os.makedirs(new_folder, exist_ok=True)
+        train_buffer.save(new_folder, "train_buffer")
+        validation_buffer.save(new_folder, "validation_buffer")
+        train_model.save_weights(os.path.join(new_folder, "model"))
+        np.save(os.path.join(new_folder, "diagnostics"), all_diagnostics)
 
 def main(args):
     # autoregressive_discrete_dqn_grasping(args)

@@ -1,10 +1,12 @@
 import numpy as np
 
+import os
+
 class ReplayBuffer:
-    def __init__(self, size, image_size, action_dim):
+    def __init__(self, size, image_size, action_dim, action_dtype=np.int32):
         self._size = size
         self._observations = np.zeros((size, image_size, image_size, 3), dtype=np.uint8)
-        self._actions = np.zeros((size, action_dim), dtype=np.int32)
+        self._actions = np.zeros((size, action_dim), dtype=action_dtype)
         self._rewards = np.zeros((size, 1), dtype=np.float32)
         self._num = 0
 

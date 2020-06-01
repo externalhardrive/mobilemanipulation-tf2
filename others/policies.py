@@ -12,9 +12,11 @@ tfpl = tfp.layers
 tfd = tfp.distributions
 tfb = tfp.bijectors
 
-def build_image_autoregressive_policy(image_size=100,
-                                      discrete_hidden_layers=(512, 512),
-                                      discrete_dimensions=(15, 31)):
+def build_image_autoregressive_policy(
+        image_size=100,
+        discrete_hidden_layers=(512, 512),
+        discrete_dimensions=(15, 31)
+    ):
 
     obs_in = tfk.Input((image_size, image_size, 3))
     conv_out = convnet_model(
@@ -47,9 +49,11 @@ def build_image_autoregressive_policy(image_size=100,
 
     return logits_model, samples_model, deterministic_model
 
-def build_image_discrete_policy(image_size=100,
-                                discrete_hidden_layers=(512, 512),
-                                discrete_dimension=15 * 31):
+def build_image_discrete_policy(
+        image_size=100,
+        discrete_hidden_layers=(512, 512),
+        discrete_dimension=15 * 31
+    ):
     obs_in = tfk.Input((image_size, image_size, 3))
     conv_out = convnet_model(
         conv_filters=(64, 64, 64),
@@ -75,3 +79,55 @@ def build_image_discrete_policy(image_size=100,
         return inds
 
     return logits_model, None, deterministic_model
+
+def build_image_deterministic_continuous_policy(
+        image_size=100,
+        action_dim=2,
+        feedforward_hidden_layers=(512, 512),
+    ):
+    obs_in = tfk.Input((image_size, image_size, 3))
+    conv_out = convnet_model(
+        conv_filters=(64, 64, 64),
+        conv_kernel_sizes=(3, 3, 3),
+        conv_strides=(2, 2, 2),
+        activation="relu",
+    )(obs_in)
+    
+    action_out = feedforward_model(
+        feedforward_hidden_layers,
+        [action_dim],
+        activation='relu',
+        output_activation='linear',
+    )(conv_out)
+
+    model = tfk.Model(obs_in, action_out)
+
+    return model
+
+def build_image_continuous_Q_function(
+        image_size=100,
+        action_dim=2,
+        feedforward_hidden_layers=(512, 512),
+    ):
+    obs_in = tfk.Input((image_size, image_size, 3))
+    conv_out = convnet_model(
+        conv_filters=(64, 64, 64),
+        conv_kernel_sizes=(3, 3, 3),
+        conv_strides=(2, 2, 2),
+        activation="relu",
+    )(obs_in)
+
+    action_in = tfk.Input((action_dim,))
+
+    concat_ff_in = tfkl.Concatenate(axis=-1)((conv_out, action_in))
+
+    Q_out = feedforward_model(
+        feedforward_hidden_layers,
+        [1],
+        activation='relu',
+        output_activation='linear',
+    )(concat_ff_in)
+
+    model = tfk.Model((obs_in, action_in), Q_out)
+
+    return model

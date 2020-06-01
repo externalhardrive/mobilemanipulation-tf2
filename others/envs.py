@@ -2,6 +2,7 @@ import numpy as np
 
 from softlearning.environments.gym.locobot import *
 from softlearning.environments.gym.locobot.nav_envs import RoomEnv
+from softlearning.environments.gym.locobot.utils import *
 
 class GraspingEnv:
     def __init__(self):

@@ -25,4 +25,4 @@ class Discretizer:
         return np.ravel_multi_index(action, self._sizes, order='C')
 
     def unflatten(self, index):
-        return np.array(np.ravel_multi_index(index, self._sizes, order='C')).squeeze()
+        return np.array(np.unravel_index(index, self._sizes, order='C')).squeeze()
