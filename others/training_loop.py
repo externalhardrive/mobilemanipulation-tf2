@@ -100,7 +100,7 @@ def training_loop(
             diagnostics['num_success'] += reward
             successes_this_env += reward
 
-            if np.random.uniform() < validation_prob:
+            if validation_buffer and np.random.uniform() < validation_prob:
                 validation_buffer.store_sample(obs, action, reward)
             else:
                 train_buffer.store_sample(obs, action, reward)
@@ -118,13 +118,13 @@ def training_loop(
         # diagnostics stuff
         diagnostics['num_samples_total'] = num_samples
         diagnostics['num_training_samples'] = train_buffer.num_samples
-        diagnostics['num_validation_samples'] = validation_buffer.num_samples
+        diagnostics['num_validation_samples'] = validation_buffer.num_samples if validation_buffer else 0
         diagnostics['total_time'] = time.time() - training_start_time
         diagnostics['time'] = time.time() - epoch_start_time
         
         diagnostics['average_training_loss'] = 'none' if num_train_steps == 0 else total_training_loss / num_train_steps
 
-        if validation_buffer.num_samples >= validation_batch_size:
+        if validation_buffer and validation_buffer.num_samples >= validation_batch_size:
             datas = validation_buffer.get_all_samples_in_batch(validation_batch_size)
             total_validation_loss = 0.0
             for data in datas:
@@ -141,8 +141,10 @@ def training_loop(
 
         condensed_infos = OrderedDict()
         for k, v in sampler_infos.items():
-            condensed_infos[k + '-mean'] = np.mean(v)
-            condensed_infos[k + '-sum'] = np.sum(v)
+            condensed_infos[k + '-min'] = np.min(v, axis=0)
+            condensed_infos[k + '-max'] = np.max(v, axis=0)
+            condensed_infos[k + '-mean'] = np.mean(v, axis=0)
+            condensed_infos[k + '-sum'] = np.sum(v, axis=0)
             condensed_infos[k + '-count'] = len(v)
         diagnostics['sampler_infos'] = condensed_infos
 

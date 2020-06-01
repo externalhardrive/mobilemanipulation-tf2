@@ -92,3 +92,33 @@ def validation_autoregressive_discrete_softmax(logits_model, data, discrete_dime
     loss = autoregressive_softmax_cross_entropy_loss(logits, actions_labeled)
     return loss
 
+
+
+@tf.function(experimental_relax_shapes=True)
+def train_ddpg_Q_function(Q_model, data, optimizer):
+    observations = data['observations']
+    rewards = data['rewards']
+    actions = data['actions']
+
+    with tf.GradientTape() as tape:
+        Q_values_logits = Q_model((observations, actions))
+        losses = tf.nn.sigmoid_cross_entropy_with_logits(labels=rewards, logits=Q_values_logits)
+        loss = tf.nn.compute_average_loss(losses)
+
+    grads = tape.gradient(loss, Q_model.trainable_variables)
+    optimizer.apply_gradients(zip(grads, Q_model.trainable_variables))
+
+    return loss
+
+@tf.function(experimental_relax_shapes=True)
+def train_ddpg_policy(policy_model, Q_model, observations, optimizer):
+    with tf.GradientTape() as tape:
+        actions = policy_model(observations)
+        Q_values_logits = Q_model((observations, actions))
+        losses = -tf.math.sigmoid(Q_values_logits)
+        loss = tf.nn.compute_average_loss(losses)
+
+    grads = tape.gradient(loss, policy_model.trainable_variables)
+    optimizer.apply_gradients(zip(grads, policy_model.trainable_variables))
+
+    return loss

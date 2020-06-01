@@ -177,9 +177,92 @@ def discrete_dqn_grasping(args):
         logits_model.save_weights(os.path.join(new_folder, "model"))
         np.save(os.path.join(new_folder, "diagnostics"), all_diagnostics)
 
+def ddpg_grasping(args):
+    # some hyperparameters
+    image_size = 100
+    action_dim = 2
+
+    num_samples_per_env = 10
+    num_samples_per_epoch = 100
+    num_samples_total = int(1e5)
+    min_samples_before_train = 1000
+
+    train_frequency = 5
+    train_batch_size = 200
+    
+    # create the policy and Q function
+    policy_model = build_image_deterministic_continuous_policy(
+        image_size=image_size,
+        action_dim=action_dim,
+        feedforward_hidden_layers=(512, 512),
+    )
+
+    Q_model = build_image_continuous_Q_function(
+        image_size=image_size,
+        action_dim=action_dim,
+        feedforward_hidden_layers=(512, 512),
+    )
+
+    # create the optimizer
+    policy_optimizer = tf.optimizers.Adam(learning_rate=1e-5)
+    Q_optimizer = tf.optimizers.Adam(learning_rate=1e-5)
+    
+    # create the env
+    env = GraspingEnv()
+
+    # create the sampler
+    sampler = create_grasping_env_ddpg_sampler(
+        env=env,
+        policy_model=policy_model,
+        action_dim=action_dim,
+        min_samples_before_train=min_samples_before_train,
+        num_samples_at_end=50000,
+        noise_std_start=0.5,
+        noise_std_end=0.01,
+    )
+
+    # create the train function
+    def train_function(data): 
+        Q_loss = train_ddpg_Q_function(Q_model, data, Q_optimizer)
+        train_ddpg_policy(policy_model, Q_model, data['observations'], policy_optimizer)
+        return Q_loss
+
+    # create the dataset
+    train_buffer = ReplayBuffer(size=num_samples_total, image_size=image_size, action_dim=action_dim)
+
+    # run the training
+    all_diagnostics = training_loop(
+        num_samples_per_env=num_samples_per_env,
+        num_samples_per_epoch=num_samples_per_epoch,
+        num_samples_total=num_samples_total,
+        min_samples_before_train=min_samples_before_train,
+        train_frequency=train_frequency,
+        train_batch_size=train_batch_size,
+        validation_prob=None,
+        validation_batch_size=None,
+        env=env,
+        sampler=sampler,
+        train_buffer=train_buffer, validation_buffer=None,
+        train_function=train_function, validation_function=None,
+    )
+
+    # save
+    save_folder = './others/logs/'
+    name = 'ddpg_1'
+
+    if name:
+        os.makedirs(save_folder, exist_ok=True)
+        new_folder = os.path.join(save_folder, name)
+        os.makedirs(new_folder, exist_ok=True)
+        train_buffer.save(new_folder, "train_buffer")
+        policy_model.save_weights(os.path.join(new_folder, "policy_model"))
+        Q_model.save_weights(os.path.join(new_folder, "Q_model"))
+        np.save(os.path.join(new_folder, "diagnostics"), all_diagnostics)
+
 def main(args):
     # autoregressive_discrete_dqn_grasping(args)
-    discrete_dqn_grasping(args)
+    # discrete_dqn_grasping(args)
+    ddpg_grasping(args)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

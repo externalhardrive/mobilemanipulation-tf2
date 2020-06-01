@@ -52,6 +52,14 @@ class GraspingEnv:
         self._env.interface.move_arm_to_start(steps=90, max_velocity=8.0)
         return reward
 
+    def from_normalized_action(self, normalized_action):
+        action_min = np.array([0.3, -0.16])
+        action_max = np.array([0.466666666, 0.16])
+        action_mean = (action_max + action_min) * 0.5
+        action_scale = (action_max - action_min) * 0.5
+
+        return normalized_action * action_scale + action_mean
+
     def are_blocks_graspable(self):
         for i in range(self._env.room.num_objects):
             object_pos, _ = self._env.interface.get_object(self._env.room.objects_id[i], relative=True)

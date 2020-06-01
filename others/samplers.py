@@ -69,3 +69,44 @@ def create_grasping_env_autoregressive_discrete_sampler(
             return sample_deterministic()
 
     return sampler
+
+def create_grasping_env_ddpg_sampler(
+        env=None,
+        policy_model=None,
+        action_dim=None,
+        min_samples_before_train=1000,
+        num_samples_at_end=50000,
+        noise_std_start=0.5,
+        noise_std_end=0.01,
+    ):
+    """ Linear annealing from start noise to end noise. """
+
+    def sample_random():
+        obs = env.get_observation()
+        action = np.random.uniform(-1.0, 1.0, size=(action_dim,))
+        reward = env.do_grasp(env.from_normalized_action(action))
+    
+        return obs, action, reward, {'action': action}
+
+    def sample_with_noise(noise_std):
+        obs = env.get_observation()
+
+        noise = np.random.normal() * noise_std
+        action_deterministic = policy_model(np.array([obs])).numpy()[0]
+        action = np.clip(action_deterministic + noise, -1.0, 1.0)
+
+        reward = env.do_grasp(env.from_normalized_action(action))
+
+        return obs, action, reward, {'action': action, 'noise': noise, 'noise_std': noise_std}
+
+    def sampler(num_samples):
+        if num_samples < min_samples_before_train: # epsilon greedy or initial samples
+            return sample_random()
+        
+        noise_std = np.interp(num_samples, 
+                              np.array([min_samples_before_train, num_samples_at_end]), 
+                              np.array([noise_std_start, noise_std_end]))
+
+        return sample_with_noise(noise_std)
+
+    return sampler
