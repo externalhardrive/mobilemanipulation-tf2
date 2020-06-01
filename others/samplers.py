@@ -91,7 +91,7 @@ def create_grasping_env_ddpg_sampler(
     def sample_with_noise(noise_std):
         obs = env.get_observation()
 
-        noise = np.random.normal() * noise_std
+        noise = np.random.normal(size=(action_dim,)) * noise_std
         action_deterministic = policy_model(np.array([obs])).numpy()[0]
         action = np.clip(action_deterministic + noise, -1.0, 1.0)
 

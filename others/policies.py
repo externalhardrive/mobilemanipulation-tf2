@@ -97,7 +97,7 @@ def build_image_deterministic_continuous_policy(
         feedforward_hidden_layers,
         [action_dim],
         activation='relu',
-        output_activation='linear',
+        output_activation='tanh',
     )(conv_out)
 
     model = tfk.Model(obs_in, action_out)

@@ -217,8 +217,8 @@ def ddpg_grasping(args):
         action_dim=action_dim,
         min_samples_before_train=min_samples_before_train,
         num_samples_at_end=50000,
-        noise_std_start=0.5,
-        noise_std_end=0.01,
+        noise_std_start=0.25,
+        noise_std_end=0.005,
     )
 
     # create the train function
@@ -228,7 +228,7 @@ def ddpg_grasping(args):
         return Q_loss
 
     # create the dataset
-    train_buffer = ReplayBuffer(size=num_samples_total, image_size=image_size, action_dim=action_dim)
+    train_buffer = ReplayBuffer(size=num_samples_total, image_size=image_size, action_dim=action_dim, action_dtype=np.float32)
 
     # run the training
     all_diagnostics = training_loop(

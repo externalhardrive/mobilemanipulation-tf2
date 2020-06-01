@@ -115,7 +115,8 @@ def train_ddpg_policy(policy_model, Q_model, observations, optimizer):
     with tf.GradientTape() as tape:
         actions = policy_model(observations)
         Q_values_logits = Q_model((observations, actions))
-        losses = -tf.math.sigmoid(Q_values_logits)
+        # losses = -tf.math.sigmoid(Q_values_logits)
+        losses = -Q_values_logits
         loss = tf.nn.compute_average_loss(losses)
 
     grads = tape.gradient(loss, policy_model.trainable_variables)
