@@ -124,7 +124,7 @@ GENERAL_ENVIRONMENT_SPECS = (
     {
         'id': 'Locobot-DiscreteGraspingEnv-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.locobot:LocobotDiscreteGraspingEnv')
+                        ':LocobotDiscreteGraspingEnv')
     },
 
     {

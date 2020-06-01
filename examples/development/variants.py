@@ -568,7 +568,7 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': True,
                 },
-            }.
+            },
         },
         'Tests': {
             'LineReach-v0': {
