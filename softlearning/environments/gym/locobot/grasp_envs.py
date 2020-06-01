@@ -66,7 +66,7 @@ class LocobotDiscreteGraspingEnv(RoomEnv):
         return not self.are_blocks_graspable()
 
     def reset(self):
-        if self.num_steps_this_env >= self.num_repeat or self.should_reset()
+        if self.num_steps_this_env >= self.num_repeat or self.should_reset():
             self.interface.reset_robot([0, 0], 0, 0, 0)
             while True:
                 self.room.reset()
