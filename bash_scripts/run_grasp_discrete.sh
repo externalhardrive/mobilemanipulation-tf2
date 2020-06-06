@@ -10,4 +10,4 @@ softlearning run_example_local examples.development \
     --trial-cpus 3 \
     --trial-gpus 1 \
     --run-eagerly False \
-    --server-port 11112 \
+    --server-port 12222 \

@@ -76,7 +76,7 @@ ALGORITHM_PARAMS_ADDITIONAL = {
 
             'target_entropy_start': 'auto',
             'entropy_ratio_start': 0.9,
-            'entropy_ratio_end': 0.4,
+            'entropy_ratio_end': 0.55,
             'entropy_timesteps': 60000,
         },
     },
