@@ -20,7 +20,7 @@ def train_autoregressive_discrete_sigmoid(logits_model, data, optimizer, discret
     return loss
 
 @tf.function(experimental_relax_shapes=True)
-def validation_autoregressive_discrete_sigmoid(logits_model, data, discrete_dimension):
+def validation_autoregressive_discrete_sigmoid(logits_model, data, discrete_dimensions):
     observations = data['observations']
     rewards = tf.cast(data['rewards'], tf.float32)
     actions_discrete = data['actions']
