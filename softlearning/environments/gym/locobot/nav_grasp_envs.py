@@ -106,9 +106,9 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
             grasp_training_params=dict(
                 discrete_hidden_layers=[512, 512],
                 lr=1e-5,
-                batch_size=100,
+                batch_size=50,
                 buffer_size=int(1e5),
-                min_samples_before_train=500,
+                min_samples_before_train=100,
                 epsilon=0.1,
             ),
         )
@@ -165,7 +165,7 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
                 discrete_dimension=15*31,
                 discrete_hidden_layers=training_params["discrete_hidden_layers"])
 
-            LocobotNavigationDQNGraspingEnv.grasping_deterministic_model = deterministic_model
+            LocobotNavigationDQNGraspingEnv.grasp_deterministic_model = deterministic_model
             self.grasp_deterministic_model = deterministic_model
             self.grasp_logits_model = logits_model
 
@@ -182,10 +182,9 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
             self.grasp_epsilon = training_params["epsilon"]
         else:
             # TODO(externalhardrive): Add ability to load grasping model from file
-            if LocobotNavigationDQNGraspingEnv.grasping_deterministic_model is None:
+            if LocobotNavigationDQNGraspingEnv.grasp_deterministic_model is None:
                 raise ValueError("Training environment must be made first")
             self.grasp_deterministic_model = LocobotNavigationDQNGraspingEnv.grasp_deterministic_model
-
 
     def reset(self):
         _ = super().reset()
@@ -274,12 +273,15 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
             obs = self.interface.render_camera(use_aux=True)
 
             # epsilon greedy or initial exploration
-            if np.random.uniform() < self.grasp_epsilon or self.grasp_buffer.num_samples < self.grasp_min_samples_before_train:
-                action_discrete = np.random.randint(0, 15*31)
-                infos["grasp_random"] = 1
+            if self.is_training:
+                if np.random.uniform() < self.grasp_epsilon or self.grasp_buffer.num_samples < self.grasp_min_samples_before_train:
+                    action_discrete = np.random.randint(0, 15*31)
+                    infos["grasp_random"] = 1
+                else:
+                    action_discrete = self.grasp_deterministic_model(np.array([obs])).numpy()
+                    infos["grasp_deterministic"] = 1
             else:
                 action_discrete = self.grasp_deterministic_model(np.array([obs])).numpy()
-                infos["grasp_deterministic"] = 1
 
             # convert to local grasp position and execute grasp
             action_undiscretized = self.grasp_discretizer.undiscretize(self.grasp_discretizer.unflatten(action_discrete))
@@ -288,12 +290,13 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
             successes.append(reward)
 
             # store in replay buffer
-            self.grasp_buffer.store_sample(obs, action_discrete, reward)
+            if self.is_training:
+                self.grasp_buffer.store_sample(obs, action_discrete, reward)
             
             num_grasps += 1
 
             # train once
-            if self.grasp_buffer.num_samples >= self.grasp_min_samples_before_train:
+            if self.is_training and self.grasp_buffer.num_samples >= self.grasp_min_samples_before_train:
                 data = self.grasp_buffer.sample_batch(self.grasp_batch_size)
                 loss = self.train_grasp(data)
                 losses.append(loss.numpy())
@@ -305,10 +308,12 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
         
         if len(losses) > 0:
             infos["grasp_training_loss"] = np.mean(losses)
+        
+        if len(successes) > 0:
+            infos["average_success_per_action"] = np.mean(successes)
 
         infos["num_grasps_per_action"] = num_grasps
         infos["success_per_action"] = int(reward > 0)
-        infos["average_success_per_action"] = np.mean(successes)
 
         return reward * num_grasps
 
@@ -316,15 +321,17 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
         action_key, action_value = action
 
         reward = 0.0
-        infos = {
-            "grasp_training_loss": np.nan,
-            "num_grasps_per_action": np.nan,
-            "success_per_action": np.nan,
-            "average_success_per_action": np.nan,
-            "grasp_random": np.nan,
-            "grasp_deterministic": np.nan,
-        }
+        infos = {}
 
+        infos["num_grasps_per_action"] = np.nan
+        infos["success_per_action"] = np.nan
+        infos["average_success_per_action"] = np.nan
+
+        if self.is_training:
+            infos["grasp_training_loss"] = np.nan
+            infos["grasp_random"] = np.nan
+            infos["grasp_deterministic"] = np.nan
+        
         if action_key == "move":
             self.do_move(action_value)
         elif action_key == "grasp":
@@ -336,7 +343,9 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
         
         infos["total_grasp_actions"] = self.total_grasp_actions
         infos["total_grasped"] = self.total_grasped
-        infos["grasp_buffer_samples"] = self.grasp_buffer.num_samples
+
+        if self.is_training:
+            infos["grasp_buffer_samples"] = self.grasp_buffer.num_samples
 
         self.num_steps += 1
         done = self.num_steps >= self.max_ep_len
