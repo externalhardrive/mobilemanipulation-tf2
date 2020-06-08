@@ -20,21 +20,21 @@ def save_obs(obs, path):
     mpimg.imsave(path, obs)
 
 def main(args):
-    # room_name = "simple"
+    room_name = "simple"
     # room_name = "simple_obstacles"
-    # room_params = dict(
-    #     num_objects=100, 
-    #     object_name="greensquareball", 
-    #     wall_size=5.0,
-    #     no_spawn_radius=0.8,
-    # )
-    room_name = "medium"
     room_params = dict(
         num_objects=100, 
         object_name="greensquareball", 
-        wall_size=5,
-        no_spawn_radius=0.7,
+        wall_size=5.0,
+        no_spawn_radius=0.55,
     )
+    # room_name = "medium"
+    # room_params = dict(
+    #     num_objects=100, 
+    #     object_name="greensquareball", 
+    #     wall_size=5,
+    #     no_spawn_radius=0.7,
+    # )
     # room_name = "simple"
     # room_params = dict(
     #     num_objects=20, 
@@ -42,15 +42,18 @@ def main(args):
     #     wall_size=3.0,
     #     no_spawn_radius=0.6,
     # )
-    inner_env = LocobotNavigationVacuumEnv(
+    # inner_env = LocobotNavigationVacuumEnv(
+    #     renders=True, grayscale=False, step_duration=1/60,
+    #     room_name=room_name,
+    #     room_params=room_params,
+    #     image_size=100,
+    #     steps_per_second=2,
+    #     max_ep_len=200,
+    #     max_velocity=20.0,
+    #     max_acceleration=4.0,
+    # )
+    inner_env = LocobotNavigationDQNGraspingEnv(
         renders=True, grayscale=False, step_duration=1/60,
-        room_name=room_name,
-        room_params=room_params,
-        image_size=100,
-        steps_per_second=2,
-        max_ep_len=200,
-        max_velocity=20.0,
-        max_acceleration=4.0,
     )
 
     env = GymAdapter(None, None,
@@ -66,7 +69,7 @@ def main(args):
         
     while True:
         # save_obs(obs["pixels"], f"../images/obs{i}.png")
-        print("velocity:", obs["current_velocity"])
+        # print("velocity:", obs["current_velocity"])
         cmd = input().strip()
         try:
             if cmd == "exit":
