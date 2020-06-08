@@ -19,11 +19,11 @@ ALGORITHM_PARAMS_BASE = {
         'eval_render_kwargs': {},
         'eval_n_episodes': 1,
         'num_warmup_samples': tune.sample_from(lambda spec: (
-            # 5 * (spec.get('config', spec)
-            #       ['sampler_params']
-            #       ['config']
-            #       ['max_path_length'])
-            1000
+            5 * (spec.get('config', spec)
+                  ['sampler_params']
+                  ['config']
+                  ['max_path_length'])
+            # 1000
         )),
     }
 }
@@ -182,6 +182,7 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageNavigationResetFree-v0': int(1e6),
             'MixedNavigationResetFree-v0': int(1e5),
             'NavigationVacuum-v0': int(1e6),
+            'NavigationDQNGrasping-v0': int(1e6),
             'DiscreteGraspingEnv-v0': int(1e5),
         },
         'Tests': {
@@ -306,6 +307,7 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageNavigationResetFree-v0': 200,
             'MixedNavigationResetFree-v0': 200,
             'NavigationVacuum-v0': 200,
+            'NavigationDQNGrasping-v0': 200,
             'DiscreteGraspingEnv-v0': 1,
         },
         'Tests': {
@@ -327,6 +329,7 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageNavigationResetFree-v0': 1000,
             'MixedNavigationResetFree-v0': 1000,
             'NavigationVacuum-v0': 1000,
+            'NavigationDQNGrasping-v0': 1000,
             'DiscreteGraspingEnv-v0': 1000,
         },
         'Tests': {
@@ -564,6 +567,19 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'max_velocity': 20.0,
                 'max_acceleration': 4.0
             },
+            'NavigationDQNGrasping-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
+                },
+                'room_name': 'simple',
+                'room_params': {
+                    'num_objects': 100, 
+                    'object_name': "greensquareball", 
+                    'no_spawn_radius': 0.55, #0.8,
+                    'wall_size': 5.0
+                },
+                # use default everything else
+            },
             'DiscreteGraspingEnv-v0': {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': True,
@@ -644,7 +660,10 @@ EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'max_ep_len': 200,
                 'trajectory_log_dir': None, 
                 'trajectory_log_freq': 0
-            }
+            },
+            'NavigationDQNGrasping-v0': {
+                'is_training': False,
+            },
         },
     },
 }
