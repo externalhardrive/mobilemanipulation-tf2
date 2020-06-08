@@ -555,7 +555,7 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'room_params': {
                     'num_objects': 100, 
                     'object_name': "greensquareball", 
-                    'no_spawn_radius': 0.8,
+                    'no_spawn_radius': 0.55, #0.8,
                     'wall_size': 5.0
                 },
                 'max_ep_len': 200,

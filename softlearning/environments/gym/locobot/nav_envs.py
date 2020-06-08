@@ -197,7 +197,8 @@ class MixedLocobotNavigationEnv(BaseNavigationEnv):
     def reset(self):
         _ = super().reset()
         
-        self.target_velocity = np.array([self.max_velocity * 0.2] * 2)
+        # self.target_velocity = np.array([self.max_velocity * 0.2] * 2)
+        self.target_velocity = np.array([0, 0])
         self.interface.set_wheels_velocity(self.target_velocity[0], self.target_velocity[1])
         for _ in range(60):
             self.interface.step()
