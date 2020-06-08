@@ -104,15 +104,15 @@ def discrete_dqn_grasping(args):
     num_samples_per_env = 10
     num_samples_per_epoch = 100
     num_samples_total = int(1e5)
-    min_samples_before_train = 1000
+    min_samples_before_train = 100
 
-    train_frequency = 5
-    train_batch_size = 200
-    validation_prob = 0.1
-    validation_batch_size = 100
+    train_frequency = 1
+    train_batch_size = 50
+    validation_prob = -1
+    validation_batch_size = 50
     
     # create the policy
-    logits_model, samples_model, deterministic_model = build_image_discrete_policy(
+    logits_model, deterministic_model = build_image_discrete_policy(
         image_size=image_size, 
         discrete_dimension=discrete_dimension,
         discrete_hidden_layers=[512, 512]
@@ -166,7 +166,7 @@ def discrete_dqn_grasping(args):
     )
 
     save_folder = './others/logs/'
-    name = 'discrete_1'
+    name = 'discrete_3'
 
     if name:
         os.makedirs(save_folder, exist_ok=True)
@@ -346,9 +346,9 @@ def discrete_fake_grasping(args):
 
 def main(args):
     # autoregressive_discrete_dqn_grasping(args)
-    # discrete_dqn_grasping(args)
+    discrete_dqn_grasping(args)
     # ddpg_grasping(args)
-    discrete_fake_grasping(args)
+    # discrete_fake_grasping(args)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
