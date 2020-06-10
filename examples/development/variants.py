@@ -10,9 +10,7 @@ from softlearning.utils.dict import deep_update
 
 DEFAULT_KEY = "__DEFAULT_KEY__"
 
-M = 256
-NUM_COUPLING_LAYERS = 2
-
+M = 512
 
 ALGORITHM_PARAMS_BASE = {
     'config': {
@@ -20,12 +18,22 @@ ALGORITHM_PARAMS_BASE = {
         'n_train_repeat': 1,
         'eval_render_kwargs': {},
         'eval_n_episodes': 1,
-        'num_warmup_samples': 3000,# tune.sample_from(lambda spec: (
-#             10 * (spec.get('config', spec)
-#                   ['sampler_params']
-#                   ['config']
-#                   ['max_path_length'])
-#         )),
+# <<<<<<< HEAD
+#         'num_warmup_samples': 3000,# tune.sample_from(lambda spec: (
+# #             10 * (spec.get('config', spec)
+# #                   ['sampler_params']
+# #                   ['config']
+# #                   ['max_path_length'])
+# #         )),
+# =======
+        'num_warmup_samples': tune.sample_from(lambda spec: (
+            .5 * (spec.get('config', spec)
+                  ['sampler_params']
+                  ['config']
+                  ['max_path_length'])
+            # 1000
+        )),
+#>>>>>>> 64be3c99b791d653c2ecc7b41767647f8fc1205d
     }
 }
 
@@ -43,6 +51,42 @@ ALGORITHM_PARAMS_ADDITIONAL = {
 
             'discount': 0.99,
             'reward_scale': 1.0,
+        },
+    },
+    'SACMixed': {
+        'class_name': 'SACMixed',
+        'config': {
+            'policy_lr': 3e-4,
+            'Q_lr': 3e-4,
+            'alpha_lr': 3e-4,
+            'target_update_interval': 1,
+            'tau': 5e-3,
+            'target_entropy': 'auto',
+
+            'discount': 0.95,
+            'reward_scale': 1.0,
+
+            'discrete_entropy_ratio_start': 0.9,
+            'discrete_entropy_ratio_end': 0.55,
+            'discrete_entropy_timesteps': 60000,
+        },
+    },
+    'SACDiscrete': {
+        'class_name': 'SACDiscrete',
+        'config': {
+            'policy_lr': 3e-4,
+            'Q_lr': 3e-4,
+            'alpha_lr': 3e-4,
+            'target_update_interval': 1,
+            'tau': 5e-3,
+
+            'discount': 0.95,
+            'reward_scale': 1.0,
+
+            'target_entropy_start': 'auto',
+            'entropy_ratio_start': 0.9,
+            'entropy_ratio_end': 0.55,
+            'entropy_timesteps': 60000,
         },
     },
     'SQL': {
@@ -74,14 +118,32 @@ ALGORITHM_PARAMS_ADDITIONAL = {
 }
 
 
-GAUSSIAN_POLICY_PARAMS_BASE = {
-    'class_name': 'FeedforwardGaussianPolicy',
-    'config': {
-        'hidden_layer_sizes': (M, M),
-        'squash': True,
-        'observation_keys': None,
-        'preprocessors': None,
-    }
+POLICY_PARAMS_BASE = {
+    'gaussian': {
+        'class_name': 'FeedforwardGaussianPolicy',
+        'config': {
+            'hidden_layer_sizes': (M, M),
+            'squash': True,
+            'observation_keys': None,
+            'preprocessors': None,
+        },
+    },
+    'discrete_gaussian': {
+        'class_name': 'FeedforwardDiscreteGaussianPolicy',
+        'config': {
+            'hidden_layer_sizes': (M, M),
+            'observation_keys': None,
+            'preprocessors': None,
+        },
+    },
+    'discrete': {
+        'class_name': 'FeedforwardDiscretePolicy',
+        'config': {
+            'hidden_layer_sizes': (M, M),
+            'observation_keys': None,
+            'preprocessors': None,
+        },
+    },
 }
 
 TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
@@ -124,8 +186,20 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
         'Locobot': {
             DEFAULT_KEY: int(2e5),
             'ImageNavigation-v0': int(1e6),
-            'MixedNavigation-v0': int(1e6),
             'ImageKukaGrasping': int(2e7)
+            'MixedNavigation-v0': int(1e5),
+            'MixedNavigationReach-v0': int(1e6),
+            'ImageNavigationResetFree-v0': int(1e6),
+            'MixedNavigationResetFree-v0': int(1e5),
+            'NavigationVacuum-v0': int(1e6),
+            'NavigationDQNGrasping-v0': int(1e6),
+            'DiscreteGraspingEnv-v0': int(1e5),
+        },
+        'Tests': {
+            DEFAULT_KEY: int(1e5),
+            'LineReach-v0': int(1e5),
+            'LineGrasping-v0': int(1e5),
+            'LineGraspingDiscrete-v0': int(1e5),
         },
     },
     'dm_control': {
@@ -238,8 +312,21 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageMultiGrasping-v0': 1,
             'ImageSingleGrasping-v0': 1,
             'ImageNavigation-v0': 200,
-            'MixedNavigation-v0': 1000,
+            #'MixedNavigation-v0': 1000,
             'ImageKukaGrasping': 15,
+            'MixedNavigation-v0': 200,
+            'MixedNavigationReach-v0': 100,
+            'ImageNavigationResetFree-v0': 200,
+            'MixedNavigationResetFree-v0': 200,
+            'NavigationVacuum-v0': 200,
+            'NavigationDQNGrasping-v0': 200,
+            'DiscreteGraspingEnv-v0': 1,
+        },
+        'Tests': {
+            DEFAULT_KEY: 100,
+            'LineReach-v0': 100,
+            'LineGrasping-v0': 1,
+            'LineGraspingDiscrete-v0': 1,
         },
     },
 }
@@ -249,9 +336,20 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
     'gym': {
         DEFAULT_KEY: 1000,
         'Locobot': {
-            DEFAULT_KEY: 100,
-            'MixedNavigation-v0': 5000,
-            #'ImageKukaGrasping': 15
+
+            DEFAULT_KEY: 1000,
+            'MixedNavigation-v0': 1000,
+            'ImageNavigationResetFree-v0': 1000,
+            'MixedNavigationResetFree-v0': 1000,
+            'NavigationVacuum-v0': 1000,
+            'NavigationDQNGrasping-v0': 1000,
+            'DiscreteGraspingEnv-v0': 1000,
+        },
+        'Tests': {
+            DEFAULT_KEY: 1000,
+            'LineReach-v0': 1000,
+            'LineGrasping-v0': 1000,
+            'LineGraspingDiscrete-v0': 1000,
         },
     },
 }
@@ -367,37 +465,159 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'crop_output': True,
                 'min_other_blocks': 0,
                 'max_other_blocks': 6
-
+            },
+            'MixedNavigationReach-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
+                },
+                'observation_keys': ('current_velocity', 'target_velocity', 'pixels'),
+                'room_name': 'simple',
+                'room_params': {
+                    'num_objects': 20, 
+                    'object_name': "greensquareball", 
+                    'wall_size': 3.0, 
+                    'no_spawn_radius': 0.6,
+                },
+                'max_ep_len': 100,
+                'image_size': 100,
+                'steps_per_second': 2,
+                'max_velocity': 20.0,
+                'max_acceleration': 4.0
             },
             'ImageNavigation-v0': {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': True,
-                    'render_kwargs': {},
                 },
-                'room_name': 'simple',
+                # 'room_name': 'simple_obstacles',
+                # 'room_params': {
+                #     'num_objects': 100, 
+                #     'object_name': "greensquareball", 
+                #     'wall_size': 5.0, 
+                # },
+                'room_name': 'medium',
                 'room_params': {
                     'num_objects': 100, 
                     'object_name': "greensquareball", 
-                    'wall_size': 5.0, 
+                    'no_spawn_radius': 0.8,
                 },
                 'max_ep_len': 200,
                 'image_size': 100,
-                'use_dist_reward': False,
-                'grasp_reward': 1,
+            },
+            'ImageNavigationResetFree-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': True,
+                },
+                'reset_free': True,
+                'room_name': 'medium',
+                'room_params': {
+                    'num_objects': 100, 
+                    'object_name': "greensquareball", 
+                    'no_spawn_radius': 0.8,
+                },
+                'max_ep_len': float('inf'),
+                'image_size': 100,
             },
             'MixedNavigation-v0': {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': False,
                 },
-                'observation_keys': ('velocity', 'pixels'),
+                'observation_keys': ('current_velocity', 'pixels'),
+                # 'room_name': 'simple',
+                # 'room_params': {
+                #     'num_objects': 80, 
+                #     'object_name': "greensquareball", 
+                #     'wall_size': 5.0, 
+                #     'no_spawn_radius': 0.8,
+                # },
+                'room_name': 'medium',
+                'room_params': {
+                    'num_objects': 200, 
+                    'object_name': "greensquareball", 
+                    'no_spawn_radius': 0.7,
+                    'wall_size': 7.0
+                },
+                'max_ep_len': 200,
+                'image_size': 100,
+                'steps_per_second': 2,
+                'max_velocity': 20.0,
+                'max_acceleration': 4.0
+            },
+            'MixedNavigationResetFree-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
+                },
+                'observation_keys': ('current_velocity', 'target_velocity', 'pixels'),
+                'reset_free': True,
+                'room_name': 'medium',
+                'room_params': {
+                    'num_objects': 200, 
+                    'object_name': "greensquareball", 
+                    'no_spawn_radius': 0.7,
+                    'wall_size': 7.0
+                },
+                'max_ep_len': float('inf'),
+                'image_size': 100,
+                'steps_per_second': 2,
+                'max_velocity': 20.0,
+                'max_acceleration': 4.0,
+                'trajectory_log_dir': '/home/charlesjsun/mobilemanipulation-tf2/nohup_output/mixed_nav_rf_sac_newton5_2_traj/', 
+                'trajectory_log_freq': 1000
+            },
+            'NavigationVacuum-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
+                },
                 'room_name': 'simple',
                 'room_params': {
                     'num_objects': 100, 
                     'object_name': "greensquareball", 
-                    'wall_size': 5.0, 
+                    'no_spawn_radius': 0.55, #0.8,
+                    'wall_size': 5.0
                 },
-                'max_ep_len': 100,
+                'max_ep_len': 200,
                 'image_size': 100,
+                'steps_per_second': 2,
+                'max_velocity': 20.0,
+                'max_acceleration': 4.0
+            },
+            'NavigationDQNGrasping-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
+                },
+                'room_name': 'simple',
+                'room_params': {
+                    'num_objects': 100, 
+                    'object_name': "greensquareball", 
+                    'no_spawn_radius': 0.55, #0.8,
+                    'wall_size': 5.0
+                },
+                # use default everything else
+            },
+            'DiscreteGraspingEnv-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': True,
+                },
+            },
+        },
+        'Tests': {
+            'LineReach-v0': {
+                'max_pos': 10.0, 
+                'max_step': 1.0, 
+                'collect_radius': 0.1,
+                'max_ep_len': 100
+            },
+            'LineGrasping-v0': {
+                'line_width': 32,
+                'min_objects': 1,
+                'max_objects': 5,
+                'num_repeat': 10,
+                'collect_radius': 0.03,
+            },
+            'LineGraspingDiscrete-v0': {
+                'line_width': 32,
+                'min_objects': 1,
+                'max_objects': 5,
+                'num_repeat': 10,
             },
             'ImageKukaGrasping-v0': {
                 'pixel_wrapper_kwargs': {
@@ -448,6 +668,25 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
     },
 }
 
+EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
+    'gym': {
+        'Locobot': {
+            'ImageNavigationResetFree-v0': {
+                'reset_free': False,
+                'max_ep_len': 200,
+            },
+            'MixedNavigationResetFree-v0': {
+                'reset_free': False,
+                'max_ep_len': 200,
+                'trajectory_log_dir': None, 
+                'trajectory_log_freq': 0
+            },
+            'NavigationDQNGrasping-v0': {
+                'is_training': False,
+            },
+        },
+    },
+}
 
 def get_epoch_length(universe, domain, task):
     level_result = EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK.copy()
@@ -482,12 +721,6 @@ def get_checkpoint_frequency(spec):
     ) // num_checkpoints
 
     return checkpoint_frequency
-
-
-def get_policy_params(spec):
-    # config = spec.get('config', spec)
-    policy_params = GAUSSIAN_POLICY_PARAMS_BASE.copy()
-    return policy_params
 
 
 def get_total_timesteps(universe, domain, task):
@@ -527,13 +760,32 @@ def get_environment_params(universe, domain, task):
 
     return environment_params
 
+def get_evaluation_environment_params(universe, domain, task):
+    environment_params = deepcopy(get_environment_params(universe, domain, task))
+    extra_params = (
+        EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK
+        .get(universe, {}).get(domain, {}).get(task, {}))
+    
+    environment_params.update(extra_params)
+    return environment_params
+
 
 def get_variant_spec_base(universe, domain, task, policy, algorithm):
     algorithm_params = deep_update(
-        ALGORITHM_PARAMS_BASE,
-        ALGORITHM_PARAMS_ADDITIONAL.get(algorithm, {}),
-        get_algorithm_params(universe, domain, task),
+        deepcopy(ALGORITHM_PARAMS_BASE),
+        deepcopy(ALGORITHM_PARAMS_ADDITIONAL.get(algorithm, {})),
+        deepcopy(get_algorithm_params(universe, domain, task)),
     )
+
+    policy_params = deepcopy(POLICY_PARAMS_BASE[policy])
+    
+    # policy_params = deep_update(
+    #     policy_params,
+    #     deepcopy(
+    #         EXTRA_POLICY_PARAMS_PER_UNIVERSE_DOMAIN_TASK
+    #         .get(universe, {}).get(domain, {}).get(task, {}))
+    # )
+
     variant_spec = {
         'git_sha': get_git_rev(__file__),
 
@@ -544,33 +796,26 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
                 'universe': universe,
                 'kwargs': get_environment_params(universe, domain, task),
             },
-            'evaluation': tune.sample_from(lambda spec: (
-                spec.get('config', spec)
-                ['environment_params']
-                ['training']
-            )),
+            'evaluation': {
+                'domain': domain,
+                'task': task,
+                'universe': universe,
+                'kwargs': get_evaluation_environment_params(universe, domain, task),
+            },
         },
         # 'policy_params': tune.sample_from(get_policy_params),
-        'policy_params': {
-            'class_name': 'FeedforwardGaussianPolicy',
-            'config': {
-                'hidden_layer_sizes': (M, M),
-                'squash': True,
-                'observation_keys': None,
-                'preprocessors': None,
-            },
-        },
-        'exploration_policy_params': {
-            'class_name': 'ContinuousUniformPolicy',
-            'config': {
-                'observation_keys': tune.sample_from(lambda spec: (
-                    spec.get('config', spec)
-                    ['policy_params']
-                    ['config']
-                    .get('observation_keys')
-                ))
-            },
-        },
+        'policy_params': policy_params,
+        # 'exploration_policy_params': {
+        #     'class_name': 'ContinuousUniformPolicy',
+        #     'config': {
+        #         'observation_keys': tune.sample_from(lambda spec: (
+        #             spec.get('config', spec)
+        #             ['policy_params']
+        #             ['config']
+        #             .get('observation_keys')
+        #         ))
+        #     },
+        # },
         'Q_params': {
             'class_name': 'double_feedforward_Q_function',
             'config': {
@@ -583,7 +828,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         'replay_pool_params': {
             'class_name': 'SimpleReplayPool',
             'config': {
-                'max_size': int(5e4),
+                'max_size': int(1e5),
             },
         },
         'sampler_params': {
@@ -594,8 +839,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         },
         'run_params': {
             'host_name': get_host_name(),
-            'seed': tune.sample_from(
-                lambda spec: np.random.randint(0, 10000)),
+            'seed': tune.sample_from(lambda spec: np.random.randint(0, 10000)),
             'checkpoint_at_end': True,
             'checkpoint_frequency': tune.sample_from(get_checkpoint_frequency),
             'checkpoint_replay_pool': False,
@@ -621,34 +865,14 @@ def get_variant_spec_image(universe,
         universe, domain, task, policy, algorithm, *args, **kwargs)
 
     if is_image_env(universe, domain, task, variant_spec):
-        # preprocessor_params = {
-        #     'class_name': 'convnet_preprocessor',
-        #     'config': {
-        #         'conv_filters': (64, ) * 3,
-        #         'conv_kernel_sizes': (3, ) * 3,
-        #         'conv_strides': (2, ) * 3,
-        #         'normalization_type': 'layer',
-        #         'downsampling_type': 'conv',
-        #     },
-        # }
-        
-#         preprocessor_params = {
-#             'class_name': 'convnet_preprocessor',
-#             'config': {
-#                 'conv_filters': (32,32),
-#                 'conv_kernel_sizes': (3, 3),
-#                 'conv_strides': (2, 2),
-#                 'normalization_type': None,
-#                 'downsampling_type': 'pool',
-#             },
-#         }
+
         preprocessor_params = {
             'class_name': 'convnet_preprocessor',
             'config': {
-                'conv_filters': (8, 16, 32),
+                'conv_filters': (64, 64, 64),
                 'conv_kernel_sizes': (3, 3, 3),
-                'conv_strides': (2, 2, 1),
-                'normalization_type': 'layer',
+                'conv_strides': (2, 2, 2),
+                'normalization_type': None,
                 'downsampling_type': 'conv',
             },
         }

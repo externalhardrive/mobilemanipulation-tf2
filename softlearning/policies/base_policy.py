@@ -10,6 +10,7 @@ import tree
 from softlearning.models.utils import create_inputs
 from softlearning.utils.tensorflow import cast_and_concat, apply_preprocessors
 from softlearning import preprocessors as preprocessors_lib
+from softlearning.distributions.bijectors import ClippedTanh
 
 # pylint: disable=g-import-not-at-top
 try:
@@ -37,7 +38,8 @@ class BasePolicy:
             if isinstance(preprocessors, dict):
                 empty_preprocessors.update(preprocessors)
             else:
-                raise NotImplementedError("preprocessors can only be of type dict")
+                # don't really know how to handle non dict cases
+                empty_preprocessors = preprocessors
         preprocessors = empty_preprocessors
 
         preprocessors = tree.map_structure_up_to(
@@ -203,8 +205,6 @@ class BasePolicy:
             'input_shapes': self._input_shapes,
             'output_shape': self._output_shape,
             'observation_keys': self._observation_keys,
-            # 'preprocessors': preprocessors.serialize(self._preprocessors),
-            # 'preprocessors': self._preprocessors,
             'preprocessors': tree.map(preprocessors_lib.serialize, self._preprocessors),
             'name': self._name,
         }
@@ -243,17 +243,18 @@ class ContinuousPolicy(BasePolicy):
                  *args,
                  squash=True,
                  **kwargs):
-        assert (np.all(action_range == np.array([[-1], [1]]))), (
+        assert (np.all(action_range[0] == -1.) and np.all(action_range[1] == 1.)), (
             "The action space should be scaled to (-1, 1)."
             " TODO(hartikainen): We should support non-scaled actions spaces.")
         self._action_range = action_range
         self._squash = squash
         self._action_post_processor = {
             True: tfp.bijectors.Tanh(),
+            # True: ClippedTanh(),
             False: tfp.bijectors.Identity(),
         }[squash]
 
-        return super(ContinuousPolicy, self).__init__(*args, **kwargs)
+        super(ContinuousPolicy, self).__init__(*args, **kwargs)
 
     def get_config(self):
         base_config = super(ContinuousPolicy, self).get_config()

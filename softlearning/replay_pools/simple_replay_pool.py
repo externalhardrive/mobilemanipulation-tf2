@@ -1,7 +1,10 @@
 from gym import spaces
+import numpy as np
 import tree
 
 from .flexible_replay_pool import FlexibleReplayPool, Field
+
+from softlearning.environments.gym.spaces import *
 
 
 def field_from_gym_space(name, space):
@@ -12,6 +15,10 @@ def field_from_gym_space(name, space):
     elif isinstance(space, spaces.Dict):
         return tree.map_structure_with_path(
             field_from_gym_space, space.spaces)
+    elif isinstance(space, DiscreteBox):
+        return Field(name=name, dtype=space.dtype, shape=(space.num_discrete + space.num_continuous,))
+    elif isinstance(space, spaces.Discrete):
+        return Field(name=name, dtype=np.int32, shape=(1,))
     else:
         raise NotImplementedError(space)
 
@@ -31,14 +38,9 @@ class SimpleReplayPool(FlexibleReplayPool):
         self._action_space = action_space
 
         fields = {
-            'observations': field_from_gym_space(
-                'observations', observation_space),
-            'next_observations': field_from_gym_space(
-                'next_observations', observation_space),
-            'actions': Field(
-                name='actions',
-                dtype=action_space.dtype,
-                shape=environment.action_space.shape),
+            'observations': field_from_gym_space('observations', observation_space),
+            'next_observations': field_from_gym_space('next_observations', observation_space),
+            'actions': field_from_gym_space('actions', action_space),
             'rewards': Field(
                 name='rewards',
                 dtype='float32',

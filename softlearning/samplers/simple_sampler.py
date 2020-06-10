@@ -5,6 +5,8 @@ import tree
 
 from .base_sampler import BaseSampler
 
+import sys, os
+import time
 
 class SimpleSampler(BaseSampler):
     def __init__(self, **kwargs):

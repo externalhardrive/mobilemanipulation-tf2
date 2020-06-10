@@ -135,6 +135,10 @@ class RLAlgorithm(Checkpointable):
         return self._training_batch(*args, **kwargs)
 
     @property
+    def _evaluation_policy(self):
+        return self._policy
+
+    @property
     def _training_started(self):
         return self._total_timestep > 0
 
@@ -152,13 +156,11 @@ class RLAlgorithm(Checkpointable):
 
         Args:
             env (`SoftlearningEnv`): Environment used for training.
-            policy (`Policy`): Policy used for training
             pool (`PoolBase`): Sample pool to add samples to
         """
         print("starting training")
         training_environment = self._training_environment
         evaluation_environment = self._evaluation_environment
-        policy = self._policy
 
         gt.reset_root()
         gt.rename_root('RLAlgorithm')
@@ -179,7 +181,7 @@ class RLAlgorithm(Checkpointable):
                 self._timestep = samples_now - start_samples
 
                 if (samples_now >= start_samples + self._epoch_length
-                    and self.ready_to_train):
+                    and self.ready_to_train and len(update_diagnostics) > 0):
                     break
 
                 self._timestep_before_hook()
@@ -189,12 +191,9 @@ class RLAlgorithm(Checkpointable):
                 gt.stamp('sample')
 
                 if self.ready_to_train:
-                    diags = self._do_training_repeats(
-                        timestep=self._total_timestep)
-                    #print("recieved diag", diags)
-                    if diags is not  None:
-                        
-                        update_diagnostics.append(diags)
+                    repeat_diagnostics = self._do_training_repeats(timestep=self._total_timestep)
+                    if repeat_diagnostics is not None:
+                        update_diagnostics.append(repeat_diagnostics)
 
                 gt.stamp('train')
 
@@ -209,7 +208,7 @@ class RLAlgorithm(Checkpointable):
                 math.ceil(self._epoch_length / self.sampler._max_path_length))
             gt.stamp('training_paths')
             evaluation_paths = self._evaluation_paths(
-                policy, evaluation_environment)
+                self._evaluation_policy, evaluation_environment)
             gt.stamp('evaluation_paths')
 
             training_metrics = self._evaluate_rollouts(

@@ -71,35 +71,82 @@ GENERAL_ENVIRONMENT_SPECS = (
         'entry_point': (f'{CUSTOM_GYM_ENVIRONMENTS_PATH}'
                         '.multi_goal:MultiGoalEnv')
     },
-    {
-        'id': 'Locobot-Grasping-v0',
-        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.grasping_envs:LocobotGraspingEnv')
-    },
-    {
-        'id': 'Locobot-ImageGrasping-v0',
-        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.grasping_envs:ImageLocobotGraspingEnv')
-    },
-    {
-        'id': 'Locobot-ImageMultiGrasping-v0',
-        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.grasping_envs:ImageLocobotMultiGraspingEnv')
-    },
-    {
-        'id': 'Locobot-ImageSingleGrasping-v0',
-        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.grasping_envs:ImageLocobotSingleGraspingEnv')
-    },
+    # {
+    #     'id': 'Locobot-Grasping-v0',
+    #     'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+    #                     '.grasping_envs:LocobotGraspingEnv')
+    # },
+    # {
+    #     'id': 'Locobot-ImageGrasping-v0',
+    #     'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+    #                     '.grasping_envs:ImageLocobotGraspingEnv')
+    # },
+    # {
+    #     'id': 'Locobot-ImageMultiGrasping-v0',
+    #     'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+    #                     '.grasping_envs:ImageLocobotMultiGraspingEnv')
+    # },
+    # {
+    #     'id': 'Locobot-ImageSingleGrasping-v0',
+    #     'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+    #                     '.grasping_envs:ImageLocobotSingleGraspingEnv')
+    # },
     {
         'id': 'Locobot-ImageNavigation-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.nav_grasp_envs:ImageLocobotNavigationEnv')
+                        '.nav_envs:ImageLocobotNavigationEnv')
     },
     {
         'id': 'Locobot-MixedNavigation-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.nav_grasp_envs:MixedLocobotNavigationEnv')
+                        '.nav_envs:MixedLocobotNavigationEnv')
+    },
+    {
+        'id': 'Locobot-MixedNavigationReach-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.nav_envs:MixedLocobotNavigationReachEnv')
+    },
+    {
+        'id': 'Locobot-ImageNavigationResetFree-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.nav_envs:ImageLocobotNavigationEnv')
+    },
+    {
+        'id': 'Locobot-MixedNavigationResetFree-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.nav_envs:MixedLocobotNavigationEnv')
+    },
+    {
+        'id': 'Locobot-NavigationVacuum-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.nav_grasp_envs:LocobotNavigationVacuumEnv')
+    },
+    {
+        'id': 'Locobot-NavigationDQNGrasping-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        ':LocobotNavigationDQNGraspingEnv')
+    },
+
+    {
+        'id': 'Locobot-DiscreteGraspingEnv-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        ':LocobotDiscreteGraspingEnv')
+    },
+
+    {
+        'id': 'Tests-LineReach-v0',
+        'entry_point': (f'{CUSTOM_GYM_ENVIRONMENTS_PATH}'
+                        '.tests:LineReach')
+    },
+    {
+        'id': 'Tests-LineGrasping-v0',
+        'entry_point': (f'{CUSTOM_GYM_ENVIRONMENTS_PATH}'
+                        '.tests:LineGrasping')
+    },
+    {
+        'id': 'Tests-LineGraspingDiscrete-v0',
+        'entry_point': (f'{CUSTOM_GYM_ENVIRONMENTS_PATH}'
+                        '.tests:LineGraspingDiscrete')
     },
         {
         'id': 'Locobot-ImageKukaGrasping-v0',

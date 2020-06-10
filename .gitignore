@@ -120,3 +120,4 @@ vendor/*
 dataset/data/
 dataset/models/
 nohup_output/
+others/logs/

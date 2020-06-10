@@ -17,6 +17,8 @@ from softlearning import value_functions
 from softlearning import replay_pools
 from softlearning import samplers
 
+from softlearning.policies.utils import get_additional_policy_params
+
 from softlearning.utils.misc import set_seed
 from softlearning.utils.tensorflow import set_gpu_memory_growth
 from examples.instrument import run_example_local
@@ -51,21 +53,18 @@ class ExperimentRunner(tune.Trainable):
             if 'evaluation' in environment_params
             else training_environment)
 
-        variant['policy_params']['config'].update({
-            'action_range': (training_environment.action_space.low,
-                             training_environment.action_space.high),
-            'input_shapes': training_environment.observation_shape,
-            'output_shape': training_environment.action_shape,
-        })
-        policy = self.policy = policies.get(variant['policy_params'])
-        
         variant['Q_params']['config'].update({
-            'input_shapes': (
-                training_environment.observation_shape,
-                training_environment.action_shape),
+            'input_shapes': training_environment.Q_input_shapes,
+            'output_size': training_environment.Q_output_size,
         })
         Qs = self.Qs = value_functions.get(variant['Q_params'])
 
+        variant['policy_params']['config'].update({
+            'input_shapes': training_environment.observation_shape,
+            'output_shape': training_environment.action_shape,
+            **get_additional_policy_params(variant['policy_params']['class_name'], training_environment)
+        })
+        policy = self.policy = policies.get(variant['policy_params'])
 
         variant['replay_pool_params']['config'].update({
             'environment': training_environment,
@@ -214,7 +213,7 @@ class ExperimentRunner(tune.Trainable):
         )
 
         self.algorithm._alpha_optimizer.apply_gradients([(
-            tf.zeros_like(self.algorithm._alpha), self.algorithm._alpha
+            tf.zeros_like(self.algorithm._log_alpha), self.algorithm._log_alpha
         )])
         self.algorithm._policy_optimizer.apply_gradients([
             (tf.zeros_like(variable), variable)

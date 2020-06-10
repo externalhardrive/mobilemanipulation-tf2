@@ -4,6 +4,7 @@ from softlearning.utils.serialization import (
 from .base_sampler import BaseSampler  # noqa: unused-import
 from .dummy_sampler import DummySampler  # noqa: unused-import
 from .simple_sampler import SimpleSampler  # noqa: unused-import
+from .multi_sampler import MultiSampler  # noqa: unused-import
 from .remote_sampler import RemoteSampler  # noqa: unused-import
 from .utils import rollout, rollouts  # noqa: unused-import
 

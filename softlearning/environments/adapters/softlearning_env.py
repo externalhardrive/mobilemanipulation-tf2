@@ -91,6 +91,14 @@ class SoftlearningEnv(metaclass=ABCMeta):
 
         return action_shape
 
+    @property
+    def Q_input_shapes(self):
+        return (self.observation_shape, self.action_shape)
+
+    @property
+    def Q_output_size(self):
+        return 1
+
     @abstractmethod
     def step(self, action):
         """Run one timestep of the environment's dynamics. When end of
@@ -227,13 +235,16 @@ class SoftlearningEnv(metaclass=ABCMeta):
         for path in paths:
             for info_key, info_values in path.get('infos', {}).items():
                 info_values = np.array(info_values)
-                results[info_key + '-first'].append(info_values[0])
-                results[info_key + '-last'].append(info_values[-1])
-                results[info_key + '-mean'].append(np.mean(info_values))
-                results[info_key + '-median'].append(np.median(info_values))
-                results[info_key + '-sum'].append(np.sum(info_values))
-                if np.array(info_values).dtype != np.dtype('bool'):
-                    results[info_key + '-range'].append(np.ptp(info_values))
+                info_values = info_values[~np.isnan(info_values)]
+                if info_values.shape[0] > 0:
+                    results[info_key + '-first'].append(info_values[0])
+                    results[info_key + '-last'].append(info_values[-1])
+                    results[info_key + '-mean'].append(np.mean(info_values))
+                    results[info_key + '-median'].append(np.median(info_values))
+                    results[info_key + '-sum'].append(np.sum(info_values))
+                    results[info_key + '-count'].append(info_values.shape[0])
+                    if np.array(info_values).dtype != np.dtype('bool'):
+                        results[info_key + '-range'].append(np.ptp(info_values))
 
         aggregated_results = {}
         for key, value in results.items():
