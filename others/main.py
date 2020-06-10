@@ -97,7 +97,7 @@ def autoregressive_discrete_dqn_grasping(args):
 
 def discrete_dqn_grasping(args):
     # some hyperparameters
-    image_size = 100
+    image_size = 60
     discrete_dimensions = [15, 31]
     discrete_dimension = 15 * 31
 
@@ -166,7 +166,7 @@ def discrete_dqn_grasping(args):
     )
 
     save_folder = './others/logs/'
-    name = 'discrete_3'
+    name = 'discrete_4'
 
     if name:
         os.makedirs(save_folder, exist_ok=True)

@@ -161,6 +161,8 @@ class SACMixed(RLAlgorithm):
         
         self._alpha_optimizer = tf.optimizers.Adam(self._alpha_lr, name='alpha_optimizer')
 
+        self._should_process_batch = hasattr(self._training_environment, 'process_batch')
+
     @property
     def _target_entropy_discrete(self):
         return self._target_entropy_discrete_max * self._discrete_entropy_ratio_current
@@ -318,6 +320,7 @@ class SACMixed(RLAlgorithm):
             ('alpha_discrete_loss-mean', tf.reduce_mean(alpha_discrete_losses)),
             ('alpha_continuous_loss-mean', tf.reduce_mean(alpha_continuous_losses)),
             ('target_entropy_discrete', target_entropy_discrete),
+            ('relabled-rewards-mean', tf.reduce_mean(batch['rewards'])),
         ))
 
         return diagnostics
@@ -327,6 +330,9 @@ class SACMixed(RLAlgorithm):
         iterations_ratio = min(iteration / self._discrete_entropy_timesteps, 1.0)
         ratio_difference = self._discrete_entropy_ratio_start - self._discrete_entropy_ratio_end
         self._discrete_entropy_ratio_current = self._discrete_entropy_ratio_start - iterations_ratio * ratio_difference
+
+        if self._should_process_batch:
+            self._training_environment.process_batch(batch)
 
         training_diagnostics = self._do_updates(batch, tf.constant(self._target_entropy_discrete, dtype=tf.float32))
 

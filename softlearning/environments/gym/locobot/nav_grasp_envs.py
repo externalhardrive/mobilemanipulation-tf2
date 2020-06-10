@@ -4,6 +4,7 @@ import numpy as np
 import os
 from collections import OrderedDict
 import tensorflow as tf
+from scipy.special import expit
 
 from . import locobot_interface
 
@@ -118,10 +119,10 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
         defaults["camera_fov"] = 55
 
         # grasp camera
-        defaults['use_aux_camera'] = True
-        defaults['aux_camera_look_pos'] = [0.4, 0, 0.05]
-        defaults['aux_camera_fov'] = 35
-        defaults['aux_image_size'] = 100
+        # defaults['use_aux_camera'] = True
+        # defaults['aux_camera_look_pos'] = [0.4, 0, 0.05]
+        # defaults['aux_camera_fov'] = 35
+        # defaults['aux_image_size'] = 100
 
         # observation space for base
         defaults['observation_space'] = spaces.Dict({
@@ -161,7 +162,7 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
             training_params = self.params["grasp_training_params"]
 
             logits_model, deterministic_model = build_image_discrete_policy(
-                image_size=self.params["aux_image_size"],
+                image_size=self.grasp_image_size,
                 discrete_dimension=15*31,
                 discrete_hidden_layers=training_params["discrete_hidden_layers"])
 
@@ -173,7 +174,7 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
 
             self.grasp_buffer = ReplayBuffer(
                 size=training_params["buffer_size"], 
-                observation_shape=(self.params["aux_image_size"], self.params["aux_image_size"], 3), 
+                observation_shape=(self.grasp_image_size, self.grasp_image_size, 3), 
                 action_dim=1, 
                 observation_dtype=np.uint8, action_dtype=np.int32)
 
@@ -200,7 +201,27 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
         obs = self.get_observation()
 
         return obs
+
+    def crop_obs(self, obs):
+        return obs[..., 38:98, 20:80, :]
+
+    @property
+    def grasp_image_size(self):
+        return 60
     
+    def process_batch(self, batch):
+        """ Modifies batch, the training batch data. """
+        observations = self.crop_obs(batch["observations"])
+        actions = batch["actions"]
+        rewards = batch["rewards"]
+
+        # actions goes: [is move, is grasp, move left, move right]
+        is_grasp = actions[:, 1:2]
+        print(batch)
+
+        max_Q_value = expit(np.max(self.grasp_logits_model(observations).numpy(), axis=-1, keepdims=True))
+        batch["rewards"] = max_Q_value * is_grasp + rewards * (1.0 - is_grasp)
+
     def render(self, *args, **kwargs):
         return self.interface.render_camera(use_aux=False)
 
@@ -270,7 +291,8 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
         successes = []
         while num_grasps < self.num_grasp_repeat and self.are_blocks_graspable():
             # get the grasping camera image
-            obs = self.interface.render_camera(use_aux=True)
+            obs = self.interface.render_camera(use_aux=False)
+            obs = self.crop_obs(obs)
 
             # epsilon greedy or initial exploration
             if self.is_training:
@@ -310,12 +332,16 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
             infos["grasp_training_loss"] = np.mean(losses)
         
         if len(successes) > 0:
-            infos["average_success_per_action"] = np.mean(successes)
+            infos["average_success_per_taken_action"] = np.mean(successes)
 
         infos["num_grasps_per_action"] = num_grasps
         infos["success_per_action"] = int(reward > 0)
 
-        return reward * num_grasps
+        if num_grasps > 0:
+            infos["num_grasps_per_taken_action"] = num_grasps
+            infos["success_per_taken_action"] = int(reward > 0)
+
+        return reward #* num_grasps
 
     def step(self, action):
         action_key, action_value = action
@@ -325,7 +351,9 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
 
         infos["num_grasps_per_action"] = np.nan
         infos["success_per_action"] = np.nan
-        infos["average_success_per_action"] = np.nan
+        infos["num_grasps_per_taken_action"] = np.nan
+        infos["success_per_taken_action"] = np.nan
+        infos["average_success_per_taken_action"] = np.nan
 
         if self.is_training:
             infos["grasp_training_loss"] = np.nan

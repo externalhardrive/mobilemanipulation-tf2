@@ -19,7 +19,7 @@ ALGORITHM_PARAMS_BASE = {
         'eval_render_kwargs': {},
         'eval_n_episodes': 1,
         'num_warmup_samples': tune.sample_from(lambda spec: (
-            5 * (spec.get('config', spec)
+            .5 * (spec.get('config', spec)
                   ['sampler_params']
                   ['config']
                   ['max_path_length'])

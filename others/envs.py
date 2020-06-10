@@ -18,10 +18,10 @@ class GraspingEnv:
             renders=False, grayscale=False, step_duration=1/60 * 0,
             room_name=room_name,
             room_params=room_params,
-            use_aux_camera=True,
-            aux_camera_look_pos=[0.4, 0, 0.05],
-            aux_camera_fov=35,
-            aux_image_size=100,
+            # use_aux_camera=True,
+            # aux_camera_look_pos=[0.4, 0, 0.05],
+            # aux_camera_fov=35,
+            # aux_image_size=100,
             observation_space=None,
             action_space=None,
             max_ep_len=None,
@@ -37,6 +37,13 @@ class GraspingEnv:
         # env.interface.render_camera(use_aux=True)
 
         self._env = env
+
+    def crop_obs(self, obs):
+        return obs[..., 38:98, 20:80, :]
+
+    @property
+    def grasp_image_size(self):
+        return 60
 
     def do_grasp(self, action):
         self._env.interface.execute_grasp_direct(action, 0.0)
@@ -78,7 +85,7 @@ class GraspingEnv:
         return not self.are_blocks_graspable()
     
     def get_observation(self):
-        return self._env.interface.render_camera(use_aux=True)
+        return self.crop_obs(self._env.interface.render_camera(use_aux=False))
 
 
 class FakeGraspingDiscreteEnv:
