@@ -102,13 +102,13 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
         defaults = dict(
             steps_per_second=2,
             max_velocity=20.0,
-            num_grasp_repeat=10, 
+            num_grasp_repeat=4,
             is_training=True,
             grasp_training_params=dict(
                 discrete_hidden_layers=[512, 512],
                 lr=1e-5,
-                batch_size=50,
-                buffer_size=int(1e5),
+                batch_size=100,
+                buffer_size=int(5e5),
                 min_samples_before_train=100,
                 epsilon=0.1,
             ),
@@ -211,13 +211,12 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
     
     def process_batch(self, batch):
         """ Modifies batch, the training batch data. """
-        observations = self.crop_obs(batch["observations"])
+        observations = self.crop_obs(batch["observations"]["pixels"])
         actions = batch["actions"]
         rewards = batch["rewards"]
 
         # actions goes: [is move, is grasp, move left, move right]
         is_grasp = actions[:, 1:2]
-        print(batch)
 
         max_Q_value = expit(np.max(self.grasp_logits_model(observations).numpy(), axis=-1, keepdims=True))
         batch["rewards"] = max_Q_value * is_grasp + rewards * (1.0 - is_grasp)
@@ -289,7 +288,7 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
         reward = 0
         losses = []
         successes = []
-        while num_grasps < self.num_grasp_repeat and self.are_blocks_graspable():
+        while num_grasps < self.num_grasp_repeat and reward < 1: #self.are_blocks_graspable():
             # get the grasping camera image
             obs = self.interface.render_camera(use_aux=False)
             obs = self.crop_obs(obs)
@@ -337,9 +336,9 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
         infos["num_grasps_per_action"] = num_grasps
         infos["success_per_action"] = int(reward > 0)
 
-        if num_grasps > 0:
-            infos["num_grasps_per_taken_action"] = num_grasps
-            infos["success_per_taken_action"] = int(reward > 0)
+        # if num_grasps > 0:
+        #     infos["num_grasps_per_taken_action"] = num_grasps
+        #     infos["success_per_taken_action"] = int(reward > 0)
 
         return reward #* num_grasps
 
@@ -351,8 +350,8 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
 
         infos["num_grasps_per_action"] = np.nan
         infos["success_per_action"] = np.nan
-        infos["num_grasps_per_taken_action"] = np.nan
-        infos["success_per_taken_action"] = np.nan
+        # infos["num_grasps_per_taken_action"] = np.nan
+        # infos["success_per_taken_action"] = np.nan
         infos["average_success_per_taken_action"] = np.nan
 
         if self.is_training:

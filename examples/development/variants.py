@@ -19,7 +19,7 @@ ALGORITHM_PARAMS_BASE = {
         'eval_render_kwargs': {},
         'eval_n_episodes': 1,
         'num_warmup_samples': tune.sample_from(lambda spec: (
-            .5 * (spec.get('config', spec)
+            5 * (spec.get('config', spec)
                   ['sampler_params']
                   ['config']
                   ['max_path_length'])
@@ -57,7 +57,7 @@ ALGORITHM_PARAMS_ADDITIONAL = {
             'discount': 0.95,
             'reward_scale': 1.0,
 
-            'discrete_entropy_ratio_start': 0.9,
+            'discrete_entropy_ratio_start': 0.55,
             'discrete_entropy_ratio_end': 0.55,
             'discrete_entropy_timesteps': 60000,
         },
