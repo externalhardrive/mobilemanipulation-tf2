@@ -390,6 +390,47 @@ class PybulletInterface:
     def set_joint_velocity(self, joint, velocity):
         """ Move an arbitrary joint to the desired value. """
         self.p.setJointMotorControl2(self.robot, joint, self.p.VELOCITY_CONTROL, targetVelocity=velocity)
+        
+    def get_wrist_state(self):
+        """ Returns wrist rotation and how open gripper is.
+        """
+        curr_wrist_angle, _, _, _ = self.p.getJointState(self.robot, 16 )
+        curr_open, _, _, _ = self.p.getJointState(self.robot, 17 )
+        return curr_wrist_angle, curr_open
+        
+    def get_ee_global(self):
+        """ Returns ee position and orientation in world coordinates. """
+        ee_pos, ee_ori, _, _, _, _  = self.p.getLinkState(self.robot, 16)
+        return ee_pos, ee_ori
+    
+    def get_ee_local(self):
+        """ Returns ee position and orientation relative to the robot's base. """
+        ee_pos, ee_ori, _, _, _, _  = self.p.getLinkState(self.robot, 16)
+        base_pos, base_ori = self.p.getBasePositionAndOrientation(self.robot)
+        base_pos, base_ori = self.p.invertTransform(base_pos, base_ori)
+        local_ee_pos, local_ee_ori = self.p.multiplyTransforms(base_pos, base_ori, ee_pos, ee_ori)
+        return local_ee_pos, local_ee_ori
+    
+    def apply_continuous_action(self, action, max_velocity=float("inf")):
+        """Args:
+          action: 5-vector parameterizing XYZ offset, vertical angle offset
+          (radians), and grasp (value between 0.001 (close) and 0.2 (open)."""
+        curr_ee, curr_ori = self.get_ee_global()
+        #print("curr_ee", curr_ee)
+        new_ee = np.array(curr_ee) + action[:3]
+        #print("new_ee", new_ee)
+        #jointStates = self.p.calculateInverseKinematics(self.robot, 16, new_ee, curr_ori, maxNumIterations=150)[2:6]
+        jointStates = self.p.calculateInverseKinematics(self.robot, self.WRIST_JOINT, new_ee, curr_ori, maxNumIterations=150)[2:6]
+        curr_wrist_angle, gripper_opening = self.get_wrist_state()
+        new_wrist_angle = curr_wrist_angle + action[3]
+        self.move_arm(jointStates, wrist_rot=new_wrist_angle, steps=70, max_velocity=max_velocity)
+
+        #self.p.setJointMotorControl2(self.robot, self.WRIST_JOINT, self.p.POSITION_CONTROL, new_wrist_angle, maxVelocity=max_velocity)
+        self.p.setJointMotorControl2(self.robot, self.LEFT_GRIPPER, self.p.POSITION_CONTROL, -1*action[4])
+        self.p.setJointMotorControl2(self.robot, self.RIGHT_GRIPPER, self.p.POSITION_CONTROL, action[4])
+        self.do_steps(30)
+        return
+
 
     # ----- END ARM METHODS -----
 
@@ -418,7 +459,7 @@ class PybulletInterface:
         camera = self.aux_camera if use_aux else self.camera
         camera_look_pos = self.params["aux_camera_look_pos"] if use_aux else self.params["camera_look_pos"]
 
-        camera_pos, camera_ori, _, _, _, _ = self.p.getLinkState(self.robot, 23)
+        camera_pos, camera_ori, _, _, _, _ = self.p.getLinkState(self.robot,  23)
         base_pos, base_ori = self.p.getBasePositionAndOrientation(self.robot)
         look_pos, look_ori = self.p.multiplyTransforms(base_pos, base_ori, camera_look_pos, self.default_ori)
         camera.update(camera_pos, look_pos)

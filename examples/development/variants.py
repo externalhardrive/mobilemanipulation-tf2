@@ -27,7 +27,7 @@ ALGORITHM_PARAMS_BASE = {
 # #         )),
 # =======
         'num_warmup_samples': tune.sample_from(lambda spec: (
-            .5 * (spec.get('config', spec)
+            10 * (spec.get('config', spec)
                   ['sampler_params']
                   ['config']
                   ['max_path_length'])
@@ -186,7 +186,7 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
         'Locobot': {
             DEFAULT_KEY: int(2e5),
             'ImageNavigation-v0': int(1e6),
-            'ImageKukaGrasping': int(2e7)
+            'ImageKukaGrasping': int(2e7),
             'MixedNavigation-v0': int(1e5),
             'MixedNavigationReach-v0': int(1e6),
             'ImageNavigationResetFree-v0': int(1e6),
@@ -321,6 +321,7 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'NavigationVacuum-v0': 200,
             'NavigationDQNGrasping-v0': 200,
             'DiscreteGraspingEnv-v0': 1,
+            'ContinuousMultistepGraspingEnv-v0': 15,
         },
         'Tests': {
             DEFAULT_KEY: 100,
@@ -344,6 +345,7 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'NavigationVacuum-v0': 1000,
             'NavigationDQNGrasping-v0': 1000,
             'DiscreteGraspingEnv-v0': 1000,
+            'ContinuousMultistepGraspingEnv-v0': 100,
         },
         'Tests': {
             DEFAULT_KEY: 1000,
@@ -596,7 +598,12 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
             'DiscreteGraspingEnv-v0': {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': True,
+                }, },
+            'ContinuousMultistepGraspingEnv-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
                 },
+                'max_ep_len': 15,
             },
         },
         'Tests': {
@@ -706,7 +713,6 @@ def get_max_path_length(universe, domain, task):
             return level_result
 
         level_result = level_result.get(level_key) or level_result[DEFAULT_KEY]
-
     return level_result
 
 
@@ -865,7 +871,7 @@ def get_variant_spec_image(universe,
         universe, domain, task, policy, algorithm, *args, **kwargs)
 
     if is_image_env(universe, domain, task, variant_spec):
-
+        print("Is image env, loading convnet")
         preprocessor_params = {
             'class_name': 'convnet_preprocessor',
             'config': {
