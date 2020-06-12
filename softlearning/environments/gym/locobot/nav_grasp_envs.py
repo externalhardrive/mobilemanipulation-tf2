@@ -102,14 +102,15 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
         defaults = dict(
             steps_per_second=2,
             max_velocity=20.0,
-            num_grasp_repeat=4,
+            num_grasp_repeat=2,
             is_training=True,
             grasp_training_params=dict(
                 discrete_hidden_layers=[512, 512],
                 lr=1e-5,
-                batch_size=100,
-                buffer_size=int(5e5),
-                min_samples_before_train=100,
+                batch_size=50,
+                batch_size_successes_ratio=0.1,
+                buffer_size=int(1e5),
+                min_samples_before_train=10,
                 epsilon=0.1,
             ),
         )
@@ -172,13 +173,21 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
 
             self.grasp_optimizer = tf.optimizers.Adam(learning_rate=training_params["lr"])
 
-            self.grasp_buffer = ReplayBuffer(
+            self.grasp_buffer_successes = ReplayBuffer(
+                size=training_params["buffer_size"], 
+                observation_shape=(self.grasp_image_size, self.grasp_image_size, 3), 
+                action_dim=1, 
+                observation_dtype=np.uint8, action_dtype=np.int32)
+            self.grasp_buffer_fails = ReplayBuffer(
                 size=training_params["buffer_size"], 
                 observation_shape=(self.grasp_image_size, self.grasp_image_size, 3), 
                 action_dim=1, 
                 observation_dtype=np.uint8, action_dtype=np.int32)
 
             self.grasp_batch_size = training_params["batch_size"]
+            self.grasp_batch_size_successes_ratio = training_params["batch_size_successes_ratio"]
+            self.grasp_batch_size_successes = int(self.grasp_batch_size * self.grasp_batch_size_successes_ratio)
+            self.grasp_batch_size_fails = self.grasp_batch_size - self.grasp_batch_size_successes
             self.grasp_min_samples_before_train = training_params["min_samples_before_train"]
             self.grasp_epsilon = training_params["epsilon"]
         else:
@@ -295,7 +304,7 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
 
             # epsilon greedy or initial exploration
             if self.is_training:
-                if np.random.uniform() < self.grasp_epsilon or self.grasp_buffer.num_samples < self.grasp_min_samples_before_train:
+                if np.random.uniform() < self.grasp_epsilon or min(self.grasp_buffer_successes.num_samples, self.grasp_buffer_fails.num_samples) < self.grasp_min_samples_before_train:
                     action_discrete = np.random.randint(0, 15*31)
                     infos["grasp_random"] = 1
                 else:
@@ -312,15 +321,25 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
 
             # store in replay buffer
             if self.is_training:
-                self.grasp_buffer.store_sample(obs, action_discrete, reward)
+                if reward > 0:
+                    self.grasp_buffer_successes.store_sample(obs, action_discrete, reward)
+                else:
+                    self.grasp_buffer_fails.store_sample(obs, action_discrete, reward)
             
             num_grasps += 1
 
             # train once
-            if self.is_training and self.grasp_buffer.num_samples >= self.grasp_min_samples_before_train:
-                data = self.grasp_buffer.sample_batch(self.grasp_batch_size)
-                loss = self.train_grasp(data)
-                losses.append(loss.numpy())
+            if self.is_training:
+                if min(self.grasp_buffer_successes.num_samples, self.grasp_buffer_fails.num_samples) >= self.grasp_min_samples_before_train:
+                    data_successes = self.grasp_buffer_successes.sample_batch(self.grasp_batch_size_successes)
+                    data_fails = self.grasp_buffer_fails.sample_batch(self.grasp_batch_size_fails)
+                    data = {
+                        "observations": np.concatenate((data_successes["observations"], data_fails["observations"]), axis=0),
+                        "actions": np.concatenate((data_successes["actions"], data_fails["actions"]), axis=0),
+                        "rewards": np.concatenate((data_successes["rewards"], data_fails["rewards"]), axis=0)
+                    }
+                    loss = self.train_grasp(data)
+                    losses.append(loss.numpy())
 
             # if success, stop grasping
             if reward > 0:
@@ -372,7 +391,8 @@ class LocobotNavigationDQNGraspingEnv(RoomEnv):
         infos["total_grasped"] = self.total_grasped
 
         if self.is_training:
-            infos["grasp_buffer_samples"] = self.grasp_buffer.num_samples
+            infos["grasp_buffer_successes_samples"] = self.grasp_buffer_successes.num_samples
+            infos["grasp_buffer_fails_samples"] = self.grasp_buffer_fails.num_samples
 
         self.num_steps += 1
         done = self.num_steps >= self.max_ep_len
