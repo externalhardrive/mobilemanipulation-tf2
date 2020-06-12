@@ -103,7 +103,7 @@ def discrete_dqn_grasping(args):
 
     num_samples_per_env = 10
     num_samples_per_epoch = 100
-    num_samples_total = int(1e5)
+    num_samples_total = int(1e4)
     min_samples_before_train = 1000
 
     train_frequency = 5
@@ -112,7 +112,7 @@ def discrete_dqn_grasping(args):
     validation_batch_size = 100
     
     # create the policy
-    logits_model, samples_model, deterministic_model = build_image_discrete_policy(
+    logits_model, deterministic_model = build_image_discrete_policy(
         image_size=image_size, 
         discrete_dimension=discrete_dimension,
         discrete_hidden_layers=[512, 512]
@@ -346,9 +346,9 @@ def discrete_fake_grasping(args):
 
 def main(args):
     # autoregressive_discrete_dqn_grasping(args)
-    # discrete_dqn_grasping(args)
+    discrete_dqn_grasping(args)
     # ddpg_grasping(args)
-    discrete_fake_grasping(args)
+    # discrete_fake_grasping(args)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -588,7 +588,7 @@
     </link>
     <joint name="head_pan_joint" type="revolute">
         <!-- TODO(externalhardrive): camera mount location change -->
-        <origin rpy="0 0 0" xyz="0.01755 -0.00000 0.3975"/>
+        <origin rpy="0 0 0" xyz="0.01755 -0.10000 0.3975"/>
         <parent link="cam_mount"/>
         <child link="head_pan_link"/>
         <axis xyz="0 0 1"/>
@@ -662,7 +662,7 @@
         <visual>
             <origin rpy="0 0 0" xyz="0 0 0"/>
             <geometry>
-                <box size="0.02 0.02 0.02"/>
+                <box size="0.002 0.002 0.002"/>
             </geometry>
             <material name="">
                 <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>

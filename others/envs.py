@@ -15,9 +15,11 @@ class GraspingEnv:
             spawn_radius=0.3,
         )
         env = RoomEnv(
-            renders=False, grayscale=False, step_duration=1/60 * 0,
+            renders=True, grayscale=False, step_duration=1/60 * 0,
             room_name=room_name,
             room_params=room_params,
+            image_size=100,
+            camera_fov=55,
             use_aux_camera=True,
             aux_camera_look_pos=[0.4, 0, 0.05],
             aux_camera_fov=35,
@@ -27,14 +29,21 @@ class GraspingEnv:
             max_ep_len=None,
         )
 
-        # from softlearning.environments.gym.locobot.utils import URDF
-        # env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, -0.16, 0.015])
-        # env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, 0.16, 0.015])
-        # env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, -0.16, 0.015])
-        # env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, 0.16, 0.015])
-        # env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, 0, 0.015])
-        # env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, 0, 0.015])
-        # env.interface.render_camera(use_aux=True)
+        from softlearning.environments.gym.locobot.utils import URDF
+        env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, -0.16, 0.015])
+        env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, 0.16, 0.015])
+        env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, -0.16, 0.015])
+        env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, 0.16, 0.015])
+        env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, 0, 0.015])
+        env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, 0, 0.015])
+        obs = env.interface.render_camera(use_aux=False)
+
+        # import matplotlib.pyplot as plt 
+        # plt.imsave("./others/logs/obs.bmp", obs)
+
+        # plt.imsave("./others/logs/cropped.bmp", obs[38:98, 20:80, :])
+
+        input()
 
         self._env = env
 
@@ -78,7 +87,7 @@ class GraspingEnv:
         return not self.are_blocks_graspable()
     
     def get_observation(self):
-        return self._env.interface.render_camera(use_aux=True)
+        return self._env.interface.render_camera(use_aux=False)
 
 
 class FakeGraspingDiscreteEnv:
