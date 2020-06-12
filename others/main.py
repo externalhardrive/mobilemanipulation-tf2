@@ -97,7 +97,7 @@ def autoregressive_discrete_dqn_grasping(args):
 
 def discrete_dqn_grasping(args):
     # some hyperparameters
-    image_size = 100
+    image_size = 60
     discrete_dimensions = [15, 31]
     discrete_dimension = 15 * 31
 
@@ -106,10 +106,10 @@ def discrete_dqn_grasping(args):
     num_samples_total = int(1e4)
     min_samples_before_train = 1000
 
-    train_frequency = 5
-    train_batch_size = 200
-    validation_prob = 0.1
-    validation_batch_size = 100
+    train_frequency = 1
+    train_batch_size = 50
+    validation_prob = -1
+    validation_batch_size = 50
     
     # create the policy
     logits_model, deterministic_model = build_image_discrete_policy(
@@ -166,7 +166,7 @@ def discrete_dqn_grasping(args):
     )
 
     save_folder = './others/logs/'
-    name = 'discrete_1'
+    name = 'discrete_4'
 
     if name:
         os.makedirs(save_folder, exist_ok=True)

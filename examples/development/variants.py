@@ -57,7 +57,7 @@ ALGORITHM_PARAMS_ADDITIONAL = {
             'discount': 0.95,
             'reward_scale': 1.0,
 
-            'discrete_entropy_ratio_start': 0.9,
+            'discrete_entropy_ratio_start': 0.55,
             'discrete_entropy_ratio_end': 0.55,
             'discrete_entropy_timesteps': 60000,
         },
