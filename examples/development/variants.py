@@ -585,6 +585,20 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                     'pixels_only': True,
                 },
             },
+            'ContinuousMultistepGraspingEnv-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
+                    'pixel_keys': ('left_camera', 'right_camera'),
+                    'render_kwargs': {
+                        'left_camera': {
+                            'use_aux': True,
+                        },
+                        'right_camera': {
+                            'use_aux': False,
+                        },
+                    },
+                },
+            },
         },
         'Tests': {
             'LineReach-v0': {
@@ -830,8 +844,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
 
 
 def is_image_env(universe, domain, task, variant_spec):
-    return 'pixel_wrapper_kwargs' in (
-        variant_spec['environment_params']['training']['kwargs'])
+    return 'pixel_wrapper_kwargs' in variant_spec['environment_params']['training']['kwargs']
 
 
 def get_variant_spec_image(universe,
@@ -858,8 +871,10 @@ def get_variant_spec_image(universe,
         }
 
         variant_spec['policy_params']['config']['hidden_layer_sizes'] = (M, M)
+        pixel_keys = variant_spec['environment_params']['training']['kwargs']['pixel_wrapper_kwargs'].get(
+            'pixel_keys', ('pixels',))
         variant_spec['policy_params']['config']['preprocessors'] = {
-            'pixels': deepcopy(preprocessor_params)
+            key: deepcopy(preprocessor_params) for key in pixel_keys
         }
     
         variant_spec['Q_params']['config']['hidden_layer_sizes'] = (

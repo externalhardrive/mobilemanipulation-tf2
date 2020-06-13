@@ -41,8 +41,6 @@ class GraspingEnv:
 
         # plt.imsave("./others/logs/cropped.bmp", obs[38:98, 20:80, :])
 
-        input()
-
         self._env = env
 
     def crop_obs(self, obs):

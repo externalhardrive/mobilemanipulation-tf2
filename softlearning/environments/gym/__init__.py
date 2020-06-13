@@ -131,6 +131,11 @@ GENERAL_ENVIRONMENT_SPECS = (
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
                         ':LocobotDiscreteGraspingEnv')
     },
+    {
+        'id': 'Locobot-ContinuousMultistepGraspingEnv-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        ':LocobotContinuousMultistepGraspingEnv')
+    },
 
     {
         'id': 'Tests-LineReach-v0',

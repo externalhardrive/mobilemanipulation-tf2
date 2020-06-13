@@ -55,7 +55,8 @@ class PybulletInterface:
     RIGHT_GRIPPER = 18 # 0 is middle, -0.02 is extended
     LEFT_WHEEL = 1
     RIGHT_WHEEL = 2
-    CAMERA_LINK = 24
+    CAMERA_LINK = 25
+    AUX_CAMERA_LINK = 26
 
     GRIPPER_LENGTH_FROM_WRIST = 0.115
 
@@ -108,7 +109,7 @@ class PybulletInterface:
         self.robot_urdf = URDF["locobot"]
         self.robot = self.p.loadURDF(self.robot_urdf, useFixedBase=0)
         _, _, _, _, self.base_pos, _ = self.p.getLinkState(self.robot, 0)
-        _, _, _, _, self.camera_pos, _ = self.p.getLinkState(self.robot, 23)
+        _, _, _, _, self.camera_pos, _ = self.p.getLinkState(self.robot, self.CAMERA_LINK)
         self.base_pos = np.array(self.base_pos)
         self.camera_pos = np.array(self.camera_pos)
 
@@ -125,7 +126,9 @@ class PybulletInterface:
                 self.params["aux_camera_fov"] = self.params["camera_fov"]
             if "aux_image_size" not in self.params:
                 self.params["aux_image_size"] = self.params["image_size"]
-            self.aux_camera = Viewer(self.p, self.camera_pos, self.params["aux_camera_look_pos"], 
+            _, _, _, _, self.axu_camera_pos, _ = self.p.getLinkState(self.robot, self.AUX_CAMERA_LINK)
+            self.axu_camera_pos = np.array(self.axu_camera_pos)
+            self.aux_camera = Viewer(self.p, self.axu_camera_pos, self.params["aux_camera_look_pos"], 
                                     fov=self.params["aux_camera_fov"],
                                     near_pos=0.05, far_pos=7.0)
 
@@ -245,7 +248,7 @@ class PybulletInterface:
         self.set_wheels_velocity(left, right)
         self.p.resetJointState(self.robot, self.LEFT_WHEEL, targetValue=0, targetVelocity=left)
         self.p.resetJointState(self.robot, self.RIGHT_WHEEL, targetValue=0, targetVelocity=right)
-        self.move_arm_to_start()
+        self.move_arm_to_start(steps=180, max_velocity=8.0)
 
     def get_base_pos_and_yaw(self):
         """ Get the base position and yaw. (x, y, yaw). """
@@ -388,8 +391,49 @@ class PybulletInterface:
         self.do_steps(steps)
 
     def set_joint_velocity(self, joint, velocity):
-        """ Move an arbitrary joint to the desired value. """
+        """ Set an arbitrary joint to the desired velocity. """
         self.p.setJointMotorControl2(self.robot, joint, self.p.VELOCITY_CONTROL, targetVelocity=velocity)
+
+    def get_wrist_state(self):
+        """ Returns wrist rotation and how open gripper is.
+        """
+        curr_wrist_angle, _, _, _ = self.p.getJointState(self.robot, self.WRIST_JOINT)
+        curr_open, _, _, _ = self.p.getJointState(self.robot, self.LEFT_GRIPPER)
+        return curr_wrist_angle, curr_open
+        
+    def get_ee_global(self):
+        """ Returns ee position and orientation in world coordinates. """
+        _, _, _, _, ee_pos, ee_ori = self.p.getLinkState(self.robot, self.WRIST_JOINT)
+        return ee_pos, ee_ori
+    
+    def get_ee_local(self):
+        """ Returns ee position and orientation relative to the robot's base. """
+        _, _, _, _, ee_pos, ee_ori = self.p.getLinkState(self.robot, self.WRIST_JOINT)
+        base_pos, base_ori = self.p.getBasePositionAndOrientation(self.robot)
+        base_pos, base_ori = self.p.invertTransform(base_pos, base_ori)
+        local_ee_pos, local_ee_ori = self.p.multiplyTransforms(base_pos, base_ori, ee_pos, ee_ori)
+        local_ee_pos = [local_ee_pos[0], local_ee_pos[1], local_ee_pos[2] - self.GRIPPER_LENGTH_FROM_WRIST]
+        return local_ee_pos, local_ee_ori
+    
+    def apply_continuous_action(self, action, max_velocity=float("inf")):
+        """Args:
+          action: 5-vector parameterizing XYZ offset, vertical angle offset
+          (radians), and grasp (value between 0.001 (close) and 0.2 (open)."""
+        curr_ee, curr_ori = self.get_ee_global()
+        #print("curr_ee", curr_ee)
+        new_ee = np.array(curr_ee) + action[:3]
+        #print("new_ee", new_ee)
+        #jointStates = self.p.calculateInverseKinematics(self.robot, 16, new_ee, curr_ori, maxNumIterations=150)[2:6]
+        jointStates = self.p.calculateInverseKinematics(self.robot, self.WRIST_JOINT, new_ee, curr_ori, maxNumIterations=150)[2:6]
+        curr_wrist_angle, gripper_opening = self.get_wrist_state()
+        new_wrist_angle = curr_wrist_angle + action[3]
+        self.move_arm(jointStates, wrist_rot=new_wrist_angle, steps=70, max_velocity=max_velocity)
+
+        #self.p.setJointMotorControl2(self.robot, self.WRIST_JOINT, self.p.POSITION_CONTROL, new_wrist_angle, maxVelocity=max_velocity)
+        self.p.setJointMotorControl2(self.robot, self.LEFT_GRIPPER, self.p.POSITION_CONTROL, -1*action[4])
+        self.p.setJointMotorControl2(self.robot, self.RIGHT_GRIPPER, self.p.POSITION_CONTROL, action[4])
+        self.do_steps(30)
+        return
 
     # ----- END ARM METHODS -----
 
@@ -415,10 +459,16 @@ class PybulletInterface:
         Returns:
             (height, width, channel) uint8 array
         """
-        camera = self.aux_camera if use_aux else self.camera
-        camera_look_pos = self.params["aux_camera_look_pos"] if use_aux else self.params["camera_look_pos"]
+        if use_aux:
+            camera = self.aux_camera
+            camera_look_pos = self.params["aux_camera_look_pos"]
+            camera_link = self.AUX_CAMERA_LINK
+        else:
+            camera = self.camera
+            camera_look_pos = self.params["camera_look_pos"]
+            camera_link = self.CAMERA_LINK
 
-        camera_pos, camera_ori, _, _, _, _ = self.p.getLinkState(self.robot, 23)
+        camera_pos, camera_ori, _, _, _, _ = self.p.getLinkState(self.robot, camera_link)
         base_pos, base_ori = self.p.getBasePositionAndOrientation(self.robot)
         look_pos, look_ori = self.p.multiplyTransforms(base_pos, base_ori, camera_look_pos, self.default_ori)
         camera.update(camera_pos, look_pos)
@@ -429,6 +479,7 @@ class PybulletInterface:
         else:
             image_width = self.params["image_size"]
             image_height = self.params["image_size"]
+            
         image = camera.get_image(width=image_width, height=image_height)
         if self.grayscale:
             image = np.mean(image, axis=2).reshape((image_height, image_width, 1))
