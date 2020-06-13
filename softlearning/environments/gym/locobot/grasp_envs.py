@@ -106,7 +106,7 @@ class LocobotContinuousMultistepGraspingEnv(RoomEnv):
             spawn_loc=[0.36, 0],
             spawn_radius=0.3,
         )
-
+        defaults['height_hack'] = True
         defaults['room_name'] = room_name
         defaults['room_params'] = room_params
         defaults['use_aux_camera'] = True
@@ -114,27 +114,35 @@ class LocobotContinuousMultistepGraspingEnv(RoomEnv):
         defaults['aux_camera_fov'] = 35
         defaults['aux_image_size'] = 100
         defaults['observation_space'] = spaces.Dict()
-        defaults['action_space'] = spaces.Discrete(15 * 31)
+        #defaults['action_space'] = spaces.Discrete(15 * 31)
         defaults['max_ep_len'] = 15
         defaults["observation_space"] = spaces.Dict({
             "current_ee": spaces.Box(low=-1.0, high=1.0, shape=(5,)),
             # "pixels": added by PixelObservationWrapper
         })
-        defaults["action_space"] = spaces.Box(
-            low=-1.0, high=1.0, shape=(5,)
-        )
+        defaults['height_hack'] = False
+
+#         defaults["use_gripper_cam"] = True
         defaults.update(params)
+        self.height_hack = defaults['height_hack']
+        if self.height_hack:
+            defaults["action_space"] = spaces.Box(low=-1.0, high=1.0, shape=(4,))
 
+        else:
+            defaults["action_space"] = spaces.Box(low=-1.0, high=1.0, shape=(5,))
+            
         super().__init__(**defaults)
-
-        #self.discretizer = Discretizer([15, 31], [0.3, -0.16], [0.4666666, 0.16])
-        #self.num_repeat = 10
-        #self.num_steps_this_env = self.num_repeat
         self.local_ee_mins = np.array([0.09391462802886963, -0.0514984130859375, -0.09128464758396149, -math.pi, 0.])
         self.local_ee_maxes = np.array([0.5971627235412598, 0.13770374655723572, 0.6860376000404358, math.pi, 0.02])
 
         self.action_max = np.array([0.1, 0.1, 0.1, 0.5, 0.02])
         self.action_min = np.array([-0.1, -0.1, -0.1, -0.5, 0.001])
+
+        #self.discretizer = Discretizer([15, 31], [0.3, -0.16], [0.4666666, 0.16])
+        #self.num_repeat = 10
+        #self.num_steps_this_env = self.num_repeat
+
+#         self.use_gripper_cam = defaults['use_gripper_cam']
 
     def normalize_ee(self, local_ee):
         #print("localee", local_ee)
@@ -144,9 +152,11 @@ class LocobotContinuousMultistepGraspingEnv(RoomEnv):
     
     def denormalize_action(self, action):
         """ Action is between -1 and 1"""
+        #print("action before", action)
         action = np.clip(action, -1, 1)
-        action = (action / 2) * (self.action_max-self.action_min)
+        action = ((action+1) / 2)  * (self.action_max-self.action_min)
         action = action + self.action_min
+        #print("action after", action)
         return action
         
     def do_grasp(self, a):
@@ -156,6 +166,12 @@ class LocobotContinuousMultistepGraspingEnv(RoomEnv):
         distances = []
         ee_global, _ = self.interface.get_ee_global()
         ee_global = np.array(ee_global)
+        
+#         if ee_global[2] <= 0.1:
+#             self.interface.close_gripper()
+#             self._attempted_grasp = True
+
+        
         for i in range(self.room.num_objects):
             block_pos, _ = self.interface.get_object(self.room.objects_id[i])
             distances.append(np.linalg.norm(ee_global-np.array(block_pos)))
@@ -192,7 +208,11 @@ class LocobotContinuousMultistepGraspingEnv(RoomEnv):
         return self.get_observation()
     
     def render(self, *args, **kwargs):
-        return self.interface.render_camera(use_aux=True)
+        main_img = self.interface.render_camera(use_aux=True)
+#         if self.use_gripper_cam:
+#             gripper_img = self.interface.render_camera(use_aux=True, link=18)
+#             return (main_img, gripper_img)
+        return main_img
 
     def get_observation(self):
         obs = OrderedDict()
@@ -213,11 +233,16 @@ class LocobotContinuousMultistepGraspingEnv(RoomEnv):
     def step(self, action):
 #         action_discrete = int(action)
 #         action_undiscretized = self.discretizer.undiscretize(self.discretizer.unflatten(action_discrete))
-        
+        if self.height_hack:
+            new_action = np.zeros(5)
+            new_action[:2] = action[:2]
+            new_action[3:] = action[2:]
+            new_action[2] = -1.
         reward = self.do_grasp(action)
-        self.num_steps_this_env += 1
 
         obs = self.get_observation()
-
-        return obs, reward, reward > 0, {}
+        infos = {'grasp_success': 0}
+        if reward == 1:
+            infos['grasp_success'] = 1
+        return obs, reward, reward > 0, infos
 
