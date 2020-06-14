@@ -183,7 +183,8 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
             'MixedNavigationResetFree-v0': int(1e5),
             'NavigationVacuum-v0': int(1e6),
             'NavigationDQNGrasping-v0': int(1e6),
-            'DiscreteGraspingEnv-v0': int(1e5),
+            'DiscreteGrasping-v0': int(1e5),
+            'ContinuousMultistepGrasping-v0': int(1e6),
         },
         'Tests': {
             DEFAULT_KEY: int(1e5),
@@ -308,7 +309,8 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'MixedNavigationResetFree-v0': 200,
             'NavigationVacuum-v0': 200,
             'NavigationDQNGrasping-v0': 200,
-            'DiscreteGraspingEnv-v0': 1,
+            'DiscreteGrasping-v0': 1,
+            'ContinuousMultistepGrasping-v0': 15,
         },
         'Tests': {
             DEFAULT_KEY: 100,
@@ -330,7 +332,8 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'MixedNavigationResetFree-v0': 1000,
             'NavigationVacuum-v0': 1000,
             'NavigationDQNGrasping-v0': 1000,
-            'DiscreteGraspingEnv-v0': 1000,
+            'DiscreteGrasping-v0': 1000,
+            'ContinuousMultistepGrasping-v0': 1000,
         },
         'Tests': {
             DEFAULT_KEY: 1000,
@@ -580,12 +583,12 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 },
                 # use default everything else
             },
-            'DiscreteGraspingEnv-v0': {
+            'DiscreteGrasping-v0': {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': True,
                 },
             },
-            'ContinuousMultistepGraspingEnv-v0': {
+            'ContinuousMultistepGrasping-v0': {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': False,
                     'pixel_keys': ('left_camera', 'right_camera'),
@@ -873,9 +876,14 @@ def get_variant_spec_image(universe,
         variant_spec['policy_params']['config']['hidden_layer_sizes'] = (M, M)
         pixel_keys = variant_spec['environment_params']['training']['kwargs']['pixel_wrapper_kwargs'].get(
             'pixel_keys', ('pixels',))
-        variant_spec['policy_params']['config']['preprocessors'] = {
-            key: deepcopy(preprocessor_params) for key in pixel_keys
-        }
+        
+        preprocessors = dict()
+        for key in pixel_keys:
+            params = deepcopy(preprocessor_params)
+            params['config']['name'] = 'convnet_preprocessor_' + key
+            preprocessors[key] = params
+
+        variant_spec['policy_params']['config']['preprocessors'] = preprocessors
     
         variant_spec['Q_params']['config']['hidden_layer_sizes'] = (
             tune.sample_from(lambda spec: (deepcopy(

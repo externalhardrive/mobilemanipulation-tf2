@@ -127,12 +127,12 @@ GENERAL_ENVIRONMENT_SPECS = (
     },
 
     {
-        'id': 'Locobot-DiscreteGraspingEnv-v0',
+        'id': 'Locobot-DiscreteGrasping-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
                         ':LocobotDiscreteGraspingEnv')
     },
     {
-        'id': 'Locobot-ContinuousMultistepGraspingEnv-v0',
+        'id': 'Locobot-ContinuousMultistepGrasping-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
                         ':LocobotContinuousMultistepGraspingEnv')
     },

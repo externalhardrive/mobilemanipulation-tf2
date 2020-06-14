@@ -128,7 +128,7 @@ class LocobotContinuousMultistepGraspingEnv(RoomEnv):
         self.action_max = np.array([0.1, 0.1, 0.05])
 
     def normalize_ee_obs(self, local_ee):
-        print(local_ee)
+        # print(local_ee)
         ee = 2.0 * np.array(local_ee) - (self.local_ee_maxes + self.local_ee_mins)
         ee = ee / (self.local_ee_maxes - self.local_ee_mins)
         return ee
@@ -142,9 +142,9 @@ class LocobotContinuousMultistepGraspingEnv(RoomEnv):
     def do_grasp(self, a):
         ee_local_pos, _ = self.interface.get_ee_local()
         delta_pos = self.denormalize_action(a)
-        print(ee_local_pos, delta_pos)
+        # print(ee_local_pos, delta_pos)
         target_pos = np.array(ee_local_pos) + delta_pos
-        print(target_pos)
+        # print(target_pos)
         should_grasp = target_pos[2] <= 0.0
         target_pos = np.clip(target_pos, self.local_ee_mins, self.local_ee_maxes)
         self.interface.move_ee(target_pos, steps=30, max_velocity=5, ik_steps=128)
