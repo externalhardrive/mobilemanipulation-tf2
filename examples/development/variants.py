@@ -19,11 +19,11 @@ ALGORITHM_PARAMS_BASE = {
         'eval_render_kwargs': {},
         'eval_n_episodes': 1,
         'num_warmup_samples': tune.sample_from(lambda spec: (
-            5 * (spec.get('config', spec)
-                  ['sampler_params']
-                  ['config']
-                  ['max_path_length'])
-            # 1000
+            # 5 * (spec.get('config', spec)
+            #       ['sampler_params']
+            #       ['config']
+            #       ['max_path_length'])
+            1000
         )),
     }
 }
@@ -40,7 +40,7 @@ ALGORITHM_PARAMS_ADDITIONAL = {
             'tau': 5e-3,
             'target_entropy': 'auto',
 
-            'discount': 0.99,
+            'discount': 0.95,
             'reward_scale': 1.0,
         },
     },
@@ -601,6 +601,7 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                         },
                     },
                 },
+                # 'renders': True,
             },
         },
         'Tests': {
@@ -680,6 +681,9 @@ EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
             },
             'NavigationDQNGrasping-v0': {
                 'is_training': False,
+            },
+            'ContinuousMultistepGrasping-v0': {
+                'renders': False,
             },
         },
     },

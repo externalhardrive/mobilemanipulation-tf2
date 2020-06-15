@@ -22,6 +22,9 @@ class GaussianPolicy(LatentSpacePolicy):
             inputs=self.inputs,
             output_size=np.prod(self._output_shape) * 2)
 
+        print("Policy Shift and Scale Model")
+        self.shift_and_scale_model.summary()
+
         base_distribution = tfp.distributions.MultivariateNormalDiag(
             loc=tf.zeros(self._output_shape),
             scale_diag=tf.ones(self._output_shape))
