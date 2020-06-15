@@ -149,7 +149,10 @@ class LocobotContinuousMultistepGraspingEnv(RoomEnv):
         if should_grasp:
             target_pos[2] = 0.0
         target_pos = np.clip(target_pos, self.local_ee_mins, self.local_ee_maxes)
-        self.interface.move_ee(target_pos, steps=30, max_velocity=5, ik_steps=128)
+
+        # horizontal movement first, then vertical movement
+        self.interface.move_ee((target_pos[0], target_pos[1], ee_local_pos[2]), steps=20, max_velocity=5, ik_steps=128)
+        self.interface.move_ee(target_pos, steps=20, max_velocity=5, ik_steps=128)
 
         reward = 0
         if should_grasp:
