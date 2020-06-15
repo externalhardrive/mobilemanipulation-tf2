@@ -452,7 +452,7 @@ class PybulletInterface:
         for _ in range(num_steps):
             self.step()
 
-    def render_camera(self, use_aux=False):
+    def render_camera(self, use_aux=False, size=None):
         """ Renders the scene
         Args:
             use_aux: determines whether this renders using the main camera or the auxilary camera.
@@ -479,6 +479,9 @@ class PybulletInterface:
         else:
             image_width = self.params["image_size"]
             image_height = self.params["image_size"]
+        if size is not None:
+            image_width = size
+            image_height = size
             
         image = camera.get_image(width=image_width, height=image_height)
         if self.grayscale:
