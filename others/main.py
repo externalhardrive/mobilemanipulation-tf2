@@ -166,7 +166,7 @@ def discrete_dqn_grasping(args):
     )
 
     save_folder = './others/logs/'
-    name = 'discrete_4'
+    name = 'discrete_5'
 
     if name:
         os.makedirs(save_folder, exist_ok=True)
