@@ -109,6 +109,7 @@ class LocobotContinuousMultistepGraspingEnv(RoomEnv):
 
         defaults['room_name'] = room_name
         defaults['room_params'] = room_params
+        defaults['urdf_name'] = "locobot_dual_cam"
         defaults['use_aux_camera'] = True
         defaults['max_ep_len'] = 15
         defaults["observation_space"] = spaces.Dict({

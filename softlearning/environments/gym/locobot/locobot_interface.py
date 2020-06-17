@@ -70,7 +70,8 @@ class PybulletInterface:
             "down_quat": np.array([0.0, 0.7071067811865475, 0.0, 0.7071067811865476]), # quaternion for gripper to point downwards
             "camera_look_pos": np.array([0.5, 0., .2]), # local pos that the camera looks at
             "image_size": 100, # size of the image that the camera renders
-            "camera_fov": 60 # FOV of the camera
+            "camera_fov": 60, # FOV of the camera
+            "urdf_name": "locobot",
         }
         defaults.update(params)
         self.params = defaults
@@ -106,7 +107,7 @@ class PybulletInterface:
         # self.plane_id = self.p.loadURDF("plane100.urdf", useMaximalCoordinates=True)
 
         # Load robot
-        self.robot_urdf = URDF["locobot"]
+        self.robot_urdf = URDF[self.params["urdf_name"]]
         self.robot = self.p.loadURDF(self.robot_urdf, useFixedBase=0)
         _, _, _, _, self.base_pos, _ = self.p.getLinkState(self.robot, 0)
         _, _, _, _, self.camera_pos, _ = self.p.getLinkState(self.robot, self.CAMERA_LINK)

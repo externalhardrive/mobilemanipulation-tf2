@@ -670,7 +670,7 @@
         </visual>
     </link>
     <joint name="camera_lens_joint" type="fixed">
-        <origin rpy="0 0 0" xyz="0.02 0 0"/>
+        <origin rpy="0 0 0" xyz="0.02 -0.1 0"/>
         <parent link="camera_link"/>
         <child link="camera_lens_link"/>
         <axis xyz="0 0 0"/>
@@ -693,7 +693,7 @@
         </visual>
     </link>
     <joint name="aux_camera_lens_joint" type="fixed">
-        <origin rpy="0 0 0" xyz="0.02 0 0"/>
+        <origin rpy="0 0 0" xyz="0.02 0.1 0"/>
         <parent link="camera_link"/>
         <child link="aux_camera_lens_link"/>
         <axis xyz="0 0 0"/>

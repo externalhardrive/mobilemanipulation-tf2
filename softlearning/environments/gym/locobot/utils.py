@@ -16,6 +16,7 @@ CURR_PATH = os.path.dirname(os.path.abspath(__file__))
 
 URDF = {
     "locobot": os.path.join(CURR_PATH, 'urdf/locobot_description.urdf'),
+    "locobot_dual_cam": os.path.join(CURR_PATH, 'urdf/locobot_description_dual_cam.urdf'),
     "miniblock": os.path.join(CURR_PATH, 'urdf/miniblock.urdf'),
     "greenbox": os.path.join(CURR_PATH, 'urdf/greenbox.urdf'),
     "redbox": os.path.join(CURR_PATH, 'urdf/redbox.urdf'),
