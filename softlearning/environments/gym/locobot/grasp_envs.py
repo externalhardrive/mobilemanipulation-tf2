@@ -4,6 +4,8 @@ import numpy as np
 import os
 from collections import OrderedDict
 
+from skimage.transform import resize
+
 from . import locobot_interface
 
 from .nav_envs import RoomEnv
@@ -200,11 +202,9 @@ class LocobotContinuousMultistepGraspingEnv(RoomEnv):
     
     def render(self, *args, **kwargs):
         # import matplotlib.pyplot as plt 
-
-        # from skimage.transform import resize
-        # obs = self.interface.render_camera(use_aux=kwargs.get("use_aux", False), size=200)
-        # obs = resize(obs, (100, 100, 3))
-        # obs = (obs * 255).astype(np.uint8)
+        obs = self.interface.render_camera(use_aux=kwargs.get("use_aux", False), size=200)
+        obs = resize(obs, (100, 100, 3))
+        obs = (obs * 255).astype(np.uint8)
         # plt.imsave(f"/home/charles/RAIL/mobilemanipulation-tf2/nohup_output/obs/obs_{self.num_steps}_{kwargs.get('use_aux', False)}_2x.bmp", obs)
 
         # obs = self.interface.render_camera(use_aux=kwargs.get("use_aux", False), size=400)
@@ -214,8 +214,8 @@ class LocobotContinuousMultistepGraspingEnv(RoomEnv):
         
         # obs = self.interface.render_camera(use_aux=kwargs.get("use_aux", False))
         # plt.imsave(f"/home/charles/RAIL/mobilemanipulation-tf2/nohup_output/obs/obs_{self.num_steps}_{kwargs.get('use_aux', False)}.bmp", obs)
-        # return obs
-        return self.interface.render_camera(use_aux=kwargs.get("use_aux", False))
+        return obs
+        # return self.interface.render_camera(use_aux=kwargs.get("use_aux", False))
 
     def get_observation(self):
         obs = OrderedDict()
