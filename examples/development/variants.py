@@ -182,6 +182,7 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageNavigationResetFree-v0': int(1e6),
             'MixedNavigationResetFree-v0': int(1e5),
             'NavigationVacuum-v0': int(1e6),
+            'NavigationVacuumResetFree': int(2e5),
             'NavigationDQNGrasping-v0': int(1e6),
             'DiscreteGrasping-v0': int(1e5),
             'ContinuousMultistepGrasping-v0': int(1e6),
@@ -308,6 +309,7 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageNavigationResetFree-v0': 200,
             'MixedNavigationResetFree-v0': 200,
             'NavigationVacuum-v0': 200,
+            'NavigationVacuumResetFree': 200,
             'NavigationDQNGrasping-v0': 200,
             'DiscreteGrasping-v0': 1,
             'ContinuousMultistepGrasping-v0': 15,
@@ -331,6 +333,7 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageNavigationResetFree-v0': 1000,
             'MixedNavigationResetFree-v0': 1000,
             'NavigationVacuum-v0': 1000,
+            'NavigationVacuumResetFree': 1000,
             'NavigationDQNGrasping-v0': 1000,
             'DiscreteGrasping-v0': 1000,
             'ContinuousMultistepGrasping-v0': 1000,
@@ -570,6 +573,27 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'max_velocity': 20.0,
                 'max_acceleration': 4.0
             },
+            'NavigationVacuumResetFree-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
+                },
+                'reset_free': True,
+                'room_name': 'simple',
+                'room_params': {
+                    'num_objects': 100, 
+                    'object_name': "greensquareball", 
+                    'no_spawn_radius': 0.55, #0.8,
+                    'wall_size': 5.0
+                },
+                'replace_grasped_object': True,
+                'max_ep_len': float('inf'),
+                'image_size': 100,
+                'steps_per_second': 2,
+                'max_velocity': 20.0,
+                'max_acceleration': 4.0,
+                'trajectory_log_dir': '/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/nav_vacuum_rf_edison_1_traj/', 
+                'trajectory_log_freq': 1000
+            },
             'NavigationDQNGrasping-v0': {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': False,
@@ -676,6 +700,13 @@ EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
             'MixedNavigationResetFree-v0': {
                 'reset_free': False,
                 'max_ep_len': 200,
+                'trajectory_log_dir': None, 
+                'trajectory_log_freq': 0
+            },
+            'NavigationVacuumResetFree-v0': {
+                'reset_free': False,
+                'max_ep_len': 200,
+                'replace_grasped_object': False,
                 'trajectory_log_dir': None, 
                 'trajectory_log_freq': 0
             },
