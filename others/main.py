@@ -103,8 +103,8 @@ def discrete_dqn_grasping(args):
 
     num_samples_per_env = 10
     num_samples_per_epoch = 100
-    num_samples_total = int(1e5)
-    min_samples_before_train = 100
+    num_samples_total = int(1e4)
+    min_samples_before_train = 1000
 
     train_frequency = 1
     train_batch_size = 50

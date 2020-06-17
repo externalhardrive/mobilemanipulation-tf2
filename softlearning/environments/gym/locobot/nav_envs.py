@@ -42,13 +42,15 @@ class RoomEnv(LocobotBaseEnv):
 
 class BaseNavigationEnv(RoomEnv):
     def __init__(self, **params):
-        defaults = dict(trajectory_log_dir=None, trajectory_log_freq=0)
+        defaults = dict(trajectory_log_dir=None, trajectory_log_freq=0, replace_grasped_object=False)
 
         defaults["max_ep_len"] = 200
         defaults.update(params)
 
         super().__init__(**defaults)
         print("BaseNavigationEnv params:", self.params)
+
+        self.replace_grasped_object = self.params["replace_grasped_object"]
 
         self.trajectory_log_dir = self.params["trajectory_log_dir"]
         self.trajectory_log_freq = self.params["trajectory_log_freq"]
@@ -91,7 +93,16 @@ class BaseNavigationEnv(RoomEnv):
             if is_in_rect(object_pos[0], object_pos[1], 0.3, -0.16, 0.466666666, 0.16):
                 success += 1
                 self.total_grasped += 1
-                self.interface.move_object(self.room.objects_id[i], [self.room.extent * 3.0, 0, 1])
+
+                if self.replace_grasped_object:
+                    robot_pos = self.interface.get_base_pos()
+                    while True:
+                        x, y = np.random.uniform(-self.room._wall_size * 0.5, self.room._wall_size * 0.5, size=(2,))
+                        if self.room.is_valid_spawn_loc(x, y, robot_pos=robot_pos):
+                            break
+                    self.interface.move_object(self.room.objects_id[i], [x, y, 0.015])
+                else:
+                    self.interface.move_object(self.room.objects_id[i], [self.room.extent * 3.0, 0, 1])
                 
                 self.update_trajectory_objects()
 

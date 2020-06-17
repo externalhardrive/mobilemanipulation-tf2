@@ -57,8 +57,8 @@ class SimpleRoom(Room):
         for i in range(self._num_objects):
             self.objects_id.append(self.interface.spawn_object(URDF[self.params["object_name"]], np.array([0.0, 0.0, 10 + i])))
 
-    def is_valid_spawn_loc(self, x, y):
-        return not is_in_circle(x, y, 0, 0, self._no_spawn_radius)
+    def is_valid_spawn_loc(self, x, y, robot_pos=[0, 0]):
+        return not is_in_circle(x, y, robot_pos[0], robot_pos[1], self._no_spawn_radius)
 
     def reset(self):
         for i in range(self._num_objects):

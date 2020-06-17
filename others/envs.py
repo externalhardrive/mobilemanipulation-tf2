@@ -15,7 +15,7 @@ class GraspingEnv:
             spawn_radius=0.3,
         )
         env = RoomEnv(
-            renders=False, grayscale=False, step_duration=1/60 * 0,
+            renders=True, grayscale=False, step_duration=1/60 * 0,
             room_name=room_name,
             room_params=room_params,
             # use_aux_camera=True,
@@ -27,14 +27,19 @@ class GraspingEnv:
             max_ep_len=None,
         )
 
-        # from softlearning.environments.gym.locobot.utils import URDF
-        # env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, -0.16, 0.015])
-        # env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, 0.16, 0.015])
-        # env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, -0.16, 0.015])
-        # env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, 0.16, 0.015])
-        # env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, 0, 0.015])
-        # env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, 0, 0.015])
-        # env.interface.render_camera(use_aux=True)
+        from softlearning.environments.gym.locobot.utils import URDF
+        env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, -0.16, 0.015])
+        env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, 0.16, 0.015])
+        env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, -0.16, 0.015])
+        env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, 0.16, 0.015])
+        env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, 0, 0.015])
+        env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, 0, 0.015])
+        obs = env.interface.render_camera(use_aux=False)
+
+        # import matplotlib.pyplot as plt 
+        # plt.imsave("./others/logs/obs.bmp", obs)
+
+        # plt.imsave("./others/logs/cropped.bmp", obs[38:98, 20:80, :])
 
         self._env = env
 

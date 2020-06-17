@@ -19,11 +19,11 @@ ALGORITHM_PARAMS_BASE = {
         'eval_render_kwargs': {},
         'eval_n_episodes': 1,
         'num_warmup_samples': tune.sample_from(lambda spec: (
-            5 * (spec.get('config', spec)
-                  ['sampler_params']
-                  ['config']
-                  ['max_path_length'])
-            # 1000
+            # 5 * (spec.get('config', spec)
+            #       ['sampler_params']
+            #       ['config']
+            #       ['max_path_length'])
+            1000
         )),
     }
 }
@@ -40,7 +40,7 @@ ALGORITHM_PARAMS_ADDITIONAL = {
             'tau': 5e-3,
             'target_entropy': 'auto',
 
-            'discount': 0.99,
+            'discount': 0.95,
             'reward_scale': 1.0,
         },
     },
@@ -182,8 +182,10 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageNavigationResetFree-v0': int(1e6),
             'MixedNavigationResetFree-v0': int(1e5),
             'NavigationVacuum-v0': int(1e6),
+            'NavigationVacuumResetFree': int(2e5),
             'NavigationDQNGrasping-v0': int(1e6),
-            'DiscreteGraspingEnv-v0': int(1e5),
+            'DiscreteGrasping-v0': int(1e5),
+            'ContinuousMultistepGrasping-v0': int(1e6),
         },
         'Tests': {
             DEFAULT_KEY: int(1e5),
@@ -307,8 +309,10 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageNavigationResetFree-v0': 200,
             'MixedNavigationResetFree-v0': 200,
             'NavigationVacuum-v0': 200,
+            'NavigationVacuumResetFree': 200,
             'NavigationDQNGrasping-v0': 200,
-            'DiscreteGraspingEnv-v0': 1,
+            'DiscreteGrasping-v0': 1,
+            'ContinuousMultistepGrasping-v0': 15,
         },
         'Tests': {
             DEFAULT_KEY: 100,
@@ -329,8 +333,10 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'ImageNavigationResetFree-v0': 1000,
             'MixedNavigationResetFree-v0': 1000,
             'NavigationVacuum-v0': 1000,
+            'NavigationVacuumResetFree': 1000,
             'NavigationDQNGrasping-v0': 1000,
-            'DiscreteGraspingEnv-v0': 1000,
+            'DiscreteGrasping-v0': 1000,
+            'ContinuousMultistepGrasping-v0': 1000,
         },
         'Tests': {
             DEFAULT_KEY: 1000,
@@ -567,6 +573,27 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'max_velocity': 20.0,
                 'max_acceleration': 4.0
             },
+            'NavigationVacuumResetFree-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
+                },
+                'reset_free': True,
+                'room_name': 'simple',
+                'room_params': {
+                    'num_objects': 100, 
+                    'object_name': "greensquareball", 
+                    'no_spawn_radius': 0.55, #0.8,
+                    'wall_size': 5.0
+                },
+                'replace_grasped_object': True,
+                'max_ep_len': float('inf'),
+                'image_size': 100,
+                'steps_per_second': 2,
+                'max_velocity': 20.0,
+                'max_acceleration': 4.0,
+                'trajectory_log_dir': '/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/nav_vacuum_rf_edison_1_traj/', 
+                'trajectory_log_freq': 1000
+            },
             'NavigationDQNGrasping-v0': {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': False,
@@ -580,10 +607,25 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 },
                 # use default everything else
             },
-            'DiscreteGraspingEnv-v0': {
+            'DiscreteGrasping-v0': {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': True,
                 },
+            },
+            'ContinuousMultistepGrasping-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
+                    'pixel_keys': ('left_camera', 'right_camera'),
+                    'render_kwargs': {
+                        'left_camera': {
+                            'use_aux': True,
+                        },
+                        'right_camera': {
+                            'use_aux': False,
+                        },
+                    },
+                },
+                # 'renders': True,
             },
         },
         'Tests': {
@@ -661,8 +703,18 @@ EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'trajectory_log_dir': None, 
                 'trajectory_log_freq': 0
             },
+            'NavigationVacuumResetFree-v0': {
+                'reset_free': False,
+                'max_ep_len': 200,
+                'replace_grasped_object': False,
+                'trajectory_log_dir': None, 
+                'trajectory_log_freq': 0
+            },
             'NavigationDQNGrasping-v0': {
                 'is_training': False,
+            },
+            'ContinuousMultistepGrasping-v0': {
+                'renders': False,
             },
         },
     },
@@ -830,8 +882,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
 
 
 def is_image_env(universe, domain, task, variant_spec):
-    return 'pixel_wrapper_kwargs' in (
-        variant_spec['environment_params']['training']['kwargs'])
+    return 'pixel_wrapper_kwargs' in variant_spec['environment_params']['training']['kwargs']
 
 
 def get_variant_spec_image(universe,
@@ -858,9 +909,16 @@ def get_variant_spec_image(universe,
         }
 
         variant_spec['policy_params']['config']['hidden_layer_sizes'] = (M, M)
-        variant_spec['policy_params']['config']['preprocessors'] = {
-            'pixels': deepcopy(preprocessor_params)
-        }
+        pixel_keys = variant_spec['environment_params']['training']['kwargs']['pixel_wrapper_kwargs'].get(
+            'pixel_keys', ('pixels',))
+        
+        preprocessors = dict()
+        for key in pixel_keys:
+            params = deepcopy(preprocessor_params)
+            params['config']['name'] = 'convnet_preprocessor_' + key
+            preprocessors[key] = params
+
+        variant_spec['policy_params']['config']['preprocessors'] = preprocessors
     
         variant_spec['Q_params']['config']['hidden_layer_sizes'] = (
             tune.sample_from(lambda spec: (deepcopy(
