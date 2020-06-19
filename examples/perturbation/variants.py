@@ -192,7 +192,7 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'image_size': 100,
                 'steps_per_second': 2,
                 'max_velocity': 20.0,
-                'trajectory_log_dir': '/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/nav_vacuum_perturbation_edison_2_traj/', 
+                'trajectory_log_dir': '/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/nav_vacuum_perturbation_edison_1_traj/', 
                 'trajectory_log_freq': 1000
             },
         },

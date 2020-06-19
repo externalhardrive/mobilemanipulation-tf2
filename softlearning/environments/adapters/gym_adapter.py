@@ -157,14 +157,17 @@ class GymAdapter(SoftlearningEnv):
             combined_results = {}
             for info_key, info_values in combined_path_infos.items():
                 info_values = np.array(info_values)
-                combined_results[info_key + '-first'] = info_values[0]
-                combined_results[info_key + '-last'] = info_values[-1]
-                combined_results[info_key + '-mean'] = np.mean(info_values)
-                combined_results[info_key + '-median'] = np.median(info_values)
-                combined_results[info_key + '-sum'] = np.sum(info_values)
-                combined_results[info_key + '-max'] = np.amax(info_values)
-                if np.array(info_values).dtype != np.dtype('bool'):
-                    combined_results[info_key + '-range'] = np.ptp(info_values)
+                info_values = info_values[~np.isnan(info_values)]
+                if info_values.shape[0] > 0:
+                    combined_results[info_key + '-first'] = info_values[0]
+                    combined_results[info_key + '-last'] = info_values[-1]
+                    combined_results[info_key + '-mean'] = np.mean(info_values)
+                    combined_results[info_key + '-median'] = np.median(info_values)
+                    combined_results[info_key + '-sum'] = np.sum(info_values)
+                    combined_results[info_key + '-max'] = np.amax(info_values)
+                    combined_results[info_key + '-count'] = info_values.shape[0]
+                    if np.array(info_values).dtype != np.dtype('bool'):
+                        combined_results[info_key + '-range'] = np.ptp(info_values)
 
             if hasattr(self.unwrapped, 'get_path_infos'):
                 env_path_infos = self.unwrapped.get_path_infos(paths, *args, **kwargs)

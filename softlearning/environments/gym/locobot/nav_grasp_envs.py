@@ -121,7 +121,7 @@ class LocobotNavigationVacuumPerturbationEnv(LocobotNavigationVacuumEnv):
         defaults = dict(
             is_training=False, 
             rnd_lr=3e-4,
-            perturbation_batch_size=128,
+            perturbation_batch_size=50,
             perturbation_train_frequency=5,
             num_perturbation_steps=20,
             perturbation_drop_step=9)
@@ -205,7 +205,6 @@ class LocobotNavigationVacuumPerturbationEnv(LocobotNavigationVacuumEnv):
         return diagnostics
 
     def do_perturbation_precedure(self, object_id, infos):
-        print("perturb!")
         # diagnostics = []
         for i in range(self.num_perturbation_steps):
             # move
@@ -240,11 +239,9 @@ class LocobotNavigationVacuumPerturbationEnv(LocobotNavigationVacuumEnv):
             infos["intrinsic_reward-std"] = np.nan
             infos["intrinsic_reward-min"] = np.nan
             infos["intrinsic_reward-max"] = np.nan
-            if self.num_steps % self.perturbation_train_frequency and self.replay_pool.size >= self.perturbation_batch_size:
+            if self.num_steps % self.perturbation_train_frequency == 0 and self.replay_pool.size >= self.perturbation_batch_size:
                 diagnostics = self.train_perturbation_policy()
                 infos.update(diagnostics)
-
-        print(self.num_steps)
 
         next_obs, reward, done, new_infos = super().step(action)
 
