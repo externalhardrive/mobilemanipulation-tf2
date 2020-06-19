@@ -85,7 +85,7 @@ class BaseNavigationEnv(RoomEnv):
     def do_move(self, action):
         self.interface.move_base(action[0] * 10.0, action[1] * 10.0)
     
-    def do_grasp(self, action):
+    def do_grasp(self, action, return_grasped_object=False):
         """ returns number of object picked up """
         success = 0
         for i in range(self.room.num_objects):
@@ -107,6 +107,9 @@ class BaseNavigationEnv(RoomEnv):
                 self.update_trajectory_objects()
 
                 break
+
+        if return_grasped_object and success > 0:
+            return success, i
 
         return success
 

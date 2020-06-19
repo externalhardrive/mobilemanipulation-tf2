@@ -231,6 +231,21 @@ class PybulletInterface:
     def remove_object(self, object_id):
         self.p.removeBody(object_id)
 
+    # def to_local_pos(self, pos, ori=None):
+    #     if ori is None:
+    #         ori = self.default_ori
+    #     base_pos, base_ori = self.p.getBasePositionAndOrientation(self.robot)
+    #     base_pos, base_ori = self.p.invertTransform(base_pos, base_ori)
+    #     pos, ori = self.p.multiplyTransforms(base_pos, base_ori, pos, ori)
+    #     return pos
+
+    # def to_global_pos(self, pos, ori=None):
+    #     if ori is None:
+    #         ori = self.default_ori
+    #     base_pos, base_ori = self.p.getBasePositionAndOrientation(self.robot)
+    #     pos, ori = self.p.multiplyTransforms(base_pos, base_ori, pos, ori)
+    #     return pos
+
     # ----- END OBJECTS METHOD -----
 
 

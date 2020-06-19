@@ -126,6 +126,11 @@ GENERAL_ENVIRONMENT_SPECS = (
                         '.nav_grasp_envs:LocobotNavigationVacuumEnv')
     },
     {
+        'id': 'Locobot-NavigationVacuumPerturbation-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.nav_grasp_envs:LocobotNavigationVacuumPerturbationEnv')
+    },
+    {
         'id': 'Locobot-NavigationDQNGrasping-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
                         ':LocobotNavigationDQNGraspingEnv')

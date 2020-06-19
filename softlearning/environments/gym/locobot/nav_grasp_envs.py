@@ -15,6 +15,8 @@ from .nav_envs import *
 
 from softlearning.environments.gym.spaces import DiscreteBox
 
+from softlearning.utils.misc import RunningMeanVar
+
 class LocobotNavigationVacuumEnv(MixedLocobotNavigationEnv):
     def __init__(self, **params):
         defaults = dict()
@@ -36,10 +38,10 @@ class LocobotNavigationVacuumEnv(MixedLocobotNavigationEnv):
         else:
             super().do_move([0.0, 0.0])
 
-    def do_grasp(self, action):
+    def do_grasp(self, action, infos=None, return_grasped_object=False):
         key, value = action
         if key == "vacuum":
-            grasps =  super().do_grasp(value)
+            grasps = super().do_grasp(value, return_grasped_object=return_grasped_object)
             # super().do_move([0.2, 0.2])
             return grasps
         else:
@@ -59,7 +61,7 @@ class LocobotNavigationVacuumEnv(MixedLocobotNavigationEnv):
         self.do_move(action)
 
         # do grasping
-        num_grasped = self.do_grasp(action)
+        num_grasped = self.do_grasp(action, infos=infos)
         reward += num_grasped
 
         # if num_grasped == 0:
@@ -81,6 +83,27 @@ class LocobotNavigationVacuumEnv(MixedLocobotNavigationEnv):
         infos["total_success_to_vacuum_ratio"] = (0 if self.total_vacuum_actions == 0 
                                                     else self.total_grasped / self.total_vacuum_actions)
 
+        # store trajectory information (usually for reset free)
+        if self.trajectory_log_dir and self.trajectory_log_freq > 0:
+            self.trajectory_base[self.trajectory_step, 0] = base_pos[0]
+            self.trajectory_base[self.trajectory_step, 1] = base_pos[1]
+            self.trajectory_step += 1
+            
+            if self.trajectory_step == self.trajectory_log_freq:
+                self.trajectory_step -= 1 # for updating trajectory
+                self.update_trajectory_objects()
+
+                self.trajectory_step = 0
+                self.trajectory_num += 1
+
+                data = OrderedDict({
+                    "base": self.trajectory_base,
+                    "objects": self.trajectory_objects
+                })
+
+                np.save(self.trajectory_log_path + str(self.trajectory_num), data)
+                self.trajectory_objects = OrderedDict({})
+
         # steps update
         self.num_steps += 1
         done = self.num_steps >= self.max_ep_len
@@ -90,6 +113,117 @@ class LocobotNavigationVacuumEnv(MixedLocobotNavigationEnv):
 
         return obs, reward, done, infos
 
+
+class LocobotNavigationVacuumPerturbationEnv(LocobotNavigationVacuumEnv):
+    """ Locobot Navigation with Perturbation """
+    def __init__(self, **params):
+        defaults = dict(
+            is_training=False, 
+            rnd_lr=3e-4,
+            perturbation_batch_size=128,
+            num_perturbation_steps=20,
+            perturbation_drop_step=9)
+        
+        defaults.update(params)
+
+        super().__init__(**defaults)
+        print("LocobotNavigationVacuumPerturbationEnv params:", self.params)
+
+        self.perturbation_action_space = spaces.Box(low=-1.0, high=1.0, shape=(2,))
+
+        if is_training:
+            self.rnd_running_mean_var = RunningMeanVar()
+            self.rnd_predictor_optimizer = tf.optimizers.Adam(learning_rate=self.params["rnd_lr"], name="rnd_predictor_optimizer")
+            self.perturbation_training_iteration = 0
+            self.perturbation_batch_size = self.params["perturbation_batch_size"]
+            self.num_perturbation_steps = self.params["num_perturbation_steps"]
+            self.perturbation_drop_step = self.params["perturbation_drop_step"]
+
+    def finish_init(self, replay_pool, perturbation_policy, perturbation_algorithm, rnd_predictor, rnd_target, **kwargs):
+        self.replay_pool = replay_pool
+        self.perturbation_policy = perturbation_policy
+        self.perturbation_algorithm = perturbation_algorithm
+        self.rnd_predictor = rnd_predictor
+        self.rnd_target = rnd_target
+
+    @tf.function(experimental_relax_shapes=True)
+    def update_rnd_predictor(self, batch):
+        """Update the RND predictor network. """
+        observations = batch['observations']
+
+        with tf.GradientTape() as tape:
+            predictor_values = self.rnd_predictor.values(observations)
+            target_values = self.rnd_target.values(observations)
+
+            predictor_losses = tf.losses.MSE(y_true=target_values, y_pred=predictor_values)
+            predictor_loss = tf.nn.compute_average_loss(predictor_losses)
+
+        predictor_gradients = tape.gradient(predictor_loss, self.rnd_predictor.trainable_variables)
+        
+        self.rnd_predictor_optimizer.apply_gradients(zip(predictor_gradients, self.rnd_predictor.trainable_variables))
+
+        return predictor_losses
+
+    def train_perturbation_policy(self):
+        self.perturbation_training_iteration += 1
+
+        # get random batch
+        batch = self.replay_pool.random_batch(self.perturbation_batch_size)
+
+        # update RND predictor loss
+        predictor_losses = self.update_rnd_predictor(batch)
+
+        # compute intrinsic reward for this batch
+        intrinsic_rewards = predictor_losses.numpy().reshape(-1, 1)
+        self.rnd_running_mean_var.update_batch(intrinsic_rewards)
+        intrinsic_rewards = intrinsic_rewards / self.rnd_running_mean_var.std
+
+        batch['rewards'] = intrinsic_rewards
+        sac_diagnostics = self.perturbation_algorithm._do_training(perturbation_training_iteration, batch)
+
+        diagnostics = OrderedDict({
+            **sac_diagnostics,
+            'rnd_predictor_loss-mean': tf.reduce_mean(predictor_losses),
+            'intrinsic_running_std': self.rnd_running_mean_var.std,
+            'intrinsic_reward-mean': np.mean(intrinsic_rewards),
+            'intrinsic_reward-std': np.std(intrinsic_rewards),
+            'intrinsic_reward-min': np.min(intrinsic_rewards),
+            'intrinsic_reward-max': np.max(intrinsic_rewards),
+        })
+
+        return diagnostics
+
+    def do_perturbation_precedure(self, object_id, infos):
+        diagnostics = []
+        for i in range(self.num_perturbation_steps):
+            # move
+            obs = self.get_observation()
+            action = self.perturbation_policy.action(obs).numpy()
+            self.do_move(self, ("move", action))
+
+            # train
+            if self.replay_pool.size >= self.perturbation_batch_size:
+                diagnostics.append(self.train_perturbation_policy())
+
+            # drop the object
+            if i == self.perturbation_drop_step:
+                self.interface.move_object(self.room.objects_id[object_id], [0.4, 0.0, 0.015], relative=True)
+
+        if len(diagnostics) > 0:
+            diagnostics = tree.map_structure(lambda *d: tf.reduce_mean(d).numpy(), *diagnostics)
+        
+        if infos is not None:
+            infos.update(diagnostics)
+
+    def do_grasp(self, action, infos=None):
+        grasps = super().do_grasp(action, return_grasped_object=True)
+        if isinstance(grasps, (tuple, list)):
+            reward, object_id = grasps
+        else:
+            reward = grasps
+        if reward > 0.5:
+            self.do_perturbation_precedure(object_id, infos)
+        return reward
 
 class LocobotNavigationDQNGraspingEnv(RoomEnv):
     """ Combines navigation and grasping trained by DQN.

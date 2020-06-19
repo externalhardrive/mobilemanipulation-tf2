@@ -9,47 +9,7 @@ import tensorflow_probability as tfp
 
 from .rl_algorithm import RLAlgorithm
 
-class RunningMeanVar:
-    def __init__(self, eps=1e-6):
-        self._mean = np.zeros((), np.float64)
-        self._var = np.ones((), np.float64)
-        self._count = eps
-        self._eps = eps
-
-    def update_batch(self, batch):
-        """ https://github.com/openai/random-network-distillation/blob/f75c0f1efa473d5109d487062fd8ed49ddce6634/mpi_util.py#L200-L214 """
-        batch_mean = np.mean(batch)
-        batch_var = np.var(batch)
-        batch_count = batch.shape[0]
-        
-        delta = batch_mean - self._mean
-        total_count = self._count + batch_count
-
-        new_mean = self._mean + delta * batch_count / total_count
-        m_a = self._var * self._count
-        m_b = batch_var * batch_count
-        m_2 = m_a + m_b + np.square(delta) * self._count * batch_count / total_count
-        new_var = m_2 / total_count
-
-        self._mean = new_mean
-        self._var = new_var
-        self._count = total_count
-
-    @property
-    def count(self):
-        return self._count
-
-    @property
-    def mean(self):
-        return self._mean
-
-    @property
-    def var(self):
-        return self._var + self._eps
-
-    @property
-    def std(self):
-        return np.sqrt(self._var + self._eps)
+from softlearning.utils.misc import RunningMeanVar
 
 class R3L(RLAlgorithm):
     """ Loosely based off of R3L 
