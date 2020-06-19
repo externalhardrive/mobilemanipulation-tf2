@@ -5,6 +5,7 @@ import os
 from collections import OrderedDict
 import tensorflow as tf
 from scipy.special import expit
+import tree
 
 from . import locobot_interface
 
@@ -121,6 +122,7 @@ class LocobotNavigationVacuumPerturbationEnv(LocobotNavigationVacuumEnv):
             is_training=False, 
             rnd_lr=3e-4,
             perturbation_batch_size=128,
+            perturbation_train_frequency=5,
             num_perturbation_steps=20,
             perturbation_drop_step=9)
         
@@ -131,13 +133,15 @@ class LocobotNavigationVacuumPerturbationEnv(LocobotNavigationVacuumEnv):
 
         self.perturbation_action_space = spaces.Box(low=-1.0, high=1.0, shape=(2,))
 
-        if is_training:
+        self.is_training = self.params["is_training"]
+        if self.is_training:
             self.rnd_running_mean_var = RunningMeanVar()
             self.rnd_predictor_optimizer = tf.optimizers.Adam(learning_rate=self.params["rnd_lr"], name="rnd_predictor_optimizer")
             self.perturbation_training_iteration = 0
             self.perturbation_batch_size = self.params["perturbation_batch_size"]
             self.num_perturbation_steps = self.params["num_perturbation_steps"]
             self.perturbation_drop_step = self.params["perturbation_drop_step"]
+            self.perturbation_train_frequency = self.params["perturbation_train_frequency"]
 
     def finish_init(self, replay_pool, perturbation_policy, perturbation_algorithm, rnd_predictor, rnd_target, **kwargs):
         self.replay_pool = replay_pool
@@ -178,42 +182,45 @@ class LocobotNavigationVacuumPerturbationEnv(LocobotNavigationVacuumEnv):
         self.rnd_running_mean_var.update_batch(intrinsic_rewards)
         intrinsic_rewards = intrinsic_rewards / self.rnd_running_mean_var.std
 
-        batch['rewards'] = intrinsic_rewards
-        sac_diagnostics = self.perturbation_algorithm._do_training(perturbation_training_iteration, batch)
+        batch["rewards"] = intrinsic_rewards
+
+        # fix action to only include the continuous parts and is move, otherwise use 0
+        actions = batch["actions"]
+        gaussians = actions[:, 2:]
+        is_move = actions[:, 0:1]
+        batch["actions"] = gaussians * is_move
+
+        sac_diagnostics = self.perturbation_algorithm._do_training(self.perturbation_training_iteration, batch)
 
         diagnostics = OrderedDict({
-            **sac_diagnostics,
-            'rnd_predictor_loss-mean': tf.reduce_mean(predictor_losses),
-            'intrinsic_running_std': self.rnd_running_mean_var.std,
-            'intrinsic_reward-mean': np.mean(intrinsic_rewards),
-            'intrinsic_reward-std': np.std(intrinsic_rewards),
-            'intrinsic_reward-min': np.min(intrinsic_rewards),
-            'intrinsic_reward-max': np.max(intrinsic_rewards),
+            # **sac_diagnostics,
+            # "rnd_predictor_loss-mean": tf.reduce_mean(predictor_losses),
+            "intrinsic_running_std": self.rnd_running_mean_var.std,
+            "intrinsic_reward-mean": np.mean(intrinsic_rewards),
+            "intrinsic_reward-std": np.std(intrinsic_rewards),
+            "intrinsic_reward-min": np.min(intrinsic_rewards),
+            "intrinsic_reward-max": np.max(intrinsic_rewards),
         })
 
         return diagnostics
 
     def do_perturbation_precedure(self, object_id, infos):
-        diagnostics = []
+        print("perturb!")
+        # diagnostics = []
         for i in range(self.num_perturbation_steps):
             # move
-            obs = self.get_observation()
+            obs = self.get_observation(include_pixels=True)
             action = self.perturbation_policy.action(obs).numpy()
-            self.do_move(self, ("move", action))
-
-            # train
-            if self.replay_pool.size >= self.perturbation_batch_size:
-                diagnostics.append(self.train_perturbation_policy())
+            self.do_move(("move", action))
 
             # drop the object
             if i == self.perturbation_drop_step:
                 self.interface.move_object(self.room.objects_id[object_id], [0.4, 0.0, 0.015], relative=True)
 
-        if len(diagnostics) > 0:
-            diagnostics = tree.map_structure(lambda *d: tf.reduce_mean(d).numpy(), *diagnostics)
-        
-        if infos is not None:
-            infos.update(diagnostics)
+        # if len(diagnostics) > 0:
+        #     diagnostics = tree.map_structure(lambda *d: tf.reduce_mean(d).numpy(), *diagnostics)
+        # if infos is not None:
+        #     infos.update(diagnostics)
 
     def do_grasp(self, action, infos=None):
         grasps = super().do_grasp(action, return_grasped_object=True)
@@ -221,9 +228,29 @@ class LocobotNavigationVacuumPerturbationEnv(LocobotNavigationVacuumEnv):
             reward, object_id = grasps
         else:
             reward = grasps
-        if reward > 0.5:
+        if reward > 0.5 and self.is_training:
             self.do_perturbation_precedure(object_id, infos)
         return reward
+
+    def step(self, action):
+        infos = {}
+        if self.is_training:
+            infos["intrinsic_running_std"] = np.nan
+            infos["intrinsic_reward-mean"] = np.nan
+            infos["intrinsic_reward-std"] = np.nan
+            infos["intrinsic_reward-min"] = np.nan
+            infos["intrinsic_reward-max"] = np.nan
+            if self.num_steps % self.perturbation_train_frequency and self.replay_pool.size >= self.perturbation_batch_size:
+                diagnostics = self.train_perturbation_policy()
+                infos.update(diagnostics)
+
+        print(self.num_steps)
+
+        next_obs, reward, done, new_infos = super().step(action)
+
+        infos.update(new_infos)
+
+        return next_obs, reward, done, infos
 
 class LocobotNavigationDQNGraspingEnv(RoomEnv):
     """ Combines navigation and grasping trained by DQN.

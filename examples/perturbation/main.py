@@ -16,6 +16,7 @@ from softlearning import policies
 from softlearning import value_functions
 from softlearning import replay_pools
 from softlearning import samplers
+from softlearning import rnd
 
 from softlearning.policies.utils import get_additional_policy_params
 
@@ -56,11 +57,12 @@ class ExperimentRunner(tune.Trainable):
             else training_environment)
 
         # Q functions
-        variant['Q_params']['config'].update({
+        Q_params = copy.deepcopy(variant['Q_params'])
+        Q_params['config'].update({
             'input_shapes': training_environment.Q_input_shapes,
             'output_size': training_environment.Q_output_size,
         })
-        Qs = self.Qs = value_functions.get(variant['Q_params'])
+        Qs = self.Qs = value_functions.get(Q_params)
 
         # policy
         variant['policy_params']['config'].update({
@@ -120,10 +122,13 @@ class ExperimentRunner(tune.Trainable):
             'output_size': 1,
         })
         self.perturbation_Qs = value_functions.get(perturbation_Q_params)
+        self.perturbation_Qs[0].model.summary()
 
         # perturbation algorithm
+        class FakePerturbationEnv:
+            action_space = perturbation_action_space
         variant['perturbation_algorithm_params']['config'].update({
-            'training_environment': None,
+            'training_environment': FakePerturbationEnv,
             'evaluation_environment': None,
             'policy': self.perturbation_policy,
             'Qs': self.perturbation_Qs,
@@ -134,6 +139,7 @@ class ExperimentRunner(tune.Trainable):
 
         # finish init environment
         training_environment.finish_init(
+            replay_pool=self.replay_pool,
             perturbation_algorithm=self.perturbation_algorithm,
             perturbation_policy=self.perturbation_policy,
             rnd_predictor=self.rnd_predictor,

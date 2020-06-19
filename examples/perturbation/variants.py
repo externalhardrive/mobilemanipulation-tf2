@@ -206,7 +206,7 @@ EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'reset_free': False,
                 'max_ep_len': 200,
                 'trajectory_log_dir': None, 
-                'trajectory_log_freq': 0
+                'trajectory_log_freq': 0,
                 'is_training': False,
             },
         },

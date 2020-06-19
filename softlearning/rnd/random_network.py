@@ -174,4 +174,4 @@ class RandomNetwork:
 
 def rnd_predictor_and_target(*args, **kwargs):
     """ Returns a tuple containing the predictor and target random network for RND """
-    return (RandomNetwork(*args, name='rnd_predictor', **kwargs), RandomNetwork(*args, name='rnd_target' **kwargs))
+    return (RandomNetwork(*args, name='rnd_predictor', **kwargs), RandomNetwork(*args, name='rnd_target', **kwargs))
