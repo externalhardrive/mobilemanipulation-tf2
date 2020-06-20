@@ -123,8 +123,8 @@ class LocobotNavigationVacuumPerturbationEnv(LocobotNavigationVacuumEnv):
             rnd_lr=3e-4,
             perturbation_batch_size=50,
             perturbation_train_frequency=5,
-            num_perturbation_steps=20,
-            perturbation_drop_step=9)
+            num_perturbation_steps=40,
+            perturbation_drop_step=19)
         
         defaults.update(params)
 
@@ -208,8 +208,11 @@ class LocobotNavigationVacuumPerturbationEnv(LocobotNavigationVacuumEnv):
         # diagnostics = []
         for i in range(self.num_perturbation_steps):
             # move
-            obs = self.get_observation(include_pixels=True)
-            action = self.perturbation_policy.action(obs).numpy()
+            # obs = self.get_observation(include_pixels=True)
+            # action = self.perturbation_policy.action(obs).numpy()
+            # cmd = input().strip().split()
+            # action = [float(cmd[0]), float(cmd[1])]
+            action = self.perturbation_action_space.sample()
             self.do_move(("move", action))
 
             # drop the object
@@ -232,16 +235,21 @@ class LocobotNavigationVacuumPerturbationEnv(LocobotNavigationVacuumEnv):
         return reward
 
     def step(self, action):
+        # cmd = input().strip().split()
+        # if cmd[0] == "g":
+        #     action = ("vacuum", None)
+        # else:
+        #     action = ("move", [float(cmd[0]), float(cmd[1])])
         infos = {}
-        if self.is_training:
-            infos["intrinsic_running_std"] = np.nan
-            infos["intrinsic_reward-mean"] = np.nan
-            infos["intrinsic_reward-std"] = np.nan
-            infos["intrinsic_reward-min"] = np.nan
-            infos["intrinsic_reward-max"] = np.nan
-            if self.num_steps % self.perturbation_train_frequency == 0 and self.replay_pool.size >= self.perturbation_batch_size:
-                diagnostics = self.train_perturbation_policy()
-                infos.update(diagnostics)
+        # if self.is_training:
+        #     infos["intrinsic_running_std"] = np.nan
+        #     infos["intrinsic_reward-mean"] = np.nan
+        #     infos["intrinsic_reward-std"] = np.nan
+        #     infos["intrinsic_reward-min"] = np.nan
+        #     infos["intrinsic_reward-max"] = np.nan
+        #     if self.num_steps % self.perturbation_train_frequency == 0 and self.replay_pool.size >= self.perturbation_batch_size:
+        #         diagnostics = self.train_perturbation_policy()
+        #         infos.update(diagnostics)
 
         next_obs, reward, done, new_infos = super().step(action)
 
