@@ -242,6 +242,17 @@ class MixedLocobotNavigationEnv(BaseNavigationEnv):
         self.interface.set_wheels_velocity(new_left, new_right)
         self.interface.do_steps(self.num_sim_steps_per_env_step)
 
+        self.unstuck_objects()
+
+    def unstuck_objects(self):
+        for i in range(self.room.num_objects):
+            object_pos, _ = self.interface.get_object(self.room.objects_id[i], relative=True)
+            sq_dist = object_pos[0] ** 2 + object_pos[1] ** 2
+            if sq_dist <= 0.20 ** 2:
+                scale_factor = 0.23 / np.sqrt(sq_dist)
+                new_object_pos = np.array(object_pos) * np.array([scale_factor, scale_factor, 1])
+                self.interface.move_object(self.room.objects_id[i], new_object_pos, relative=True)
+
 class MixedLocobotNavigationReachEnv(MixedLocobotNavigationEnv):
     """ Object wouldn't be picked up. The goal is to stop at a block. """
 

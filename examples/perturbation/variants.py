@@ -192,8 +192,9 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'image_size': 100,
                 'steps_per_second': 2,
                 'max_velocity': 20.0,
-                'trajectory_log_dir': '/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/nav_vacuum_perturbation_edison_1_traj/', 
-                'trajectory_log_freq': 1000
+                'trajectory_log_dir': None, #'/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/nav_vacuum_perturbation_edison_1_traj/', 
+                'trajectory_log_freq': 1000,
+                'renders': True,
             },
         },
     },
@@ -208,6 +209,7 @@ EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'trajectory_log_dir': None, 
                 'trajectory_log_freq': 0,
                 'is_training': False,
+                'renders': False,
             },
         },
     },
@@ -351,7 +353,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         'replay_pool_params': {
             'class_name': 'SimpleReplayPool',
             'config': {
-                'max_size': int(1e5),
+                'max_size': int(1e2),
             },
         },
         'sampler_params': {
