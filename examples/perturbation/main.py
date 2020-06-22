@@ -99,36 +99,33 @@ class ExperimentRunner(tune.Trainable):
         self.algorithm = algorithms.get(variant['algorithm_params'])
 
         # perturbation stuff
-        perturbation_action_space = training_environment.perturbation_action_space
 
         # perturbation policy
         variant['perturbation_policy_params']['config'].update({
-            'input_shapes': training_environment.observation_shape,
-            'output_shape': tf.TensorShape(perturbation_action_space.shape),
-            'action_range': (perturbation_action_space.low, perturbation_action_space.high),
+            'input_shapes': training_environment.perturbation_env.observation_shape,
+            'output_shape': training_environment.perturbation_env.action_shape,
+            **get_additional_policy_params(variant['perturbation_policy_params']['class_name'], training_environment.perturbation_env)
         })
         self.perturbation_policy = policies.get(variant['perturbation_policy_params'])
 
         # perturbation rnd networks
         variant['rnd_params']['config'].update({
-            'input_shapes': training_environment.observation_shape,
+            'input_shapes': OrderedDict({'pixels': training_environment.observation_shape['pixels']}),
         })
         self.rnd_predictor, self.rnd_target = rnd.get(variant['rnd_params'])
 
         # perturbation Q functions
         perturbation_Q_params = copy.deepcopy(variant['Q_params'])
         perturbation_Q_params['config'].update({
-            'input_shapes': (training_environment.observation_shape, tf.TensorShape(perturbation_action_space.shape)),
-            'output_size': 1,
+            'input_shapes': training_environment.perturbation_env.Q_input_shapes,
+            'output_size': training_environment.perturbation_env.Q_output_size,
         })
         self.perturbation_Qs = value_functions.get(perturbation_Q_params)
         self.perturbation_Qs[0].model.summary()
 
         # perturbation algorithm
-        class FakePerturbationEnv:
-            action_space = perturbation_action_space
         variant['perturbation_algorithm_params']['config'].update({
-            'training_environment': FakePerturbationEnv,
+            'training_environment': training_environment.perturbation_env,
             'evaluation_environment': None,
             'policy': self.perturbation_policy,
             'Qs': self.perturbation_Qs,

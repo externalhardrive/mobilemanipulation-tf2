@@ -86,7 +86,7 @@ class FlexibleReplayPool(ReplayPool):
         self._samples_since_save += count
 
     def add_sample(self, sample):
-        samples = tree.map_structure(lambda x: x[..., np.newaxis], sample)
+        samples = tree.map_structure(lambda x: x[np.newaxis, ...], sample)
         self.add_samples(samples)
 
     def add_samples(self, samples):

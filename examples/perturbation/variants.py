@@ -192,9 +192,9 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'image_size': 100,
                 'steps_per_second': 2,
                 'max_velocity': 20.0,
-                'trajectory_log_dir': None, #'/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/nav_vacuum_perturbation_edison_1_traj/', 
+                'trajectory_log_dir': '/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/nav_vacuum_perturbation_edison_3_traj/', 
                 'trajectory_log_freq': 1000,
-                'renders': True,
+                'renders': False,
             },
         },
     },
@@ -305,12 +305,12 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
     )
     perturbation_algorithm_params = deep_update(
         deepcopy(ALGORITHM_PARAMS_BASE),
-        deepcopy(ALGORITHM_PARAMS_ADDITIONAL.get('SAC', {})),
+        deepcopy(ALGORITHM_PARAMS_ADDITIONAL.get('SACDiscrete', {})),
         deepcopy(get_algorithm_params(universe, domain, task)),
     )
 
     policy_params = deepcopy(POLICY_PARAMS_BASE[policy])
-    perturbation_policy_params = deepcopy(POLICY_PARAMS_BASE['gaussian'])
+    perturbation_policy_params = deepcopy(POLICY_PARAMS_BASE['discrete_gaussian'])
 
     variant_spec = {
         'git_sha': get_git_rev(__file__),
@@ -353,7 +353,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         'replay_pool_params': {
             'class_name': 'SimpleReplayPool',
             'config': {
-                'max_size': int(1e2),
+                'max_size': int(1e5),
             },
         },
         'sampler_params': {

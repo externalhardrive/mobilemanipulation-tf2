@@ -109,6 +109,23 @@ class DiscreteBox(Space):
         sample = x[self.num_discrete + self.cumulative_dimension[i] - dim: self.num_discrete + self.cumulative_dimension[i]]
         return (key, np.array(sample, self.dtype))
 
+    def to_onehot(self, x):
+        """ 
+        Convert sample to onehot encoding representation. Filling with zero when needed 
+        
+        Example:
+
+        >>> s = DiscreteBox(low=-1.0, high=1.0, dimensions=OrderedDict((("move", 2), ("grasp", 1), ("shutoff", 0))))
+        >>> s.to_onehot(("grasp", array([0.5], dtype=float32)))
+        array([
+            0.0, 1.0, 0.0,  # one-hot encoding for the 3 discrete actions ["move", "grasp", "shutoff"]
+            0.0, 0.0,       # "move" has 2 dims (filled with zero)
+            0.5,            # "grasp" has 1 dims
+                            # "shutoff" has 0 dims
+            ], dtype=float32)
+        """
+        
+
     def to_jsonable(self, sample_n):
         return [[sample[0], np.array(sample[1]).tolist() if sample[1] is not None else None] for sample in sample_n]
 

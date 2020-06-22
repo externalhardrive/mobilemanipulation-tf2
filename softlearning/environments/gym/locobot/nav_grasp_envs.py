@@ -17,6 +17,9 @@ from .nav_envs import *
 from softlearning.environments.gym.spaces import DiscreteBox
 
 from softlearning.utils.misc import RunningMeanVar
+from softlearning.utils.dict import deep_update
+
+from softlearning.replay_pools import SimpleReplayPool
 
 class LocobotNavigationVacuumEnv(MixedLocobotNavigationEnv):
     def __init__(self, **params):
@@ -115,33 +118,259 @@ class LocobotNavigationVacuumEnv(MixedLocobotNavigationEnv):
         return obs, reward, done, infos
 
 
-class LocobotNavigationVacuumPerturbationEnv(LocobotNavigationVacuumEnv):
+
+
+
+
+
+class LocobotPerturbationBase:
+    """ Base env for perturbation. Use inside another environment. """
+    def __init__(self, **params):
+        self.params = params
+        self.action_space = self.params["action_space"]
+        self.observation_space = self.params["observation_space"]
+
+    def do_perturbation_precedure(self, *args, **kwargs):
+        raise NotImplementedError
+
+    @property
+    def action_shape(self, *args, **kwargs):
+        if isinstance(self.action_space, DiscreteBox):
+            return tf.TensorShape((self.action_space.num_discrete + self.action_space.num_continuous, ))
+        elif isinstance(self.action_space, spaces.Discrete):
+            return tf.TensorShape((1, ))
+        elif isinstance(self.action_space, spaces.Box):
+            return tf.TensorShape(self.action_space.shape)
+        else:
+            raise NotImplementedError("Action space ({}) is not implemented for PerturbationBase".format(self.action_space))
+
+    @property
+    def Q_input_shapes(self):
+        if isinstance(self.action_space, DiscreteBox):
+            return (self.observation_shape, tf.TensorShape((self.action_space.num_continuous, )))
+        elif isinstance(self.action_space, spaces.Discrete):
+            return self.observation_shape
+        elif isinstance(self.action_space, spaces.Box):
+            return (self.observation_shape, self.action_shape)
+        else:
+            raise NotImplementedError("Action space ({}) is not implemented for PerturbationBase".format(self.action_space))
+
+    @property
+    def Q_output_size(self):
+        if isinstance(self.action_space, DiscreteBox):
+            return self.action_space.num_discrete
+        elif isinstance(self.action_space, spaces.Discrete):
+            return self.action_space.n
+        elif isinstance(self.action_space, spaces.Box):
+            return 1
+        else:
+            raise NotImplementedError("Action space ({}) is not implemented for PerturbationBase".format(self.action_space))
+
+    @property
+    def observation_shape(self):
+        if not isinstance(self.observation_space, spaces.Dict):
+            raise NotImplementedError(type(self.observation_space))
+
+        observation_shape = tree.map_structure(
+            lambda space: tf.TensorShape(space.shape),
+            self.observation_space.spaces)
+
+        return observation_shape
+
+
+
+
+
+
+
+class LocobotRandomPerturbation(LocobotPerturbationBase):
+    def __init__(self, **params):
+        defaults = dict(
+            num_steps=40,
+            drop_step=19,
+            move_func=None, # function that takes in 2d (-1, 1) action and moves the robot  
+            drop_func=None, # function that takes in object_id and drops that object
+        )
+        defaults["observation_space"] = spaces.OrderedDict(
+            ("pixels", spaces.Box(low=0, high=255, shape=(100, 100, 3), dtype=np.uint8)),
+            ("current_velocity", spaces.Box(low=-1.0, high=1.0, shape=(2,)))
+        )
+        defaults["action_space"] = spaces.Box(low=-1.0, high=1.0, shape=(2,))
+        defaults.update(params)
+
+        super().__init__(**defaults)
+        print("LocobotRandomPerturbation params:", self.params)
+
+        self.num_steps = self.params["num_steps"]
+        self.drop_step = self.params["drop_step"]
+
+        self.move_func = self.params["move_func"]
+        self.drop_func = self.params["drop_func"]
+
+    def do_perturbation_precedure(self, object_id, infos):
+        for i in range(self.num_steps):
+            # move
+            action = self.action_space.sample()
+            self.move_func(action)
+
+            # drop the object
+            if i == self.drop_step:
+                self.drop_func(object_id)
+
+class LocobotNavigationVacuumRandomPerturbationEnv(LocobotNavigationVacuumEnv):
+    """ Locobot Navigation with Perturbation """
+    def __init__(self, **params):
+        defaults = dict(
+            is_training=False, 
+            perturbation_params=dict(
+                num_steps=40,
+                drop_step=19,
+                move_func=lambda action: (
+                    self.do_move(("move", action))),
+                drop_func=lambda object_id: (
+                    self.interface.move_object(self.room.objects_id[object_id], [0.4, 0.0, 0.015], relative=True))
+            )
+        )
+        super().__init__(**deep_update(defaults, params))
+        print("LocobotNavigationVacuumPerturbationEnv params:", self.params)
+
+        self.is_training = self.params["is_training"]
+        if self.is_training:
+            self.perturbation_env = LocobotRandomPerturbation(**self.params["perturbation_params"])
+
+    def do_grasp(self, action, infos=None):
+        grasps = super().do_grasp(action, return_grasped_object=True)
+        if isinstance(grasps, (tuple, list)):
+            reward, object_id = grasps
+        else:
+            reward = grasps
+        if reward > 0.5 and self.is_training:
+            self.perturbation_env.do_perturbation_precedure(object_id, infos)
+        return reward
+
+    def step(self, action):
+        infos = {}
+
+        next_obs, reward, done, new_infos = super().step(action)
+
+        infos.update(new_infos)
+
+        return next_obs, reward, done, infos
+
+
+
+
+
+
+
+class LocobotRNDPerturbation(LocobotPerturbationBase):
+    def __init__(self, **params):
+        defaults = dict(
+            num_steps=40,
+            batch_size=50,
+            min_samples_before_train=100,
+            buffer_size=200,
+            move_func=None, # function that takes in 2d (-1, 1) action and moves the robot  
+            drop_func=None, # function that takes in object_id and drops that object
+            env=None,
+        )
+        defaults["observation_space"] = spaces.OrderedDict(
+            ("pixels", spaces.Box(low=0, high=255, shape=(100, 100, 3), dtype=np.uint8)),
+            ("current_velocity", spaces.Box(low=-1.0, high=1.0, shape=(2,))),
+            ("holding_object", spaces.Box(low=-1.0, high=1.0, shape=(1,))),
+        )
+        defaults["action_space"] = DiscreteBox(
+            low=-1.0, high=1.0, 
+            dimensions=OrderedDict((("move", 2), ("drop", 0)))
+        )
+        defaults.update(params)
+        super().__init__(**defaults)
+        print("LocobotRNDPerturbation params:", self.params)
+
+        self.num_steps = self.params["num_steps"]
+        self.batch_size = self.params["batch_size"]
+        self.min_samples_before_train = self.params["min_samples_before_train"]
+        self.buffer_size = self.params["buffer_size"]
+
+        self.move_func = self.params["move_func"]
+        self.drop_func = self.params["drop_func"]
+        self.env = self.params["env"]
+
+        self.buffer = SimpleReplayPool(self.buffer_size, self)
+
+    def finish_init(self, policy, algorithm):
+        self.policy = policy
+        self.algorithm = algorithm
+
+    def get_observation(self, holding_object):
+        obs = env.get_observation()
+        obs["holding_object"] = 1.0 if holding_object else -1.0
+        return obs
+
+    def do_perturbation_precedure(self, object_id, infos):
+        obs = self.get_observation()
+        for i in range(self.num_steps):
+            # action
+            if self.buffer.size >= self.min_samples_before_train:
+                onehot_action = self.perturbation_policy.action(obs).numpy()
+                action = self.action_space.from_onehot(onehot_action)
+            else:
+                action = self.action_space.sample()
+            
+            key, value = action
+            if key == "move":
+                env.do_move(("move", value))
+            elif key == "drop":
+                super().do_move([0.0, 0.0])
+                env.interface.move_object(env.room.objects_id[object_id], [0.4, 0.0, 0.015], relative=True)
+
+            next_obs = self.get_observation()
+            
+            reward = self.env.get_intrinsic_reward(next_obs)
+
+            done = (i == self.num_steps - 1)
+
+            # store in buffer
+            sample = {
+                'observations': obs,
+                'next_observations': next_obs,
+                'actions': onehot_action,
+                'rewards': np.atleast_1d(reward),
+                'terminals': np.atleast_1d(done)
+            }
+            self.buffer.store_sample(sample)
+
+            obs = next_obs
+
+            # train
+            if self.buffer.size >= self.min_samples_before_train:
+
+
+class LocobotNavigationVacuumRNDPerturbationEnv(LocobotNavigationVacuumEnv):
     """ Locobot Navigation with Perturbation """
     def __init__(self, **params):
         defaults = dict(
             is_training=False, 
             rnd_lr=3e-4,
-            perturbation_batch_size=50,
-            perturbation_train_frequency=5,
-            num_perturbation_steps=40,
-            perturbation_drop_step=19)
-        
+            rnd_batch_size=50,
+            rnd_train_frequency=5,
+            perturbation_params=dict(
+                num_steps=40,
+                batch_size=50,
+                env=self,
+            )
+        )
         defaults.update(params)
-
         super().__init__(**defaults)
-        print("LocobotNavigationVacuumPerturbationEnv params:", self.params)
-
-        self.perturbation_action_space = spaces.Box(low=-1.0, high=1.0, shape=(2,))
+        print("LocobotNavigationVacuumRNDPerturbationEnv params:", self.params)
 
         self.is_training = self.params["is_training"]
         if self.is_training:
+            self.perturbation_env = LocobotRNDPerturbation(**self.params["perturbation_params"])
             self.rnd_running_mean_var = RunningMeanVar()
             self.rnd_predictor_optimizer = tf.optimizers.Adam(learning_rate=self.params["rnd_lr"], name="rnd_predictor_optimizer")
-            self.perturbation_training_iteration = 0
-            self.perturbation_batch_size = self.params["perturbation_batch_size"]
-            self.num_perturbation_steps = self.params["num_perturbation_steps"]
-            self.perturbation_drop_step = self.params["perturbation_drop_step"]
-            self.perturbation_train_frequency = self.params["perturbation_train_frequency"]
+            self.rnd_batch_size = self.params["rnd_batch_size"]
+            self.rnd_train_frequency = self.params["rnd_train_frequency"]
 
     def finish_init(self, replay_pool, perturbation_policy, perturbation_algorithm, rnd_predictor, rnd_target, **kwargs):
         self.replay_pool = replay_pool
@@ -167,6 +396,21 @@ class LocobotNavigationVacuumPerturbationEnv(LocobotNavigationVacuumEnv):
         self.rnd_predictor_optimizer.apply_gradients(zip(predictor_gradients, self.rnd_predictor.trainable_variables))
 
         return predictor_losses
+    
+    def get_intrinsic_reward(self, obs):
+        batch = {'observations': tree.map_structure(lambda x: x[np.newaxis, ...], obs)}
+        return self.get_intrinsic_rewards(batch).squeeze()
+
+    def get_intrinsic_rewards(self, batch):
+        observations = {'pixels': batch['observations']['pixels']}
+
+        predictor_values = self.rnd_predictor.values(observations)
+        target_values = self.rnd_target.values(observations)
+
+        predictor_losses = tf.losses.MSE(y_true=target_values, y_pred=predictor_values).numpy().reshape(-1, 1)
+        intrinsic_rewards = predictor_losses / self.rnd_running_mean_var.std
+
+        return intrinsic_rewards
 
     def train_perturbation_policy(self):
         self.perturbation_training_iteration += 1
@@ -206,18 +450,23 @@ class LocobotNavigationVacuumPerturbationEnv(LocobotNavigationVacuumEnv):
 
     def do_perturbation_precedure(self, object_id, infos):
         # diagnostics = []
+        obs = self.get_observation(include_pixels=True)
+        
         for i in range(self.num_perturbation_steps):
             # move
-            # obs = self.get_observation(include_pixels=True)
-            # action = self.perturbation_policy.action(obs).numpy()
+            action = self.perturbation_policy.action(obs).numpy()
             # cmd = input().strip().split()
             # action = [float(cmd[0]), float(cmd[1])]
-            action = self.perturbation_action_space.sample()
+            # action = self.perturbation_action_space.sample()
             self.do_move(("move", action))
 
             # drop the object
             if i == self.perturbation_drop_step:
                 self.interface.move_object(self.room.objects_id[object_id], [0.4, 0.0, 0.015], relative=True)
+
+            next_obs = self.get_observation(include_pixels=True)
+
+            # store in replay buffer
 
         # if len(diagnostics) > 0:
         #     diagnostics = tree.map_structure(lambda *d: tf.reduce_mean(d).numpy(), *diagnostics)
@@ -256,6 +505,13 @@ class LocobotNavigationVacuumPerturbationEnv(LocobotNavigationVacuumEnv):
         infos.update(new_infos)
 
         return next_obs, reward, done, infos
+
+
+
+
+
+
+
 
 class LocobotNavigationDQNGraspingEnv(RoomEnv):
     """ Combines navigation and grasping trained by DQN.
