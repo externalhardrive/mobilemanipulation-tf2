@@ -14,7 +14,7 @@ M = 512
 
 ALGORITHM_PARAMS_BASE = {
     'config': {
-        'train_every_n_steps': 1,
+        'train_every_n_steps': 16,
         'n_train_repeat': 1,
         'eval_render_kwargs': {},
         'eval_n_episodes': 1,

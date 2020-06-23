@@ -411,17 +411,17 @@ class PybulletInterface:
         local_ee_pos, local_ee_ori = self.p.multiplyTransforms(base_pos, base_ori, ee_pos, ee_ori)
         return local_ee_pos, local_ee_ori
     
-    def apply_continuous_action(self, action, max_velocity=float("inf")):
+    def apply_continuous_action(self, action):
         """Args:
           action: 5-vector parameterizing XYZ offset, vertical angle offset
           (radians), and grasp (value between 0.001 (close) and 0.2 (open)."""
         curr_ee, curr_ori = self.get_ee_global()
         #print("curr_ee", curr_ee)
-        new_ee = np.array(curr_ee)# + action[:3]
+        new_ee = np.array(curr_ee) + action[:3]
         curr_wrist_angle, gripper_opening = self.get_wrist_state()
         #print("curr_wrist_angle", curr_wrist_angle, "gripper_opening", gripper_opening)
-        new_wrist_angle = curr_wrist_angle# + action[3]
-        self.move_ee(new_ee, wrist_rot=new_wrist_angle, steps=30, max_velocity=float("inf"), ik_steps=256)
+        new_wrist_angle = curr_wrist_angle + action[3]
+        #self.move_ee(new_ee, wrist_rot=new_wrist_angle, steps=30, max_velocity=float("inf"), ik_steps=256)
         #print("new_ee", new_ee)
         #jointStates = self.p.calculateInverseKinematics(self.robot, 16, new_ee, curr_ori, maxNumIterations=150)[2:6]
         jointStates = self.p.calculateInverseKinematics(self.robot, self.WRIST_JOINT, new_ee, curr_ori, maxNumIterations=150)#[2:6]
@@ -429,11 +429,14 @@ class PybulletInterface:
         jointStates = jointStates[2:6]
 
         
-        self.move_arm(jointStates, wrist_rot=new_wrist_angle, steps=70, max_velocity=max_velocity)
-
+        self.move_arm(jointStates, wrist_rot=new_wrist_angle, steps=70, max_velocity=8.0)
+        if action[4] > 0.1:
+            self.open_gripper()
+        else:
+            self.close_gripper()
        #self.p.setJointMotorControl2(self.robot, self.WRIST_JOINT, self.p.POSITION_CONTROL, new_wrist_angle, maxVelocity=max_velocity)
-        self.p.setJointMotorControl2(self.robot, self.LEFT_GRIPPER, self.p.POSITION_CONTROL, -1*action[4])
-        self.p.setJointMotorControl2(self.robot, self.RIGHT_GRIPPER, self.p.POSITION_CONTROL, action[4])
+#         self.p.setJointMotorControl2(self.robot, self.LEFT_GRIPPER, self.p.POSITION_CONTROL, -1*action[4])
+#         self.p.setJointMotorControl2(self.robot, self.RIGHT_GRIPPER, self.p.POSITION_CONTROL, action[4])
         curr_wrist_angle, gripper_opening = self.get_wrist_state()
         #print("curr_wrist_angle", curr_wrist_angle, "gripper_opening", gripper_opening)
 
@@ -471,8 +474,16 @@ class PybulletInterface:
         camera_pos, camera_ori, _, _, _, _ = self.p.getLinkState(self.robot,  link)
         base_pos, base_ori = self.p.getBasePositionAndOrientation(self.robot)
         look_pos, look_ori = self.p.multiplyTransforms(base_pos, base_ori, camera_look_pos, self.default_ori)
-        camera.update(camera_pos, look_pos)
-
+#         print("link", link)
+#         print("cam_pos ", camera_pos, "cam_ori ", camera_ori)
+#         print("look_pos", look_pos, "look_ori", look_ori)
+#         print("camera_look_pos", camera_look_pos)
+#         print("-------------")
+        if link == 23:
+            camera.update(camera_pos, look_pos)
+        else:
+            look_pos, camera_ori, _, _, _, _ = self.p.getLinkState(self.robot,  link+1)
+            camera.update(camera_pos, look_pos)
         if use_aux:
             image_width = self.params["aux_image_size"]
             image_height = self.params["aux_image_size"]

@@ -3,7 +3,7 @@ from gym import spaces
 import numpy as np
 import os
 from collections import OrderedDict
-
+import time
 from . import locobot_interface
 
 from .nav_envs import RoomEnv
@@ -197,6 +197,8 @@ class LocobotContinuousMultistepGraspingEnv(RoomEnv):
         return not self.are_blocks_graspable()
 
     def reset(self):
+        t = time.time()
+        print("reset", t)
         if True: #self.num_steps_this_env >= self.num_repeat or self.should_reset():
             self.interface.reset_robot([0, 0], 0, 0, 0)
             while True:
