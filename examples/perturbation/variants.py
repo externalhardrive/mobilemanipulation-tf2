@@ -143,7 +143,8 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
         DEFAULT_KEY: int(1e4),
         'Locobot': {
             DEFAULT_KEY: int(2e5),
-            'NavigationVacuumPerturbation-v0': int(2e5),
+            'NavigationVacuumRandomPerturbation-v0': int(2e5),
+            'NavigationVacuumRNDPerturbation-v0': int(2e5),
         },
     },
 }
@@ -155,7 +156,8 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
         DEFAULT_KEY: 1000,
         'Locobot': {
             DEFAULT_KEY: 200,
-            'NavigationVacuumPerturbation-v0': 200,
+            'NavigationVacuumRandomPerturbation-v0': 200,
+            'NavigationVacuumRNDPerturbation-v0': 200,
         },
     },
 }
@@ -166,7 +168,8 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
         DEFAULT_KEY: 1000,
         'Locobot': {
             DEFAULT_KEY: 1000,
-            'NavigationVacuumPerturbation-v0': 1000,
+            'NavigationVacuumRandomPerturbation-v0': 1000,
+            'NavigationVacuumRNDPerturbation-v0': 1000,
         },
     },
 }
@@ -175,7 +178,7 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
 ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
     'gym': {
         'Locobot': {
-            'NavigationVacuumPerturbation-v0': {
+            'NavigationVacuumRandomPerturbation-v0': {
                 'pixel_wrapper_kwargs': {
                     'pixels_only': False,
                 },
@@ -192,7 +195,28 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'image_size': 100,
                 'steps_per_second': 2,
                 'max_velocity': 20.0,
-                'trajectory_log_dir': '/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/nav_vacuum_perturbation_edison_3_traj/', 
+                'trajectory_log_dir': '/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/nav_vacuum_random_perturbation_edison_3_traj/', 
+                'trajectory_log_freq': 1000,
+                'renders': False,
+            },
+            'NavigationVacuumRNDPerturbation-v0': {
+                'pixel_wrapper_kwargs': {
+                    'pixels_only': False,
+                },
+                'reset_free': True,
+                'room_name': 'simple',
+                'room_params': {
+                    'num_objects': 100, 
+                    'object_name': "greensquareball", 
+                    'no_spawn_radius': 0.55, #0.8,
+                    'wall_size': 5.0
+                },
+                'is_training': True,
+                'max_ep_len': float('inf'),
+                'image_size': 100,
+                'steps_per_second': 2,
+                'max_velocity': 20.0,
+                'trajectory_log_dir': '/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/nav_vacuum_rnd_perturbation_edison_1_traj/', 
                 'trajectory_log_freq': 1000,
                 'renders': False,
             },
@@ -203,7 +227,15 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
 EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
     'gym': {
         'Locobot': {
-            'NavigationVacuumPerturbation-v0': {
+            'NavigationVacuumRandomPerturbation-v0': {
+                'reset_free': False,
+                'max_ep_len': 200,
+                'trajectory_log_dir': None, 
+                'trajectory_log_freq': 0,
+                'is_training': False,
+                'renders': False,
+            },
+            'NavigationVacuumRNDPerturbation-v0': {
                 'reset_free': False,
                 'max_ep_len': 200,
                 'trajectory_log_dir': None, 
@@ -305,7 +337,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
     )
     perturbation_algorithm_params = deep_update(
         deepcopy(ALGORITHM_PARAMS_BASE),
-        deepcopy(ALGORITHM_PARAMS_ADDITIONAL.get('SACDiscrete', {})),
+        deepcopy(ALGORITHM_PARAMS_ADDITIONAL.get('SACMixed', {})),
         deepcopy(get_algorithm_params(universe, domain, task)),
     )
 

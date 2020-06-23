@@ -9,6 +9,7 @@ import tensorflow as tf
 import tree
 import ray
 from ray import tune
+from collections import OrderedDict
 
 from softlearning.environments.utils import get_environment_from_params
 from softlearning import algorithms

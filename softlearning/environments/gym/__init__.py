@@ -90,6 +90,8 @@ GENERAL_ENVIRONMENT_SPECS = (
     #     'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
     #                     '.grasping_envs:ImageLocobotSingleGraspingEnv')
     # },
+    
+    # Pure Navigation Stuff
     {
         'id': 'Locobot-ImageNavigation-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
@@ -115,27 +117,39 @@ GENERAL_ENVIRONMENT_SPECS = (
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
                         '.nav_envs:MixedLocobotNavigationEnv')
     },
+
+    # navigation vacuum
     {
         'id': 'Locobot-NavigationVacuum-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.nav_grasp_envs:LocobotNavigationVacuumEnv')
+                        ':LocobotNavigationVacuumEnv')
     },
     {
         'id': 'Locobot-NavigationVacuumResetFree-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.nav_grasp_envs:LocobotNavigationVacuumEnv')
+                        ':LocobotNavigationVacuumEnv')
+    },
+
+    # navigation vacuum perturbation
+    {
+        'id': 'Locobot-NavigationVacuumRandomPerturbation-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        ':LocobotNavigationVacuumRandomPerturbationEnv')
     },
     {
-        'id': 'Locobot-NavigationVacuumPerturbation-v0',
+        'id': 'Locobot-NavigationVacuumRNDPerturbation-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
-                        '.nav_grasp_envs:LocobotNavigationVacuumPerturbationEnv')
+                        ':LocobotNavigationVacuumRNDPerturbationEnv')
     },
+
+    # nav grasp
     {
         'id': 'Locobot-NavigationDQNGrasping-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
                         ':LocobotNavigationDQNGraspingEnv')
     },
 
+    # grasping only
     {
         'id': 'Locobot-DiscreteGrasping-v0',
         'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
@@ -147,6 +161,7 @@ GENERAL_ENVIRONMENT_SPECS = (
                         ':LocobotContinuousMultistepGraspingEnv')
     },
 
+    # Test environments
     {
         'id': 'Tests-LineReach-v0',
         'entry_point': (f'{CUSTOM_GYM_ENVIRONMENTS_PATH}'

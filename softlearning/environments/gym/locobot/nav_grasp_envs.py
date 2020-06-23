@@ -191,10 +191,10 @@ class LocobotRandomPerturbation(LocobotPerturbationBase):
             move_func=None, # function that takes in 2d (-1, 1) action and moves the robot  
             drop_func=None, # function that takes in object_id and drops that object
         )
-        defaults["observation_space"] = spaces.OrderedDict(
+        defaults["observation_space"] = spaces.Dict(OrderedDict((
             ("pixels", spaces.Box(low=0, high=255, shape=(100, 100, 3), dtype=np.uint8)),
             ("current_velocity", spaces.Box(low=-1.0, high=1.0, shape=(2,)))
-        )
+        )))
         defaults["action_space"] = spaces.Box(low=-1.0, high=1.0, shape=(2,))
         defaults.update(params)
 
@@ -268,17 +268,16 @@ class LocobotRNDPerturbation(LocobotPerturbationBase):
         defaults = dict(
             num_steps=40,
             batch_size=50,
-            min_samples_before_train=100,
+            min_samples_before_train=50,
             buffer_size=200,
-            move_func=None, # function that takes in 2d (-1, 1) action and moves the robot  
-            drop_func=None, # function that takes in object_id and drops that object
+            reward_scale=10.0,
             env=None,
         )
-        defaults["observation_space"] = spaces.OrderedDict(
+        defaults["observation_space"] = spaces.Dict(OrderedDict((
             ("pixels", spaces.Box(low=0, high=255, shape=(100, 100, 3), dtype=np.uint8)),
             ("current_velocity", spaces.Box(low=-1.0, high=1.0, shape=(2,))),
             ("holding_object", spaces.Box(low=-1.0, high=1.0, shape=(1,))),
-        )
+        )))
         defaults["action_space"] = DiscreteBox(
             low=-1.0, high=1.0, 
             dimensions=OrderedDict((("move", 2), ("drop", 0)))
@@ -291,44 +290,53 @@ class LocobotRNDPerturbation(LocobotPerturbationBase):
         self.batch_size = self.params["batch_size"]
         self.min_samples_before_train = self.params["min_samples_before_train"]
         self.buffer_size = self.params["buffer_size"]
+        self.reward_scale = self.params["reward_scale"]
 
-        self.move_func = self.params["move_func"]
-        self.drop_func = self.params["drop_func"]
         self.env = self.params["env"]
 
-        self.buffer = SimpleReplayPool(self.buffer_size, self)
+        self.buffer = SimpleReplayPool(self, self.buffer_size)
+        self.training_iteration = 0
 
     def finish_init(self, policy, algorithm):
         self.policy = policy
         self.algorithm = algorithm
 
     def get_observation(self, holding_object):
-        obs = env.get_observation()
-        obs["holding_object"] = 1.0 if holding_object else -1.0
+        obs = self.env.get_observation(include_pixels=True)
+        obs["holding_object"] = np.array([1.0]) if holding_object else np.array([-1.0])
         return obs
 
     def do_perturbation_precedure(self, object_id, infos):
-        obs = self.get_observation()
+        # print("    perturb!")
+        holding_object = True
+        obs = self.get_observation(holding_object)
         for i in range(self.num_steps):
             # action
             if self.buffer.size >= self.min_samples_before_train:
-                onehot_action = self.perturbation_policy.action(obs).numpy()
+                onehot_action = self.policy.action(obs).numpy()
                 action = self.action_space.from_onehot(onehot_action)
             else:
-                action = self.action_space.sample()
+                drop_action = np.array([0, 1]) if np.random.uniform() < 0.1 else np.array([1, 0])
+                onehot_action = np.concatenate([drop_action, np.random.uniform(-1.0, 1.0, size=(2,))]) 
+                action = self.action_space.from_onehot(onehot_action)
             
+            # do action
             key, value = action
             if key == "move":
-                env.do_move(("move", value))
+                self.env.do_move(("move", value))
             elif key == "drop":
-                super().do_move([0.0, 0.0])
-                env.interface.move_object(env.room.objects_id[object_id], [0.4, 0.0, 0.015], relative=True)
+                self.env.do_move(("move", [0.0, 0.0]))
+                if holding_object:
+                    holding_object = False
+                    self.env.interface.move_object(self.env.room.objects_id[object_id], [0.4, 0.0, 0.015], relative=True)
 
-            next_obs = self.get_observation()
+            next_obs = self.get_observation(holding_object)
             
-            reward = self.env.get_intrinsic_reward(next_obs)
+            reward = self.env.get_intrinsic_reward(next_obs) * self.reward_scale
 
             done = (i == self.num_steps - 1)
+
+            # print("        perturb step:", i, "action:", action, "reward:", reward)
 
             # store in buffer
             sample = {
@@ -338,30 +346,38 @@ class LocobotRNDPerturbation(LocobotPerturbationBase):
                 'rewards': np.atleast_1d(reward),
                 'terminals': np.atleast_1d(done)
             }
-            self.buffer.store_sample(sample)
+            self.buffer.add_sample(sample)
 
             obs = next_obs
 
             # train
             if self.buffer.size >= self.min_samples_before_train:
+                batch = self.buffer.random_batch(self.batch_size)
+                sac_diagnostics = self.algorithm._do_training(self.training_iteration, batch)
+                self.training_iteration += 1
 
+        if holding_object:
+            self.env.do_move([0.0, 0.0])
+            self.env.interface.move_object(self.env.room.objects_id[object_id], [0.4, 0.0, 0.015], relative=True)
 
 class LocobotNavigationVacuumRNDPerturbationEnv(LocobotNavigationVacuumEnv):
     """ Locobot Navigation with Perturbation """
     def __init__(self, **params):
         defaults = dict(
             is_training=False, 
-            rnd_lr=3e-4,
+            rnd_lr=1e-4,
             rnd_batch_size=50,
+            rnd_min_samples_before_train=200,
             rnd_train_frequency=5,
             perturbation_params=dict(
-                num_steps=40,
-                batch_size=50,
+                # num_steps=40,
+                # batch_size=50,
+                # min_samples_before_train=100,
+                # buffer_size=200,
                 env=self,
             )
         )
-        defaults.update(params)
-        super().__init__(**defaults)
+        super().__init__(**deep_update(defaults, params))
         print("LocobotNavigationVacuumRNDPerturbationEnv params:", self.params)
 
         self.is_training = self.params["is_training"]
@@ -370,6 +386,7 @@ class LocobotNavigationVacuumRNDPerturbationEnv(LocobotNavigationVacuumEnv):
             self.rnd_running_mean_var = RunningMeanVar()
             self.rnd_predictor_optimizer = tf.optimizers.Adam(learning_rate=self.params["rnd_lr"], name="rnd_predictor_optimizer")
             self.rnd_batch_size = self.params["rnd_batch_size"]
+            self.rnd_min_samples_before_train = self.params["rnd_min_samples_before_train"]
             self.rnd_train_frequency = self.params["rnd_train_frequency"]
 
     def finish_init(self, replay_pool, perturbation_policy, perturbation_algorithm, rnd_predictor, rnd_target, **kwargs):
@@ -378,100 +395,63 @@ class LocobotNavigationVacuumRNDPerturbationEnv(LocobotNavigationVacuumEnv):
         self.perturbation_algorithm = perturbation_algorithm
         self.rnd_predictor = rnd_predictor
         self.rnd_target = rnd_target
+        self.perturbation_env.finish_init(policy=perturbation_policy, algorithm=perturbation_algorithm)
 
-    @tf.function(experimental_relax_shapes=True)
-    def update_rnd_predictor(self, batch):
-        """Update the RND predictor network. """
-        observations = batch['observations']
-
-        with tf.GradientTape() as tape:
-            predictor_values = self.rnd_predictor.values(observations)
-            target_values = self.rnd_target.values(observations)
-
-            predictor_losses = tf.losses.MSE(y_true=target_values, y_pred=predictor_values)
-            predictor_loss = tf.nn.compute_average_loss(predictor_losses)
-
-        predictor_gradients = tape.gradient(predictor_loss, self.rnd_predictor.trainable_variables)
-        
-        self.rnd_predictor_optimizer.apply_gradients(zip(predictor_gradients, self.rnd_predictor.trainable_variables))
-
-        return predictor_losses
-    
     def get_intrinsic_reward(self, obs):
         batch = {'observations': tree.map_structure(lambda x: x[np.newaxis, ...], obs)}
         return self.get_intrinsic_rewards(batch).squeeze()
 
-    def get_intrinsic_rewards(self, batch):
+    def get_intrinsic_rewards(self, batch, normalize=True):
         observations = {'pixels': batch['observations']['pixels']}
 
         predictor_values = self.rnd_predictor.values(observations)
         target_values = self.rnd_target.values(observations)
 
-        predictor_losses = tf.losses.MSE(y_true=target_values, y_pred=predictor_values).numpy().reshape(-1, 1)
-        intrinsic_rewards = predictor_losses / self.rnd_running_mean_var.std
+        intrinsic_rewards = tf.losses.MSE(y_true=target_values, y_pred=predictor_values).numpy().reshape(-1, 1)
+        if normalize:
+            intrinsic_rewards = intrinsic_rewards / self.rnd_running_mean_var.std
 
         return intrinsic_rewards
 
-    def train_perturbation_policy(self):
-        self.perturbation_training_iteration += 1
+    @tf.function(experimental_relax_shapes=True)
+    def update_rnd_predictor(self, batch):
+        """Update the RND predictor network. """
+        observations = {'pixels': batch['observations']['pixels']}
+        target_values = self.rnd_target.values(observations)
 
-        # get random batch
-        batch = self.replay_pool.random_batch(self.perturbation_batch_size)
+        with tf.GradientTape() as tape:
+            predictor_values = self.rnd_predictor.values(observations)
 
-        # update RND predictor loss
+            predictor_losses = tf.losses.MSE(y_true=target_values, y_pred=predictor_values)
+            predictor_loss = tf.nn.compute_average_loss(predictor_losses)
+
+        predictor_gradients = tape.gradient(predictor_loss, self.rnd_predictor.trainable_variables)
+        self.rnd_predictor_optimizer.apply_gradients(zip(predictor_gradients, self.rnd_predictor.trainable_variables))
+
+        return predictor_losses
+
+    def train_rnd(self):
+        # sample batch
+        batch = self.replay_pool.random_batch(self.rnd_batch_size)
+        
+        # update predictor network
         predictor_losses = self.update_rnd_predictor(batch)
 
-        # compute intrinsic reward for this batch
-        intrinsic_rewards = predictor_losses.numpy().reshape(-1, 1)
-        self.rnd_running_mean_var.update_batch(intrinsic_rewards)
-        intrinsic_rewards = intrinsic_rewards / self.rnd_running_mean_var.std
+        # update running mean var
+        unnormalized_intrinsic_rewards = self.get_intrinsic_rewards(batch, normalize=False)
+        self.rnd_running_mean_var.update_batch(unnormalized_intrinsic_rewards)
+        intrinsic_rewards = unnormalized_intrinsic_rewards / self.rnd_running_mean_var.std
 
-        batch["rewards"] = intrinsic_rewards
-
-        # fix action to only include the continuous parts and is move, otherwise use 0
-        actions = batch["actions"]
-        gaussians = actions[:, 2:]
-        is_move = actions[:, 0:1]
-        batch["actions"] = gaussians * is_move
-
-        sac_diagnostics = self.perturbation_algorithm._do_training(self.perturbation_training_iteration, batch)
-
+        # diagnostics
         diagnostics = OrderedDict({
-            # **sac_diagnostics,
-            # "rnd_predictor_loss-mean": tf.reduce_mean(predictor_losses),
+            "rnd_predictor_loss-mean": tf.reduce_mean(predictor_losses),
             "intrinsic_running_std": self.rnd_running_mean_var.std,
             "intrinsic_reward-mean": np.mean(intrinsic_rewards),
             "intrinsic_reward-std": np.std(intrinsic_rewards),
             "intrinsic_reward-min": np.min(intrinsic_rewards),
             "intrinsic_reward-max": np.max(intrinsic_rewards),
         })
-
         return diagnostics
-
-    def do_perturbation_precedure(self, object_id, infos):
-        # diagnostics = []
-        obs = self.get_observation(include_pixels=True)
-        
-        for i in range(self.num_perturbation_steps):
-            # move
-            action = self.perturbation_policy.action(obs).numpy()
-            # cmd = input().strip().split()
-            # action = [float(cmd[0]), float(cmd[1])]
-            # action = self.perturbation_action_space.sample()
-            self.do_move(("move", action))
-
-            # drop the object
-            if i == self.perturbation_drop_step:
-                self.interface.move_object(self.room.objects_id[object_id], [0.4, 0.0, 0.015], relative=True)
-
-            next_obs = self.get_observation(include_pixels=True)
-
-            # store in replay buffer
-
-        # if len(diagnostics) > 0:
-        #     diagnostics = tree.map_structure(lambda *d: tf.reduce_mean(d).numpy(), *diagnostics)
-        # if infos is not None:
-        #     infos.update(diagnostics)
 
     def do_grasp(self, action, infos=None):
         grasps = super().do_grasp(action, return_grasped_object=True)
@@ -480,7 +460,7 @@ class LocobotNavigationVacuumRNDPerturbationEnv(LocobotNavigationVacuumEnv):
         else:
             reward = grasps
         if reward > 0.5 and self.is_training:
-            self.do_perturbation_precedure(object_id, infos)
+            self.perturbation_env.do_perturbation_precedure(object_id, infos)
         return reward
 
     def step(self, action):
@@ -489,16 +469,20 @@ class LocobotNavigationVacuumRNDPerturbationEnv(LocobotNavigationVacuumEnv):
         #     action = ("vacuum", None)
         # else:
         #     action = ("move", [float(cmd[0]), float(cmd[1])])
+        # print("step:", self.num_steps)
+
         infos = {}
-        # if self.is_training:
-        #     infos["intrinsic_running_std"] = np.nan
-        #     infos["intrinsic_reward-mean"] = np.nan
-        #     infos["intrinsic_reward-std"] = np.nan
-        #     infos["intrinsic_reward-min"] = np.nan
-        #     infos["intrinsic_reward-max"] = np.nan
-        #     if self.num_steps % self.perturbation_train_frequency == 0 and self.replay_pool.size >= self.perturbation_batch_size:
-        #         diagnostics = self.train_perturbation_policy()
-        #         infos.update(diagnostics)
+        if self.is_training:
+            infos["rnd_predictor_loss-mean"] = np.nan
+            infos["intrinsic_running_std"] = np.nan
+            infos["intrinsic_reward-mean"] = np.nan
+            infos["intrinsic_reward-std"] = np.nan
+            infos["intrinsic_reward-min"] = np.nan
+            infos["intrinsic_reward-max"] = np.nan
+            if self.num_steps % self.rnd_train_frequency == 0 and self.replay_pool.size >= self.rnd_min_samples_before_train:
+                # print("    train!")
+                diagnostics = self.train_rnd()
+                infos.update(diagnostics)
 
         next_obs, reward, done, new_infos = super().step(action)
 
