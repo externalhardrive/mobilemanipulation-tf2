@@ -30,8 +30,10 @@ def create_grasping_env_discrete_sampler(
     def sampler(num_samples):
         rand = np.random.uniform()
         if rand < epsilon or num_samples < min_samples_before_train: # epsilon greedy or initial samples
+            #print("sampling random rand", rand, "epsilon", epsilon, "num_samples", num_samples, "minsamples", min_samples_before_train)
             return sample_random()
         else:
+            #print("deterministic")
             return sample_deterministic()
 
     return sampler

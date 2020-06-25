@@ -1,7 +1,7 @@
 import os 
 import numpy as np
 import time
-
+import os
 from collections import OrderedDict, defaultdict
 
 import tree
@@ -17,14 +17,20 @@ def training_loop(
         train_batch_size=256,
         validation_prob=0.1,
         validation_batch_size=100,
+        num_eval_samples_per_epoch=20,
         env=None,
         sampler=None,
+        eval_sampler=None,
         train_buffer=None, validation_buffer=None,
         train_function=None, validation_function=None,
+        savedir=None,
+        pretrain=0,
     ):
-
+    sampler(1000)
     assert num_samples_per_epoch % num_samples_per_env == 0 and num_samples_total % num_samples_per_epoch == 0
-
+    if savedir is not None:
+        if not os.path.exists(savedir):
+            os.makedirs(savedir)
     print()
     print("Training Loop params:")
     pprint.pprint(dict(
@@ -40,6 +46,7 @@ def training_loop(
         sampler=sampler,
         train_buffer=train_buffer, validation_buffer=validation_buffer,
         train_function=train_function, validation_function=validation_function,
+        pretrain=pretrain,
     ))
     print()
 
@@ -50,6 +57,11 @@ def training_loop(
     training_start_time = time.time()
 
     all_diagnostics = []
+    print("pretraining for ", pretrain, "steps")
+    for i in range(pretrain):
+        data = train_buffer.sample_batch(train_batch_size)
+        losses = train_function(data)
+        print(losses)
 
     while num_samples < num_samples_total:
         # diagnostics stuff
@@ -79,6 +91,8 @@ def training_loop(
         successes_this_env = 0
         total_success_ratio = 0
         num_envs_with_success = 0
+        total_successes = 0
+        
         for i in range(num_samples_per_epoch):
             # reset the env (at the beginning as well)
             if i == 0 or num_samples_this_env >= num_samples_per_env or env.should_reset():
@@ -98,6 +112,7 @@ def training_loop(
                 sampler_infos[k].append(infos[k])
 
             diagnostics['num_success'] += reward
+            total_successes += reward
             successes_this_env += reward
 
             if validation_buffer and np.random.uniform() < validation_prob:
@@ -109,7 +124,7 @@ def training_loop(
             num_samples_this_env += 1
 
             # do training
-            if num_samples >= min_samples_before_train and num_samples % train_frequency == 0:
+            if train_buffer.num_samples >= min_samples_before_train and num_samples % train_frequency == 0:
                 data = train_buffer.sample_batch(train_batch_size)
                 losses = train_function(data)
                 if not isinstance(losses, (tuple, list)):
@@ -119,6 +134,24 @@ def training_loop(
                 for i in range(len(total_training_losses)):
                     total_training_losses[i] += losses[i].numpy()
                 num_train_steps += 1
+                
+        diagnostics['training_successes'] = float(total_successes)/num_samples_per_epoch
+        if eval_sampler is not None:
+            eval_trials = 0
+            eval_successes = 0
+            #print("eval samples")
+            for i in range(num_eval_samples_per_epoch):
+                env.reset()
+                # do sampling
+                obs, action, reward, infos = eval_sampler(eval_trials)
+                for k in infos:
+                    sampler_infos[k].append(infos[k])
+
+                eval_successes += reward
+                eval_trials +=1
+            #print("done eval samples")
+            diagnostics['eval_successes'] = float(eval_successes)/eval_trials
+
 
         # diagnostics stuff
         diagnostics['num_samples_total'] = num_samples
@@ -128,7 +161,7 @@ def training_loop(
         diagnostics['time'] = time.time() - epoch_start_time
         
         if num_train_steps > 0:
-            diagnostics['average_training_loss'] = [loss / num_train_steps for loss in total_training_losses]
+            diagnostics['average_training_loss'] = [float(loss) / num_train_steps for loss in total_training_losses]
 
         if validation_buffer and validation_buffer.num_samples >= validation_batch_size:
             datas = validation_buffer.get_all_samples_in_batch(validation_batch_size)
@@ -157,5 +190,7 @@ def training_loop(
         print(f'Epoch {num_epoch}/{total_epochs}:')
         pprint.pprint(diagnostics)
         all_diagnostics.append(diagnostics)
+        np.save(os.path.join(savedir, "diagnostics"), all_diagnostics)
+        #import pdb; pdb.set_trace()
 
-    return all_diagnostics
+    return all_diagnostics, train_buffer, validation_buffer

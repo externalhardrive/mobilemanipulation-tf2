@@ -10,14 +10,18 @@ class GraspingEnv:
         room_params = dict(
             min_objects=1, 
             max_objects=10,
-            object_name="greensquareball", 
+            object_name="redlego", 
             spawn_loc=[0.36, 0],
-            spawn_radius=0.3,
+            spawn_radius=0.6,
+            #no_spawn_radius=0.,
+            wall_size=4,
         )
         env = RoomEnv(
-            renders=True, grayscale=False, step_duration=1/60 * 0,
+            renders=False, grayscale=False, step_duration=1/60 * 0,
             room_name=room_name,
             room_params=room_params,
+
+            
             # use_aux_camera=True,
             # aux_camera_look_pos=[0.4, 0, 0.05],
             # aux_camera_fov=35,
@@ -28,12 +32,12 @@ class GraspingEnv:
         )
 
         from softlearning.environments.gym.locobot.utils import URDF
-        env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, -0.16, 0.015])
-        env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, 0.16, 0.015])
-        env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, -0.16, 0.015])
-        env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, 0.16, 0.015])
-        env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, 0, 0.015])
-        env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, 0, 0.015])
+#         env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, -0.16, 0.015])
+#         env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, 0.16, 0.015])
+#         env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, -0.16, 0.015])
+#         env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, 0.16, 0.015])
+#         env.interface.spawn_object(URDF["greensquareball"], pos=[0.3, 0, 0.015])
+#         env.interface.spawn_object(URDF["greensquareball"], pos=[0.466666, 0, 0.015])
         obs = env.interface.render_camera(use_aux=False)
 
         # import matplotlib.pyplot as plt 
@@ -51,7 +55,10 @@ class GraspingEnv:
         return 60
 
     def do_grasp(self, action):
-        self._env.interface.execute_grasp_direct(action, 0.0)
+        if len(action) == 3:
+            self._env.interface.execute_grasp_direct(action[:2], action[2])
+        else:
+            self._env.interface.execute_grasp_direct(action, 0.0)
         reward = 0
         for i in range(self._env.room.num_objects):
             block_pos, _ = self._env.interface.get_object(self._env.room.objects_id[i])
@@ -65,10 +72,16 @@ class GraspingEnv:
         return reward
 
     def from_normalized_action(self, normalized_action):
-        action_min = np.array([0.3, -0.16])
-        action_max = np.array([0.466666666, 0.16])
-        action_mean = (action_max + action_min) * 0.5
-        action_scale = (action_max - action_min) * 0.5
+        if len(normalized_action) == 2:
+            action_min = np.array([0.3, -0.16])
+            action_max = np.array([0.466666666, 0.16])
+            action_mean = (action_max + action_min) * 0.5
+            action_scale = (action_max - action_min) * 0.5
+        else:
+            action_min = np.array([0.3, -0.16, 0])
+            action_max = np.array([0.466666666, 0.16, 3.14])
+            action_mean = (action_max + action_min) * 0.5
+            action_scale = (action_max - action_min) * 0.5
 
         return normalized_action * action_scale + action_mean
 

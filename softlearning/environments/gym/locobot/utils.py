@@ -30,6 +30,7 @@ URDF = {
     "solid_box": os.path.join(CURR_PATH, 'urdf/solid_box.urdf'),
     "walls_2": os.path.join(CURR_PATH, 'urdf/medium_room/walls.urdf'),
     "textured_box": os.path.join(CURR_PATH, 'urdf/medium_room/box.urdf'),
+    "redlego": os.path.join(CURR_PATH, 'urdf/redlego.urdf'),
 }
 
 TEXTURE = {
