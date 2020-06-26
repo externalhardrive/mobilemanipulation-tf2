@@ -161,6 +161,21 @@ GENERAL_ENVIRONMENT_SPECS = (
                         ':LocobotContinuousMultistepGraspingEnv')
     },
 
+    # Real
+    {        'id': 'Locobot-RealNavigation-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.locobot_envs:RealLocobotNavigationEnv')
+    },
+        {
+        'id': 'Locobot-RealGrasping-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.locobot_envs:RealLocobotGraspingEnv')
+    },
+        {
+        'id': 'Locobot-RealOdomNav-v0',
+        'entry_point': (f'{LOCOBOT_ENVIRONMENTS_PATH}'
+                        '.real_envs:RealLocobotOdomNavEnv')
+    },
     # Test environments
     {
         'id': 'Tests-LineReach-v0',

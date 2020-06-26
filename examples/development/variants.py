@@ -627,6 +627,30 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 },
                 # 'renders': True,
             },
+            'RealNavigation-v0': {
+                'pixel_wrapper_kwargs': {
+                    #'observation_key': 'pixels',
+                    'pixels_only': True,
+                    'render_kwargs': {
+                    },
+                },
+            },
+            'RealGrasping-v0': {
+                'pixel_wrapper_kwargs': {
+                    #'observation_key': 'pixels',
+                    'pixels_only': True,
+                    'render_kwargs': {
+                    },
+                },
+            },
+            'RealOdomNav-v0': {
+                'pixel_wrapper_kwargs': {
+                    #'observation_key': 'pixels',
+                    'pixels_only': True,
+                    'render_kwargs': {
+                    },
+                },
+            },
         },
         'Tests': {
             'LineReach-v0': {
