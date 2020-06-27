@@ -267,10 +267,10 @@ class LocobotRNDPerturbation(LocobotPerturbationBase):
     def __init__(self, **params):
         defaults = dict(
             num_steps=40,
-            batch_size=50,
-            min_samples_before_train=50,
-            buffer_size=200,
-            reward_scale=10.0,
+            batch_size=256,
+            min_samples_before_train=256,
+            buffer_size=1e4,
+            reward_scale=100.0,
             env=None,
         )
         defaults["observation_space"] = spaces.Dict(OrderedDict((
@@ -332,7 +332,7 @@ class LocobotRNDPerturbation(LocobotPerturbationBase):
 
             next_obs = self.get_observation(holding_object)
             
-            reward = self.env.get_intrinsic_reward(next_obs) * self.reward_scale
+            reward = 0 #self.env.get_intrinsic_reward(next_obs) * self.reward_scale
 
             done = (i == self.num_steps - 1)
 
@@ -360,15 +360,27 @@ class LocobotRNDPerturbation(LocobotPerturbationBase):
             self.env.do_move([0.0, 0.0])
             self.env.interface.move_object(self.env.room.objects_id[object_id], [0.4, 0.0, 0.015], relative=True)
 
+    def process_batch(self, batch):
+        intrinsic_rewards = self.env.get_intrinsic_rewards(batch)
+        batch["rewards"] = intrinsic_rewards * self.reward_scale
+
+        diagnostics = OrderedDict({
+            "intrinsic_reward-mean": np.mean(intrinsic_rewards),
+            "intrinsic_reward-std": np.std(intrinsic_rewards),
+            "intrinsic_reward-min": np.min(intrinsic_rewards),
+            "intrinsic_reward-max": np.max(intrinsic_rewards),
+        })
+        return diagnostics
+
 class LocobotNavigationVacuumRNDPerturbationEnv(LocobotNavigationVacuumEnv):
     """ Locobot Navigation with Perturbation """
     def __init__(self, **params):
         defaults = dict(
             is_training=False, 
-            rnd_lr=1e-4,
-            rnd_batch_size=50,
-            rnd_min_samples_before_train=200,
-            rnd_train_frequency=5,
+            rnd_lr=3e-4,
+            rnd_batch_size=256,
+            rnd_min_samples_before_train=800,
+            rnd_train_frequency=1,
             perturbation_params=dict(
                 # num_steps=40,
                 # batch_size=50,
@@ -422,7 +434,7 @@ class LocobotNavigationVacuumRNDPerturbationEnv(LocobotNavigationVacuumEnv):
         with tf.GradientTape() as tape:
             predictor_values = self.rnd_predictor.values(observations)
 
-            predictor_losses = tf.losses.MSE(y_true=target_values, y_pred=predictor_values)
+            predictor_losses = tf.losses.MSE(y_true=tf.stop_gradient(target_values), y_pred=predictor_values)
             predictor_loss = tf.nn.compute_average_loss(predictor_losses)
 
         predictor_gradients = tape.gradient(predictor_loss, self.rnd_predictor.trainable_variables)

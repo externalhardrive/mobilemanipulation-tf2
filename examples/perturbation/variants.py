@@ -216,7 +216,7 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'image_size': 100,
                 'steps_per_second': 2,
                 'max_velocity': 20.0,
-                'trajectory_log_dir': '/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/nav_vacuum_rnd_perturbation_edison_1_traj/', 
+                'trajectory_log_dir': '/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/nav_vacuum_rnd_perturbation_edison_2_traj/', 
                 'trajectory_log_freq': 1000,
                 'renders': False,
             },
@@ -374,7 +374,7 @@ def get_variant_spec_base(universe, domain, task, policy, algorithm):
         'rnd_params': {
             'class_name': 'rnd_predictor_and_target',
             'config': {
-                'output_shape': (1,),
+                'output_shape': (512,),
                 'hidden_layer_sizes': (M, M),
                 'observation_keys': None,
                 'preprocessors': None,

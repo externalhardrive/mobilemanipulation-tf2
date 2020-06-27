@@ -655,7 +655,7 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'is_training': True,
                 'max_steps': 20,
                 'trajectory_log_freq': 100,
-                'trajectory_log_dir': '/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/test_point_grid_exploration_edison_13_traj/', 
+                'trajectory_log_dir': '/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/test_point_grid_exploration_edison_17_traj/', 
             },
         },
     },

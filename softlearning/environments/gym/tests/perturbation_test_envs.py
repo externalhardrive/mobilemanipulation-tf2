@@ -29,6 +29,7 @@ class PointGridExploration(gym.Env):
                 output_activation='linear',
             )
             self.rnd_target.set_weights([np.random.normal(0, 0.1, size=weights.shape) for weights in self.rnd_target.get_weights()])
+            self.rnd_predictor.set_weights([np.random.normal(0, 0.1, size=weights.shape) for weights in self.rnd_predictor.get_weights()])
             self.rnd_running_mean_var = RunningMeanVar()
             self.rnd_predictor_optimizer = tf.optimizers.Adam(learning_rate=3e-4, name="rnd_predictor_optimizer")
 
