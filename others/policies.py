@@ -83,6 +83,29 @@ def build_image_discrete_policy(
     return logits_model, None, deterministic_model
 
 
+def build_fc_image_discrete_policy(
+        image_size=100,
+    ):
+    obs_in = tfk.Input((image_size, image_size, 3))
+    conv_out = convnet_model(
+        conv_filters=(64, 64, 16, 1),
+        conv_kernel_sizes=(3, 3, 3, 3),
+        conv_strides=(2, 1, 1, 1),
+        activation="relu",
+        fully_convolutional=True,
+        # kernel_regularizer=tfk.regularizers.l2(l=0.1),
+    )(obs_in)
+    
+    logits_model = tfk.Model(obs_in, conv_out)
+
+    def deterministic_model(obs):
+        logits = logits_model(obs)
+        #import  pdb; pdb.set_trace()
+        inds = tf.argmax(logits, axis=-1)
+        return inds
+
+    return logits_model, deterministic_model
+
 
 def build_discrete_policy(
         input_size=32,

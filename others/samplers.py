@@ -27,7 +27,48 @@ def create_grasping_env_discrete_sampler(
 
         return obs, action_discrete, reward, {'sample_deterministic': 1}
 
-    def sampler(num_samples):
+    def sampler(num_samples, force_deterministic=False):
+        if force_deterministic:
+            return sample_deterministic()
+        rand = np.random.uniform()
+        if rand < epsilon or num_samples < min_samples_before_train: # epsilon greedy or initial samples
+            #print("sampling random rand", rand, "epsilon", epsilon, "num_samples", num_samples, "minsamples", min_samples_before_train)
+            return sample_random()
+        else:
+            #print("deterministic")
+            return sample_deterministic()
+
+    return sampler
+
+
+def create_fc_grasping_env_discrete_sampler(
+        env=None,
+        discretizer=None,
+        deterministic_model=None,
+        min_samples_before_train=None,
+        epsilon=None,
+    ):
+    total_dimensions = np.prod(discretizer.dimensions)
+
+    def sample_random():
+        obs = env.get_observation()
+        action_discrete = np.random.randint(0, total_dimensions)
+        #action_undiscretized = discretizer.undiscretize(discretizer.unflatten(action_discrete))
+        reward = env.do_grasp(action_discrete)
+    
+        return obs, action_discrete, reward, {'sample_random': 1}
+
+    def sample_deterministic():
+        obs = env.get_observation()   
+        action_discrete = deterministic_model(np.array([obs])).numpy()
+        #action_undiscretized = discretizer.undiscretize(discretizer.unflatten(action_discrete))
+        reward = env.do_grasp(action_discrete)
+
+        return obs, action_discrete, reward, {'sample_deterministic': 1}
+
+    def sampler(num_samples, force_deterministic=False):
+        if force_deterministic:
+            return sample_deterministic()
         rand = np.random.uniform()
         if rand < epsilon or num_samples < min_samples_before_train: # epsilon greedy or initial samples
             #print("sampling random rand", rand, "epsilon", epsilon, "num_samples", num_samples, "minsamples", min_samples_before_train)

@@ -22,6 +22,7 @@ def convnet_model(
         downsampling_type='conv',
         activation=layers.LeakyReLU,
         name="convnet",
+        fully_convolutional=False,
         *args,
         **kwargs):
     normalization_layer = {
@@ -32,7 +33,7 @@ def convnet_model(
         None: None,
     }[normalization_type]
 
-    def conv_block(conv_filter, conv_kernel_size, conv_stride):
+    def conv_block(conv_filter, conv_kernel_size, conv_stride, is_last=False):
         block_parts = [
             layers.Conv2D(
                 filters=conv_filter,
@@ -47,9 +48,10 @@ def convnet_model(
         if normalization_layer is not None:
             block_parts += [normalization_layer(**normalization_kwargs)]
 
-        block_parts += [(layers.Activation(activation)
-                         if isinstance(activation, str)
-                         else activation())]
+        if not is_last:
+            block_parts += [(layers.Activation(activation)
+                             if isinstance(activation, str)
+                             else activation())]
 
         if downsampling_type == 'pool' and conv_stride > 1:
             block_parts += [getattr(layers, 'AvgPool2D')(
@@ -67,15 +69,30 @@ def convnet_model(
         x = (tf.image.convert_image_dtype(x, tf.float32) - 0.5) * 2.0
         return x
 
-    model = tf.keras.Sequential((
-        tfkl.Lambda(preprocess),
-        *[
-            conv_block(conv_filter, conv_kernel_size, conv_stride)
-            for (conv_filter, conv_kernel_size, conv_stride) in
-            zip(conv_filters, conv_kernel_sizes, conv_strides)
-        ],
-        tfkl.Flatten(),
+    
+    if fully_convolutional:
+        is_last = [False for f in conv_filters]
+        is_last[-1] = True
+        model = tf.keras.Sequential((
+            tfkl.Lambda(preprocess),
+            *[
+                conv_block(conv_filter, conv_kernel_size, conv_stride, last)
+                for (conv_filter, conv_kernel_size, conv_stride, last) in
+                zip(conv_filters, conv_kernel_sizes, conv_strides, is_last)
+            ],
+            tfkl.Flatten(),
 
-    ), name=name)
+        ), name=name)
+    else:
+        model = tf.keras.Sequential((
+            tfkl.Lambda(preprocess),
+            *[
+                conv_block(conv_filter, conv_kernel_size, conv_stride)
+                for (conv_filter, conv_kernel_size, conv_stride) in
+                zip(conv_filters, conv_kernel_sizes, conv_strides)
+            ],
+            tfkl.Flatten(),
+
+        ), name=name)
 
     return model

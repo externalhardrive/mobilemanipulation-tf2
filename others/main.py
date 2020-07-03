@@ -117,8 +117,8 @@ def discrete_dqn_grasping(args):
     num_samples_per_env = 10
     num_samples_per_epoch = 200
     num_samples_total = int(1e4)
-    min_samples_before_train = 3000
-    num_eval_samples_per_epoch = 10
+    min_samples_before_train = 1000
+    num_eval_samples_per_epoch = 20
     train_frequency = 1
     train_batch_size = 128
     validation_prob = 0.1
@@ -146,7 +146,8 @@ def discrete_dqn_grasping(args):
 
     # create the env
     env = GraspingEnv()
-
+    #env = GraspingEnv(robot_pos=np.array([1., 1.]))
+    env.reset()
     # create the sampler
     sampler = create_grasping_env_discrete_sampler(
         env=env,
@@ -219,6 +220,129 @@ def discrete_dqn_grasping(args):
         logits_model.save_weights(os.path.join(new_folder, "model"))
         np.save(os.path.join(new_folder, "diagnostics"), all_diagnostics)
 
+def discrete_FCdqn_grasping(args):
+    name = 'disc_FCdqn_'+ args.name
+    
+    # some hyperparameters
+    image_size = 60
+
+    num_samples_per_env = 10
+    num_samples_per_epoch = 200
+    num_samples_total = int(1e4)
+    min_samples_before_train = 1000
+    num_eval_samples_per_epoch = 20
+    train_frequency = 1
+    train_batch_size = 128
+    validation_prob = 0.1
+    validation_batch_size = 16
+    
+    if True: #args.policy == 'discrete':
+        # create the policy
+        logits_model, deterministic_model = build_fc_image_discrete_policy(
+            image_size=image_size, 
+            #discrete_dimension=discrete_dimension,
+            #discrete_hidden_layers=[512, 512]
+        )
+#     elif args.policy == 'auto':
+#         # create the policy
+#         logits_model, samples_model, deterministic_model = build_image_autoregressive_policy(
+#             image_size=image_size, 
+#             discrete_dimensions=discrete_dimensions,
+#             discrete_hidden_layers=[512, 512]
+#         )
+
+    # create the optimizer
+    optimizer = tf.optimizers.Adam(learning_rate=1e-4)
+    
+    if args.use_theta:
+        discrete_dimensions = [image_size, image_size, 4]
+        discrete_dimension = image_size *image_size31*4
+        # create the Discretizer
+        discretizer = Discretizer(discrete_dimensions, [0.3, -0.16, 0], [0.4666666, 0.16, 3.14])
+    else:
+        discrete_dimensions = [image_size//2, image_size//2]
+        discrete_dimension = image_size * image_size // 4
+        # create the Discretizer
+        discretizer = Discretizer(discrete_dimensions, [0.3, -0.16], [0.4666666, 0.16])
+
+
+    # create the env
+    env = FullyConvGraspingEnv()
+    #env = GraspingEnv(robot_pos=np.array([1., 1.]))
+    env.reset()
+    # create the sampler
+    sampler = create_fc_grasping_env_discrete_sampler(
+        env=env,
+        discretizer=discretizer,
+        deterministic_model=deterministic_model,
+        min_samples_before_train=min_samples_before_train,
+        epsilon=0.1,
+    )
+    # create the sampler
+    eval_sampler = create_fc_grasping_env_discrete_sampler(
+        env=env,
+        discretizer=discretizer,
+        deterministic_model=deterministic_model,
+        min_samples_before_train=0,
+        epsilon=0,
+    )
+
+
+    # create the train and validation functions
+    train_function = lambda data: train_discrete_sigmoid(logits_model, data, optimizer, discrete_dimension)
+    validation_function = lambda data: validation_discrete_sigmoid(logits_model, data, discrete_dimension)
+
+    # create the dataset
+    train_buffer = ReplayBuffer(size=num_samples_total+5000, observation_shape=(image_size, image_size, 3), action_dim=1)
+    validation_buffer = ReplayBuffer(size=num_samples_total, observation_shape=(image_size, image_size, 3), action_dim=1)
+
+    if args.load_data:
+        data = np.load('2k_positives.npy',allow_pickle=True).item()
+        for i in range(len(data['observations'])):
+            train_buffer.store_sample(data['observations'][i], data['actions'][i], data['rewards'][i])
+        data = np.load('2k_negatives.npy',allow_pickle=True).item()
+        for i in range(len(data['observations'])):
+            train_buffer.store_sample(data['observations'][i], data['actions'][i], data['rewards'][i])
+    # testing time
+    # logits_model.load_weights('./dataset/models/from_dataset_4/autoregressive')
+    # epsilon = -1
+    # min_samples_before_train = float('inf')
+    # num_samples_total = 1
+    now = datetime.now()
+    savedir='./others/logs/'+name+now.strftime("%m%d%Y-%H-%M-%S")
+    print("saving to ", savedir)
+    all_diagnostics, train_buffer, validation_buffer = training_loop(
+        num_samples_per_env=num_samples_per_env,
+        num_samples_per_epoch=num_samples_per_epoch,
+        num_samples_total=num_samples_total,
+        min_samples_before_train=min_samples_before_train,
+        train_frequency=train_frequency,
+        train_batch_size=train_batch_size,
+        validation_prob=validation_prob,
+        validation_batch_size=validation_batch_size,
+        env=env,
+        sampler=sampler,
+        eval_sampler=eval_sampler,
+        num_eval_samples_per_epoch=num_eval_samples_per_epoch,
+        train_buffer=train_buffer, validation_buffer=validation_buffer,
+        train_function=train_function, validation_function=validation_function,
+        savedir=savedir,
+        pretrain=args.pretrain
+    )
+
+    save_folder = './others/logs/'
+
+
+    if name:
+        os.makedirs(save_folder, exist_ok=True)
+        new_folder = os.path.join(save_folder, name)
+        os.makedirs(new_folder, exist_ok=True)
+        train_buffer.save(new_folder, "train_buffer")
+        validation_buffer.save(new_folder, "validation_buffer")
+        logits_model.save_weights(os.path.join(new_folder, "model"))
+        np.save(os.path.join(new_folder, "diagnostics"), all_diagnostics)
+
+        
 # def ddpg_grasping(args):
 #     # some hyperparameters
 #     image_size = 100
@@ -388,7 +512,11 @@ def discrete_dqn_grasping(args):
 
 def main(args):
     # autoregressive_discrete_dqn_grasping(args)
-    discrete_dqn_grasping(args)
+    #
+    if args.policy == 'discrete':
+        discrete_dqn_grasping(args)
+    elif args.policy == 'fc':
+        discrete_FCdqn_grasping(args)
     # ddpg_grasping(args)
     # discrete_fake_grasping(args)
 

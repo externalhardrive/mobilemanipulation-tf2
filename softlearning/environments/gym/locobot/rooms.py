@@ -111,7 +111,7 @@ class GraspingRoom(Room):
                 x, y = self._spawn_loc[0] + dx, self._spawn_loc[1] + dy
                 if self.is_valid_spawn_loc(x, y):
                     break
-            self.interface.move_object(self.objects_id[i], [x, y, 0.015], ori=np.random.rand(4))
+            self.interface.move_object(self.objects_id[i], [x, y, 0.015])#, ori=np.random.rand(4))
         
         for i in range(num_objects, self._max_objects):
             self.interface.move_object(self.objects_id[i], [self.extent + np.random.uniform(-0.5, 0.5), np.random.uniform(-0.5, 0.5), 0.01])

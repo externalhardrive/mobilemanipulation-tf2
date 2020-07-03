@@ -4,7 +4,7 @@ from os.path import expanduser
 import sys
 import pprint
 from numbers import Number
-
+import math
 import gym
 import numpy as np
 import pybullet
@@ -85,6 +85,7 @@ class PybulletInterface:
         print()
 
         self.renders = self.params["renders"]
+        print("RENDERSS!!!!!", self.renders)
         self.grayscale = self.params["grayscale"]
         self.step_duration = self.params["step_duration"]
 
@@ -319,6 +320,17 @@ class PybulletInterface:
         self.close_gripper(steps=30)
         new_pos[2] = 0.1
         self.move_ee(new_pos, wrist_rot, steps=60, max_velocity=1.0)
+        
+    def execute_place_direct(self, pos, wrist_rot=0.0):
+        new_pos = np.array([pos[0], pos[1], 0.1])
+        
+        self.move_ee(new_pos, wrist_rot, steps=60, max_velocity=12.0)
+        new_pos[2] = 0
+        self.move_ee(new_pos, wrist_rot, steps=30, max_velocity=12.0)
+        self.open_gripper(steps=30)
+        new_pos[2] = 0.1
+        self.move_ee(new_pos, wrist_rot, steps=60, max_velocity=1.0)
+        self.open_gripper(steps=0)
 
     def execute_grasp(self, pos, wrist_rot=0.0):
         """ Do a predetermined single grasp action by doing the following:
@@ -488,7 +500,8 @@ class PybulletInterface:
         base_pos, base_ori = self.p.getBasePositionAndOrientation(self.robot)
         look_pos, look_ori = self.p.multiplyTransforms(base_pos, base_ori, camera_look_pos, self.default_ori)
         camera.update(camera_pos, look_pos)
-
+        #self.look_ori = look_ori
+        self.look_pos = look_pos
         if use_aux:
             image_width = self.params["aux_image_size"]
             image_height = self.params["aux_image_size"]
@@ -502,6 +515,48 @@ class PybulletInterface:
         image = camera.get_image(width=image_width, height=image_height)
         if self.grayscale:
             image = np.mean(image, axis=2).reshape((image_height, image_width, 1))
+        #print("Rendering camera", look_pos, )
         return image.astype(np.uint8)
 
-    # ----- END MISC METHODS -----
+        # ----- END MISC METHODS -----
+
+    def get_world_from_pixel(self, pixel):
+        
+        fov = self.params['camera_fov']/360*2*math.pi# 1.0472 #60 degrees
+        #focal_len
+        h =  self.params['image_size']
+        w = h
+        f = (h/2) / np.tan(fov/2) # Focal length
+        floor_z = 0.013
+        _, _, _, _,cam_pos, camera_ori = self.p.getLinkState(self.robot, self.CAMERA_LINK)
+        cam_pos = np.array(cam_pos).reshape([-1,1])
+        #pixel = np.array((0,0))
+        cam2robot_rot = np.linalg.inv(np.array(self.camera.view_matrix).reshape(4,4).T)[:3,:3]
+        #print(cam2robot_rot)
+        pixel3d = np.array(([(pixel[0]-w/2)/f, -1*(pixel[1]-h/2)/f, -1])).reshape((3,1)) # 1,3
+        #pixel3d = np.array(([1, -(pixel[0]-w/2)/f, -1*(pixel[1]-h/2)/f])).reshape((3,1)) # 1,3
+
+        #np.dot(pixel3d, cam2robot_rot) 
+
+        pixel3d_world = np.matmul(cam2robot_rot, pixel3d) + cam_pos # 1,3
+        ray_origin = cam_pos 
+        ray_direction = (pixel3d_world-cam_pos)
+        t_floor = (floor_z - ray_origin[2,0])/ray_direction[2,0]
+        world_pixel_pos = ray_origin+t_floor*ray_direction
+        return world_pixel_pos.reshape(3)
+
+    def get_pixel_from_world(self, pos):
+        #print("pos",pos)
+        _, _, _, _,cam_pos, camera_ori = self.p.getLinkState(self.robot, self.CAMERA_LINK)
+        cam_pos = np.array(cam_pos).reshape([-1,1])
+        cam2robot_rot = np.linalg.inv(np.array(self.camera.view_matrix).reshape(4,4).T)[:3,:3]
+        pixel = np.matmul(cam2robot_rot.T, (pos-cam_pos))
+        #print("matmul",pixel)
+        pixel = -1*pixel[:2]/pixel[2] #maybe negative
+        #print("devide z", pixel)
+        pixel = np.array([pixel[0]*f+w/2, -1*pixel[1]*f+h/2]) # Maybe some negative
+        #print("f", pixel[0]*f,-1*pixel[1]*f )
+        #print("final",pixel)
+        #pixel3d = np.array(([(pixel[0]-w/2)/f, -1*(pixel[1]-h/2)/f, -1])).reshape((3,1)) # 1,3
+
+        return pixel

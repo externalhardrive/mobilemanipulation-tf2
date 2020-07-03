@@ -26,7 +26,7 @@ def training_loop(
         savedir=None,
         pretrain=0,
     ):
-    sampler(1000)
+    sampler(0, force_deterministic=True)
     assert num_samples_per_epoch % num_samples_per_env == 0 and num_samples_total % num_samples_per_epoch == 0
     if savedir is not None:
         if not os.path.exists(savedir):
