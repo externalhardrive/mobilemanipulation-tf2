@@ -131,7 +131,7 @@ class FullyConvGraspingEnv:
             wall_size=4,
         )
         env = RoomEnv(
-            renders=False, grayscale=False, step_duration=1/60 * 0,
+            renders=True, grayscale=False, step_duration=1/60 * 0,
             room_name=room_name,
             room_params=room_params,
             robot_pos = robot_pos,
@@ -165,7 +165,7 @@ class FullyConvGraspingEnv:
         self._env = env
         self.reset()
         obs = self.get_observation()
-        self.obs_downsample = 2
+        self.obs_downsample = 4
         self.obs_dim = np.array(obs.shape[:2])
         while True:
             self._env.room.reset()
@@ -185,7 +185,7 @@ class FullyConvGraspingEnv:
         #import pdb; pdb.set_trace()
         #print("action", action)
         #action *= 4
-        pixel = np.array(np.unravel_index(action, dims=(self.obs_dim/self.obs_downsample).astype(np.int32))).flatten()
+        pixel = np.array(np.unravel_index(action, shape=(self.obs_dim/self.obs_downsample).astype(np.int32))).flatten()
         #print("pixel", pixel)
         pixel *= self.obs_downsample
         y = pixel[0] +self.crop_y[0]

@@ -260,16 +260,18 @@ def discrete_FCdqn_grasping(args):
         # create the Discretizer
         discretizer = Discretizer(discrete_dimensions, [0.3, -0.16, 0], [0.4666666, 0.16, 3.14])
     else:
-        discrete_dimensions = [image_size//2, image_size//2]
-        discrete_dimension = image_size * image_size // 4
+        discrete_dimensions = [image_size//4, image_size//4]
+        discrete_dimension = image_size * image_size // 16
         # create the Discretizer
         discretizer = Discretizer(discrete_dimensions, [0.3, -0.16], [0.4666666, 0.16])
 
 
     # create the env
-    env = FullyConvGraspingEnv()
+    env = FullyConvGraspingEnv(robot_pos=np.array([1., 1.]))
     #env = GraspingEnv(robot_pos=np.array([1., 1.]))
+    print("resetting")
     env.reset()
+    print("done resetting")
     # create the sampler
     sampler = create_fc_grasping_env_discrete_sampler(
         env=env,

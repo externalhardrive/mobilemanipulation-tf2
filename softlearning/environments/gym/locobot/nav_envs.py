@@ -15,7 +15,8 @@ class RoomEnv(LocobotBaseEnv):
     def __init__(self, **params):
         defaults = dict(
             room_name="simple",
-            room_params={} # use room defaults
+            room_params={}, # use room defaults
+            robot_pos=np.array([0.0, 0.0])
         )
         defaults.update(params)
 
@@ -23,8 +24,8 @@ class RoomEnv(LocobotBaseEnv):
         print("RoomEnv params:", self.params)
 
         self.robot_yaw = 0.0
-        self.robot_pos = np.array([0.0, 0.0])
-
+        self.robot_pos = self.params['robot_pos']
+        print("Self.robot_pos", self.robot_pos)
         self.room = initialize_room(self.interface, self.params["room_name"], self.params["room_params"])
 
     def get_observation(self):

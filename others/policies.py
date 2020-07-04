@@ -90,7 +90,7 @@ def build_fc_image_discrete_policy(
     conv_out = convnet_model(
         conv_filters=(64, 64, 16, 1),
         conv_kernel_sizes=(3, 3, 3, 3),
-        conv_strides=(2, 1, 1, 1),
+        conv_strides=(2, 2, 1, 1),
         activation="relu",
         fully_convolutional=True,
         # kernel_regularizer=tfk.regularizers.l2(l=0.1),
