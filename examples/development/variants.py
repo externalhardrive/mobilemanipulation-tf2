@@ -17,13 +17,13 @@ ALGORITHM_PARAMS_BASE = {
         'train_every_n_steps': 1,
         'n_train_repeat': 1,
         'eval_render_kwargs': {},
-        'eval_n_episodes': 1,
+        'eval_n_episodes': 0,
         'num_warmup_samples': tune.sample_from(lambda spec: (
-            # 5 * (spec.get('config', spec)
-            #       ['sampler_params']
-            #       ['config']
-            #       ['max_path_length'])
-            1000
+            5 * (spec.get('config', spec)
+                  ['sampler_params']
+                  ['config']
+                  ['max_path_length'])
+            # 1000
         )),
     }
 }
@@ -40,7 +40,7 @@ ALGORITHM_PARAMS_ADDITIONAL = {
             'tau': 5e-3,
             'target_entropy': 'auto',
 
-            'discount': 0.95,
+            'discount': 0.99,
             'reward_scale': 1.0,
         },
     },
@@ -192,6 +192,7 @@ TOTAL_STEPS_PER_UNIVERSE_DOMAIN_TASK = {
             'LineReach-v0': int(1e5),
             'LineGrasping-v0': int(1e5),
             'LineGraspingDiscrete-v0': int(1e5),
+            'PointGridExploration-v0': int(1e5),
         },
     },
     'dm_control': {
@@ -319,6 +320,7 @@ MAX_PATH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'LineReach-v0': 100,
             'LineGrasping-v0': 1,
             'LineGraspingDiscrete-v0': 1,
+            'PointGridExploration-v0': 20,
         },
     },
 }
@@ -343,6 +345,7 @@ EPOCH_LENGTH_PER_UNIVERSE_DOMAIN_TASK = {
             'LineReach-v0': 1000,
             'LineGrasping-v0': 1000,
             'LineGraspingDiscrete-v0': 1000,
+            'PointGridExploration-v0': 1000,
         },
     },
 }
@@ -648,6 +651,12 @@ ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'max_objects': 5,
                 'num_repeat': 10,
             },
+            'PointGridExploration-v0': {
+                'is_training': True,
+                'max_steps': 20,
+                'trajectory_log_freq': 100,
+                'trajectory_log_dir': '/home/externalhardrive/RAIL/mobilemanipulation-tf2/nohup_output/test_point_grid_exploration_edison_17_traj/', 
+            },
         },
     },
     'dm_control': {
@@ -717,6 +726,13 @@ EXTRA_EVALUATION_ENVIRONMENT_PARAMS_PER_UNIVERSE_DOMAIN_TASK = {
                 'renders': False,
             },
         },
+        'Tests': {
+            'PointGridExploration-v0': {
+                'is_training': False,
+                'trajectory_log_dir': None,
+                'trajectory_log_freq': 0,
+            },
+        }
     },
 }
 

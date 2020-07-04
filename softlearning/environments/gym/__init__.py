@@ -177,6 +177,11 @@ GENERAL_ENVIRONMENT_SPECS = (
         'entry_point': (f'{CUSTOM_GYM_ENVIRONMENTS_PATH}'
                         '.tests:LineGraspingDiscrete')
     },
+    {
+        'id': 'Tests-PointGridExploration-v0',
+        'entry_point': (f'{CUSTOM_GYM_ENVIRONMENTS_PATH}'
+                        '.tests:PointGridExploration')
+    },
 )
 
 MUJOCO_ENVIRONMENTS = tuple(

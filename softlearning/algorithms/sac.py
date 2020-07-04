@@ -169,6 +169,8 @@ class SAC(RLAlgorithm):
         self._alpha_optimizer = tf.optimizers.Adam(
             self._alpha_lr, name='alpha_optimizer')
 
+        self._should_process_batch = hasattr(self._training_environment, 'process_batch')
+
     @tf.function(experimental_relax_shapes=True)
     def _compute_Q_targets(self, batch):
         next_observations = batch['next_observations']
@@ -313,13 +315,20 @@ class SAC(RLAlgorithm):
         return diagnostics
 
     def _do_training(self, iteration, batch):
+        diagnostics = OrderedDict()
+        
+        if self._should_process_batch:
+            process_batch_diagnostics = self._training_environment.process_batch(batch)
+            diagnostics.update(process_batch_diagnostics)
+
         training_diagnostics = self._do_updates(batch)
+        diagnostics.update(training_diagnostics)
 
         if iteration % self._target_update_interval == 0:
             # Run target ops here.
             self._update_target(tau=tf.constant(self._tau))
 
-        return training_diagnostics
+        return diagnostics
 
     def get_diagnostics(self,
                         iteration,
